@@ -2,24 +2,11 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapContainer, TileLayer, FeatureGroup, useMap, useMapEvents } from "react-leaflet";
-import { EditControl } from "react-leaflet-draw";
+import { MapContainer, TileLayer, Polygon, useMap, useMapEvents } from "react-leaflet";
 import * as turf from "@turf/turf";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import "leaflet-draw/dist/leaflet.draw.css";
 import { fetchClimateData, searchLocation, getLocationName, ClimateData } from "@/lib/climateApi";
-
-// Fix Leaflet default marker icons
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
-
-L.Icon.Default.mergeOptions({
-  iconUrl: icon,
-  iconRetinaUrl: iconRetina,
-  shadowUrl: iconShadow,
-});
 
 interface MapSectionProps {
   selectedCity: string;
@@ -47,11 +34,32 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-// Component to handle map clicks for location selection
-function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
+// Component to handle drawing polygon by clicking
+function PolygonDrawer({ 
+  isDrawing, 
+  onPointAdd, 
+  onComplete,
+  points 
+}: { 
+  isDrawing: boolean; 
+  onPointAdd: (latlng: L.LatLng) => void;
+  onComplete: () => void;
+  points: L.LatLng[];
+}) {
   useMapEvents({
     click: (e) => {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
+      if (isDrawing) {
+        // Check if clicking near the first point to close polygon
+        if (points.length >= 3) {
+          const firstPoint = points[0];
+          const distance = e.latlng.distanceTo(firstPoint);
+          if (distance < 20) {
+            onComplete();
+            return;
+          }
+        }
+        onPointAdd(e.latlng);
+      }
     },
   });
   return null;
@@ -62,12 +70,12 @@ const MapSection = ({
   onCityChange, 
   onAreaCalculated,
   onClimateDataFetched,
-  onLocationChange 
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ lat: number; lng: number; name: string }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [polygonPoints, setPolygonPoints] = useState<L.LatLng[]>([]);
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; name: string }>({
     lat: presetCities[selectedCity as keyof typeof presetCities]?.lat || 30.0444,
@@ -76,7 +84,39 @@ const MapSection = ({
   });
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
-  const featureGroupRef = useRef<L.FeatureGroup | null>(null);
+
+  // Calculate polygon area using Turf.js
+  const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
+    if (points.length < 3) return 0;
+
+    // Convert to GeoJSON coordinates
+    const coordinates = points.map((ll) => [ll.lng, ll.lat]);
+    // Close the polygon
+    coordinates.push(coordinates[0]);
+
+    // Create Turf polygon and calculate area
+    const polygon = turf.polygon([coordinates]);
+    const areaInSqMeters = turf.area(polygon);
+    
+    return Math.round(areaInSqMeters * 100) / 100;
+  }, []);
+
+  // Handle adding a point to polygon
+  const handlePointAdd = useCallback((latlng: L.LatLng) => {
+    setPolygonPoints(prev => [...prev, latlng]);
+  }, []);
+
+  // Handle completing the polygon
+  const handlePolygonComplete = useCallback(() => {
+    if (polygonPoints.length >= 3) {
+      const area = calculatePolygonArea(polygonPoints);
+      setCalculatedArea(area);
+      if (onAreaCalculated && area > 0) {
+        onAreaCalculated(area);
+      }
+    }
+    setIsDrawingMode(false);
+  }, [polygonPoints, calculatePolygonArea, onAreaCalculated]);
 
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
@@ -98,11 +138,8 @@ const MapSection = ({
   const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
     const locationName = name || await getLocationName(lat, lng);
     setCurrentLocation({ lat, lng, name: locationName });
-    if (onLocationChange) {
-      onLocationChange(lat, lng, locationName);
-    }
     fetchClimateForLocation(lat, lng);
-  }, [onLocationChange, fetchClimateForLocation]);
+  }, [fetchClimateForLocation]);
 
   // Initial climate data fetch
   useEffect(() => {
@@ -117,59 +154,25 @@ const MapSection = ({
     }
   }, [selectedCity, updateLocation]);
 
-  // Calculate polygon area using Turf.js
-  const calculatePolygonArea = useCallback((layer: L.Polygon) => {
-    const latlngs = layer.getLatLngs()[0] as L.LatLng[];
-    if (latlngs.length < 3) return 0;
-
-    // Convert to GeoJSON coordinates
-    const coordinates = latlngs.map((ll) => [ll.lng, ll.lat]);
-    // Close the polygon
-    coordinates.push(coordinates[0]);
-
-    // Create Turf polygon and calculate area
-    const polygon = turf.polygon([coordinates]);
-    const areaInSqMeters = turf.area(polygon);
-    
-    return Math.round(areaInSqMeters * 100) / 100;
-  }, []);
-
-  // Handle polygon creation
-  const onCreated = useCallback((e: L.DrawEvents.Created) => {
-    const layer = e.layer as L.Polygon;
-    const area = calculatePolygonArea(layer);
-    setCalculatedArea(area);
-    
-    if (onAreaCalculated && area > 0) {
-      onAreaCalculated(area);
-    }
-    setIsDrawingMode(false);
-  }, [calculatePolygonArea, onAreaCalculated]);
-
-  // Handle polygon edit
-  const onEdited = useCallback((e: L.DrawEvents.Edited) => {
-    const layers = e.layers;
-    layers.eachLayer((layer) => {
-      const area = calculatePolygonArea(layer as L.Polygon);
-      setCalculatedArea(area);
-      if (onAreaCalculated && area > 0) {
-        onAreaCalculated(area);
-      }
-    });
-  }, [calculatePolygonArea, onAreaCalculated]);
-
-  // Handle polygon deletion
-  const onDeleted = useCallback(() => {
+  // Clear polygon
+  const clearPolygon = useCallback(() => {
+    setPolygonPoints([]);
     setCalculatedArea(null);
   }, []);
 
-  // Clear all polygons
-  const clearPolygons = useCallback(() => {
-    if (featureGroupRef.current) {
-      featureGroupRef.current.clearLayers();
-      setCalculatedArea(null);
+  // Toggle drawing mode
+  const toggleDrawingMode = useCallback(() => {
+    if (isDrawingMode) {
+      // If exiting drawing mode with points, complete the polygon
+      if (polygonPoints.length >= 3) {
+        handlePolygonComplete();
+      }
+      setIsDrawingMode(false);
+    } else {
+      clearPolygon();
+      setIsDrawingMode(true);
     }
-  }, []);
+  }, [isDrawingMode, polygonPoints.length, handlePolygonComplete, clearPolygon]);
 
   // Search for location
   const handleSearch = async () => {
@@ -192,12 +195,8 @@ const MapSection = ({
     }
   };
 
-  // Handle location click on map
-  const handleLocationSelect = useCallback((lat: number, lng: number) => {
-    if (!isDrawingMode) {
-      updateLocation(lat, lng);
-    }
-  }, [isDrawingMode, updateLocation]);
+  // Convert points to positions for Polygon component
+  const polygonPositions: [number, number][] = polygonPoints.map(p => [p.lat, p.lng]);
 
   return (
     <section className="relative">
@@ -277,14 +276,14 @@ const MapSection = ({
         {/* Drawing Tools */}
         <div className="flex justify-center gap-3 mb-4 animate-slide-up" style={{ animationDelay: "0.15s" }}>
           <Button
-            onClick={() => setIsDrawingMode(!isDrawingMode)}
+            onClick={toggleDrawingMode}
             variant={isDrawingMode ? "default" : "outline"}
             className={`flex items-center gap-2 ${isDrawingMode ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
           >
             {isDrawingMode ? (
               <>
                 <MousePointer className="w-4 h-4" />
-                Exit Drawing
+                Finish Drawing
               </>
             ) : (
               <>
@@ -293,9 +292,9 @@ const MapSection = ({
               </>
             )}
           </Button>
-          {calculatedArea !== null && (
+          {(polygonPoints.length > 0 || calculatedArea !== null) && (
             <Button
-              onClick={clearPolygons}
+              onClick={clearPolygon}
               variant="outline"
               className="flex items-center gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
             >
@@ -309,7 +308,9 @@ const MapSection = ({
         {isDrawingMode && (
           <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
-              Click on the map to draw polygon corners. Click the first point to complete.
+              {polygonPoints.length < 3 
+                ? `Click on the map to add points (${polygonPoints.length}/3 minimum)`
+                : "Click near the first point to complete, or click 'Finish Drawing'"}
             </p>
           </div>
         )}
@@ -343,34 +344,25 @@ const MapSection = ({
                 zoom={18} 
               />
               
-              <LocationSelector onLocationSelect={handleLocationSelect} />
+              <PolygonDrawer 
+                isDrawing={isDrawingMode}
+                onPointAdd={handlePointAdd}
+                onComplete={handlePolygonComplete}
+                points={polygonPoints}
+              />
               
-              <FeatureGroup ref={featureGroupRef}>
-                {/* @ts-ignore - react-leaflet-draw types are incomplete */}
-                <EditControl
-                  position="topright"
-                  onCreated={onCreated}
-                  onEdited={onEdited}
-                  onDeleted={onDeleted}
-                  draw={{
-                    rectangle: false,
-                    circle: false,
-                    circlemarker: false,
-                    marker: false,
-                    polyline: false,
-                    polygon: isDrawingMode ? {
-                      allowIntersection: false,
-                      shapeOptions: {
-                        color: "#14b8a6",
-                        fillColor: "#14b8a6",
-                        fillOpacity: 0.4,
-                        weight: 2,
-                      },
-                    } : false,
+              {/* Show polygon if we have at least 2 points */}
+              {polygonPoints.length >= 2 && (
+                <Polygon
+                  positions={polygonPositions}
+                  pathOptions={{
+                    color: "#14b8a6",
+                    fillColor: "#14b8a6",
+                    fillOpacity: 0.4,
+                    weight: 2,
                   }}
-                  edit={false as unknown as object}
                 />
-              </FeatureGroup>
+              )}
             </MapContainer>
           </div>
           
