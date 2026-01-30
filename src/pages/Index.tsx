@@ -11,14 +11,15 @@ const Index = () => {
   const [rooftopArea, setRooftopArea] = useState<number>(100);
   const [selectedCity, setSelectedCity] = useState<string>("zagazig");
   const [costScenario, setCostScenario] = useState<"low" | "medium" | "high">("medium");
-  const [electricityPrice, setElectricityPrice] = useState<number>(1.45);
+  const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
+  const [usableFraction, setUsableFraction] = useState<number>(0.60);
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [locationName, setLocationName] = useState<string>("");
 
   const handleCalculate = () => {
-    const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice);
+    const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice, usableFraction);
     setResults(calculation);
     setShowResults(true);
 
@@ -50,6 +51,8 @@ const Index = () => {
           setCostScenario={setCostScenario}
           electricityPrice={electricityPrice}
           setElectricityPrice={setElectricityPrice}
+          usableFraction={usableFraction}
+          setUsableFraction={setUsableFraction}
           onCalculate={handleCalculate}
           locationName={locationName}
           solarIrradiance={climateData?.annualAvgIrradiance}

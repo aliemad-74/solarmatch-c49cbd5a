@@ -7,10 +7,11 @@ export const costScenarios = {
   high: { value: 30000, label: "Premium", description: "Top-tier equipment, extended warranty" },
 };
 
-// System constants
-export const PERFORMANCE_RATIO = 0.80; // System losses (inverter, wiring, etc.)
-export const KW_PER_SQM = 0.18; // kW capacity per square meter (typical)
-export const CO2_FACTOR = 0.5; // kg CO2 saved per kWh (Egypt grid average)
+// System constants (Egypt 2025 market data)
+export const SQM_PER_KW = 7; // 7 m² per kW (modern 540-700W panels)
+export const DEFAULT_USABLE_FRACTION = 0.60; // 60% of roof usable (residential default)
+export const ENERGY_YIELD_PER_KW = 1800; // kWh per kW per year (Egypt realistic average)
+export const CO2_FACTOR = 0.55; // kg CO2 saved per kWh (Egypt grid emission factor)
 export const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 export const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -26,6 +27,7 @@ export const defaultClimateData: ClimateData = {
 
 export interface SolarCalculation {
   maxCapacityKW: number;
+  usableArea: number;
   systemCost: number;
   monthlyProduction: number[];
   yearlyProduction: number;
@@ -40,35 +42,43 @@ export function calculateSolarFeasibility(
   rooftopArea: number,
   climateData: ClimateData | null,
   costScenario: "low" | "medium" | "high",
-  electricityPrice: number
+  electricityPrice: number,
+  usableFraction: number = DEFAULT_USABLE_FRACTION
 ): SolarCalculation {
   const climate = climateData || defaultClimateData;
 
-  // Maximum installable capacity
-  const maxCapacityKW = rooftopArea * KW_PER_SQM;
+  // Calculate usable roof area
+  const usableArea = rooftopArea * usableFraction;
+
+  // Maximum installable capacity: kW = usable_area / 7 m²/kW
+  const maxCapacityKW = usableArea / SQM_PER_KW;
 
   // System cost based on scenario
   const systemCost = maxCapacityKW * costScenarios[costScenario].value;
 
-  // Monthly energy production (kWh)
-  const monthlyProduction = climate.monthlyIrradiance.map((irradiance, index) => {
-    const dailyProduction = maxCapacityKW * irradiance * PERFORMANCE_RATIO;
-    return dailyProduction * DAYS_PER_MONTH[index];
+  // Annual energy production using Egypt yield factor (1800 kWh/kW/year)
+  const yearlyProduction = maxCapacityKW * ENERGY_YIELD_PER_KW;
+
+  // Monthly distribution based on irradiance patterns
+  const totalIrradiance = climate.monthlyIrradiance.reduce((sum, v) => sum + v, 0);
+  const monthlyProduction = climate.monthlyIrradiance.map((irradiance) => {
+    const monthFraction = irradiance / totalIrradiance;
+    return yearlyProduction * monthFraction;
   });
 
-  // Yearly totals
-  const yearlyProduction = monthlyProduction.reduce((sum, monthly) => sum + monthly, 0);
-  const monthlySavings = (yearlyProduction / 12) * electricityPrice;
+  // Savings calculations
   const yearlySavings = yearlyProduction * electricityPrice;
+  const monthlySavings = yearlySavings / 12;
 
   // Payback period
   const paybackYears = yearlySavings > 0 ? systemCost / yearlySavings : 0;
 
-  // Environmental impact
-  const co2Reduction = yearlyProduction * CO2_FACTOR / 1000; // tons per year
+  // Environmental impact: kg CO2 saved per year, converted to tons
+  const co2Reduction = (yearlyProduction * CO2_FACTOR) / 1000;
 
   return {
     maxCapacityKW,
+    usableArea,
     systemCost,
     monthlyProduction,
     yearlyProduction,
