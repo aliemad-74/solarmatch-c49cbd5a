@@ -14,6 +14,8 @@ interface InputPanelProps {
   setCostScenario: (scenario: "low" | "medium" | "high") => void;
   electricityPrice: number;
   setElectricityPrice: (price: number) => void;
+  usableFraction: number;
+  setUsableFraction: (fraction: number) => void;
   onCalculate: () => void;
   locationName?: string;
   solarIrradiance?: number;
@@ -26,6 +28,8 @@ const InputPanel = ({
   setCostScenario,
   electricityPrice,
   setElectricityPrice,
+  usableFraction,
+  setUsableFraction,
   onCalculate,
   locationName,
   solarIrradiance,
@@ -134,6 +138,34 @@ const InputPanel = ({
             </p>
           </div>
 
+          {/* Usable Area Fraction Slider */}
+          <div className="space-y-4 mb-8">
+            <Label className="text-sm font-medium text-foreground flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Home className="w-4 h-4 text-muted-foreground" />
+                Usable Roof Area
+              </span>
+              <span className="text-lg font-semibold text-primary">{Math.round(usableFraction * 100)}%</span>
+            </Label>
+            <div className="px-2">
+              <Slider
+                value={[usableFraction * 100]}
+                onValueChange={(v) => setUsableFraction(v[0] / 100)}
+                min={40}
+                max={80}
+                step={5}
+                className="w-full"
+              />
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>40% (Obstacles/Shading)</span>
+              <span>80% (Industrial)</span>
+            </div>
+            <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg py-2 px-4">
+              Accounts for HVAC, obstacles, shading. Residential default: 60%
+            </p>
+          </div>
+
           {/* Electricity Price Slider */}
           <div className="space-y-4 mb-8">
             <Label className="text-sm font-medium text-foreground flex items-center justify-between">
@@ -147,15 +179,15 @@ const InputPanel = ({
               <Slider
                 value={[electricityPrice]}
                 onValueChange={(v) => setElectricityPrice(v[0])}
-                min={0.5}
-                max={3.0}
-                step={0.1}
+                min={0.8}
+                max={2.3}
+                step={0.05}
                 className="w-full"
               />
             </div>
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>0.50 EGP (Subsidized)</span>
-              <span>3.00 EGP (Commercial)</span>
+              <span>0.80 EGP (Low usage)</span>
+              <span>2.30 EGP (High usage)</span>
             </div>
           </div>
 
