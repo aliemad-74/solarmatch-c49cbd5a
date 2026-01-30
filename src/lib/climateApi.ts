@@ -83,16 +83,18 @@ export async function fetchClimateData(lat: number, lng: number): Promise<Climat
 
 /**
  * Extract monthly values from NASA POWER response
- * NASA returns data with keys "1" through "12" for months
+ * NASA returns data with keys like "JAN", "FEB", "MAR", etc.
  */
 function extractMonthlyValues(data: Record<string, number> | undefined): number[] {
   if (!data) {
     return Array(12).fill(0);
   }
 
+  const monthKeys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const monthlyValues: number[] = [];
-  for (let month = 1; month <= 12; month++) {
-    const value = data[month.toString()];
+  
+  for (const key of monthKeys) {
+    const value = data[key];
     // NASA uses -999 for missing data
     monthlyValues.push(value && value !== -999 ? value : 0);
   }
