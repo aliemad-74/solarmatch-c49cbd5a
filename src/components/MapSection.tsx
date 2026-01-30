@@ -135,6 +135,19 @@ const MapSection = ({
     }
   }, [isDrawingMode]);
 
+  // Calculate polygon area using Turf.js
+  const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
+    if (points.length < MIN_POLYGON_POINTS) return 0;
+
+    const coordinates = points.map((ll) => [ll.lng, ll.lat]);
+    coordinates.push(coordinates[0]);
+
+    const polygon = turf.polygon([coordinates]);
+    const areaInSqMeters = turf.area(polygon);
+    
+    return Math.round(areaInSqMeters * 100) / 100;
+  }, []);
+
   // Update polygon visualization
   useEffect(() => {
     if (!mapRef.current) return;
@@ -158,31 +171,54 @@ const MapSection = ({
       }).addTo(mapRef.current);
     }
 
-    // Draw point markers
+    // Draw draggable point markers
     polygonPoints.forEach((point, index) => {
-      const marker = L.circleMarker([point.lat, point.lng], {
-        radius: 6,
-        color: index === 0 ? "#f59e0b" : "#14b8a6",
-        fillColor: index === 0 ? "#f59e0b" : "#14b8a6",
-        fillOpacity: 1,
-        weight: 2,
+      const marker = L.marker([point.lat, point.lng], {
+        draggable: true,
+        icon: L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="
+            width: 14px;
+            height: 14px;
+            background: ${index === 0 ? '#f59e0b' : '#14b8a6'};
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: grab;
+          "></div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        }),
       }).addTo(mapRef.current!);
-      pointMarkersRef.current.push(marker);
+
+      // Handle drag events to update polygon points
+      marker.on('drag', (e: L.LeafletEvent) => {
+        const target = e.target as L.Marker;
+        const newLatLng = target.getLatLng();
+        setPolygonPoints(prev => {
+          const updated = [...prev];
+          updated[index] = newLatLng;
+          return updated;
+        });
+      });
+
+      marker.on('dragend', () => {
+        // Recalculate area after drag ends
+        setPolygonPoints(prev => {
+          if (prev.length >= MIN_POLYGON_POINTS) {
+            const area = calculatePolygonArea(prev);
+            setCalculatedArea(area);
+            if (onAreaCalculated && area > 0) {
+              onAreaCalculated(area);
+            }
+          }
+          return prev;
+        });
+      });
+
+      pointMarkersRef.current.push(marker as any);
     });
-  }, [polygonPoints]);
-
-  // Calculate polygon area using Turf.js
-  const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
-    if (points.length < MIN_POLYGON_POINTS) return 0;
-
-    const coordinates = points.map((ll) => [ll.lng, ll.lat]);
-    coordinates.push(coordinates[0]);
-
-    const polygon = turf.polygon([coordinates]);
-    const areaInSqMeters = turf.area(polygon);
-    
-    return Math.round(areaInSqMeters * 100) / 100;
-  }, []);
+  }, [polygonPoints, calculatePolygonArea, onAreaCalculated]);
 
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
