@@ -47,9 +47,9 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
           <ResultCard
             icon={<Sun className="w-6 h-6" />}
-            title="Max Capacity"
-            value={`${formatNumber(results.maxCapacityKW)} kW`}
-            subtitle="Installable power"
+            title="Installed Capacity"
+            value={`${formatNumber(results.kWInstalled)} kW`}
+            subtitle={`${results.panelsCount} panels`}
             highlight
             delay={0}
           />
@@ -185,7 +185,7 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
                 Ready to Go Solar?
               </h4>
               <p className="text-muted-foreground max-w-lg">
-                Based on your {formatNumber(results.maxCapacityKW)} kW system, you could save approximately{" "}
+                Based on your {formatNumber(results.kWInstalled)} kW system, you could save approximately{" "}
                 <span className="font-semibold text-primary">{formatCurrency(results.yearlySavings)}</span> annually 
                 and reduce your carbon footprint by <span className="font-semibold text-solar-green">{formatNumber(results.co2Reduction)} tons</span> of CO₂ per year.
               </p>

@@ -1,110 +1,69 @@
 import { ClimateData } from "./climateApi";
 
-// Panel types available in Egypt (2025)
+// ================================================
+// PANEL SPECIFICATIONS (Egypt 2025 Market)
+// ================================================
+
 export const panelTypes = {
   modern: { 
-    label: "Modern High-Power", 
+    label: "High-Power Mono", 
     description: "540-700W monocrystalline, 20% efficiency",
-    sqmPerKW: 6, 
+    sqmPerKW: 6,           // m² per kW
+    panelWatt: 550,        // Watts per panel
+    panelArea: 2.2,        // m² per panel
+    panelPrice: 4500,      // EGP per panel
     degradation: 0.005,
-    pricePerWatt: 7.5 
   },
   standard: { 
     label: "Standard Mono", 
     description: "360-450W monocrystalline, 18% efficiency",
-    sqmPerKW: 7, 
+    sqmPerKW: 7,           // m² per kW
+    panelWatt: 400,        // Watts per panel
+    panelArea: 2.0,        // m² per panel
+    panelPrice: 3000,      // EGP per panel
     degradation: 0.005,
-    pricePerWatt: 7.0 
   },
   economy: { 
     label: "Economy Poly", 
     description: "Polycrystalline, 16% efficiency, needs more space",
-    sqmPerKW: 8.5, 
+    sqmPerKW: 8.5,         // m² per kW
+    panelWatt: 330,        // Watts per panel
+    panelArea: 2.1,        // m² per panel
+    panelPrice: 2200,      // EGP per panel
     degradation: 0.006,
-    pricePerWatt: 6.5 
   },
 };
 
 export type PanelType = keyof typeof panelTypes;
 
-/**
- * Auto-select optimal panel type based on:
- * - Usable roof area (smaller roofs need more efficient panels)
- * - Solar irradiance (high irradiance allows economy panels)
- */
-export function selectOptimalPanelType(
-  usableArea: number,
-  annualAvgIrradiance: number
-): { type: PanelType; reason: string } {
-  // Thresholds based on Egyptian market reality
-  const SMALL_ROOF_THRESHOLD = 50; // m² usable
-  const MEDIUM_ROOF_THRESHOLD = 100; // m² usable
-  const LARGE_ROOF_THRESHOLD = 200; // m² usable
-  const HIGH_IRRADIANCE = 5.5; // kWh/m²/day (Egypt average is ~5.5-6.5)
+// ================================================
+// COST PACKAGES (EGP per kW - Full System)
+// ================================================
 
-  // Very large roof (>200 m²): Economy panels are most cost-effective
-  if (usableArea > LARGE_ROOF_THRESHOLD) {
-    return {
-      type: "economy",
-      reason: `Large roof (${usableArea.toFixed(0)} m²) - Economy panels offer best value at 8.5 m²/kW`,
-    };
-  }
-
-  // Small roof (<50 m²): Prioritize high-efficiency to maximize capacity
-  if (usableArea < SMALL_ROOF_THRESHOLD) {
-    return {
-      type: "modern",
-      reason: `Compact roof (${usableArea.toFixed(0)} m²) - Modern panels maximize capacity with 6 m²/kW`,
-    };
-  }
-
-  // Medium-large roof (100-200 m²) with good sun: Economy is viable
-  if (usableArea > MEDIUM_ROOF_THRESHOLD && annualAvgIrradiance >= HIGH_IRRADIANCE) {
-    return {
-      type: "economy",
-      reason: `Medium-large roof with good irradiance (${annualAvgIrradiance.toFixed(1)} kWh/m²/day) - Economy panels are cost-effective`,
-    };
-  }
-
-  // Medium roof (50-100 m²) with high irradiance: Standard is optimal
-  if (usableArea >= SMALL_ROOF_THRESHOLD && annualAvgIrradiance >= HIGH_IRRADIANCE) {
-    return {
-      type: "standard",
-      reason: `Balanced choice for ${usableArea.toFixed(0)} m² with ${annualAvgIrradiance.toFixed(1)} kWh/m²/day irradiance`,
-    };
-  }
-
-  // Medium roof with lower irradiance: Modern for efficiency
-  if (usableArea < MEDIUM_ROOF_THRESHOLD && annualAvgIrradiance < HIGH_IRRADIANCE) {
-    return {
-      type: "modern",
-      reason: `Medium roof with moderate irradiance - Modern panels compensate with higher efficiency`,
-    };
-  }
-
-  // Default: Standard panels for balanced performance
-  return {
-    type: "standard",
-    reason: `Optimal balance for ${usableArea.toFixed(0)} m² roof with ${annualAvgIrradiance.toFixed(1)} kWh/m²/day`,
-  };
-}
-
-// Cost scenarios in EGP per kW
 export const costScenarios = {
   low: { value: 12000, label: "Economy", description: "Basic equipment, local installation" },
   medium: { value: 18000, label: "Standard", description: "Quality equipment, professional installation" },
   high: { value: 30000, label: "Premium", description: "Top-tier equipment, extended warranty" },
 };
 
-// System constants (Egypt 2025 market data)
-export const DEFAULT_USABLE_FRACTION = 0.60; // 60% of roof usable (residential default)
-export const ENERGY_YIELD_PER_KW = 1800; // kWh per kW per year (Egypt realistic average)
-export const CO2_FACTOR = 0.55; // kg CO2 saved per kWh (Egypt grid emission factor)
-export const SYSTEM_LIFETIME_YEARS = 25; // Standard PV system lifetime
+// Other costs for panel-based pricing (inverter + mounting + wiring + installation)
+export const OTHER_COSTS_PER_KW = 8000; // EGP per kW
+
+// ================================================
+// SYSTEM CONSTANTS
+// ================================================
+
+export const DEFAULT_USABLE_FRACTION = 0.60;
+export const INSTALLATION_FACTOR = 0.95;     // 95% of max capacity installable in practice
+export const ENERGY_YIELD_PER_KW = 1800;     // kWh per kW per year (Egypt average)
+export const CO2_FACTOR = 0.55;              // kg CO2 saved per kWh
+export const SYSTEM_LIFETIME_YEARS = 25;
+export const CONSISTENCY_THRESHOLD = 1.3;    // 30% tolerance for cost check
+
 export const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 export const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Default climate data (fallback)
+// Default climate data (Cairo fallback)
 export const defaultClimateData: ClimateData = {
   monthlyIrradiance: [4.2, 5.0, 5.8, 6.5, 7.0, 7.5, 7.3, 7.0, 6.2, 5.3, 4.5, 4.0],
   monthlyTemperature: [14, 15, 18, 22, 26, 29, 30, 30, 28, 24, 19, 15],
@@ -114,20 +73,137 @@ export const defaultClimateData: ClimateData = {
   location: { lat: 30.0444, lng: 31.2357 },
 };
 
+// ================================================
+// CALCULATION RESULT INTERFACE
+// ================================================
+
+export type PricingMode = "per_kw" | "per_panel";
+
 export interface SolarCalculation {
-  maxCapacityKW: number;
+  // Area calculations
   usableArea: number;
+  
+  // Capacity calculations
+  kWMax: number;
+  kWInstalled: number;
+  
+  // Panel details (for per_panel mode)
+  panelsCount: number;
+  totalWatts: number;
+  
+  // Cost breakdown
   systemCost: number;
+  panelCost: number;
+  otherCosts: number;
+  costPerKWReal: number;
+  
+  // Production & savings
   monthlyProduction: number[];
   yearlyProduction: number;
   monthlySavings: number;
   yearlySavings: number;
   paybackYears: number;
+  
+  // Environmental
   co2Reduction: number;
-  climateData?: ClimateData;
+  
+  // Metadata
   panelType: PanelType;
+  pricingMode: PricingMode;
+  climateData?: ClimateData;
+  
+  // Consistency check
+  expectedCost: number;
   costWarning?: string;
 }
+
+// ================================================
+// METHOD 1: COST PER kW (RECOMMENDED)
+// ================================================
+
+function calculatePerKW(
+  usableArea: number,
+  panel: typeof panelTypes[PanelType],
+  costScenario: "low" | "medium" | "high"
+): { kWMax: number; kWInstalled: number; systemCost: number; panelsCount: number } {
+  // kW_max = usable_area / area_per_kW
+  const kWMax = usableArea / panel.sqmPerKW;
+  
+  // kW_installed = floor(kW_max × 0.95) - practical installation limit
+  const kWInstalled = Math.floor(kWMax * INSTALLATION_FACTOR * 10) / 10; // Round to 1 decimal
+  
+  // Total_System_Cost = kW_installed × Cost_per_kW
+  const systemCost = kWInstalled * costScenarios[costScenario].value;
+  
+  // Estimate panels count for display
+  const panelsCount = Math.floor((kWInstalled * 1000) / panel.panelWatt);
+  
+  return { kWMax, kWInstalled, systemCost, panelsCount };
+}
+
+// ================================================
+// METHOD 2: COST PER PANEL (OPTIONAL)
+// ================================================
+
+function calculatePerPanel(
+  usableArea: number,
+  panel: typeof panelTypes[PanelType]
+): { kWMax: number; kWInstalled: number; systemCost: number; panelsCount: number; panelCost: number; otherCosts: number; totalWatts: number } {
+  // Panels_count = floor(usable_area / panel_area)
+  const panelsCount = Math.floor(usableArea / panel.panelArea);
+  
+  // Total_Watts = Panels_count × panel_watt
+  const totalWatts = panelsCount * panel.panelWatt;
+  
+  // kW_installed = Total_Watts / 1000 (CRITICAL: Convert W → kW)
+  const kWInstalled = totalWatts / 1000;
+  const kWMax = kWInstalled / INSTALLATION_FACTOR; // Reverse calculate max
+  
+  // Panel_Cost = Panels_count × panel_price
+  const panelCost = panelsCount * panel.panelPrice;
+  
+  // Other_costs = kW_installed × 8,000 EGP
+  const otherCosts = kWInstalled * OTHER_COSTS_PER_KW;
+  
+  // Total_System_Cost = Panel_Cost + Other_costs
+  const systemCost = panelCost + otherCosts;
+  
+  return { kWMax, kWInstalled, systemCost, panelsCount, panelCost, otherCosts, totalWatts };
+}
+
+// ================================================
+// CONSISTENCY CHECK (MANDATORY)
+// ================================================
+
+function checkConsistency(
+  systemCost: number,
+  kWInstalled: number
+): { expectedCost: number; warning?: string } {
+  // expected_cost = kW_installed × 18,000 (medium scenario baseline)
+  const expectedCost = kWInstalled * costScenarios.medium.value;
+  
+  // If Total_System_Cost > expected_cost × 1.3: Show warning
+  if (systemCost > expectedCost * CONSISTENCY_THRESHOLD) {
+    return {
+      expectedCost,
+      warning: `⚠️ Cost inconsistent with roof area. Expected ~${formatCurrency(expectedCost)} for ${formatNumber(kWInstalled)} kW. Possible unit error or premium equipment.`,
+    };
+  }
+  
+  // Also warn if cost is suspiciously low
+  if (systemCost < expectedCost * 0.5) {
+    return {
+      expectedCost,
+      warning: `⚠️ Cost seems too low. Expected ~${formatCurrency(expectedCost)} for ${formatNumber(kWInstalled)} kW. Verify pricing inputs.`,
+    };
+  }
+  
+  return { expectedCost };
+}
+
+// ================================================
+// MAIN CALCULATION FUNCTION
+// ================================================
 
 export function calculateSolarFeasibility(
   rooftopArea: number,
@@ -135,63 +211,94 @@ export function calculateSolarFeasibility(
   costScenario: "low" | "medium" | "high",
   electricityPrice: number,
   usableFraction: number = DEFAULT_USABLE_FRACTION,
-  panelType: PanelType = "standard"
+  panelType: PanelType = "standard",
+  pricingMode: PricingMode = "per_kw"
 ): SolarCalculation {
   const climate = climateData || defaultClimateData;
   const panel = panelTypes[panelType];
 
-  // Calculate usable roof area
+  // Step 1: Calculate usable area
   const usableArea = rooftopArea * usableFraction;
 
-  // Maximum installable capacity: kW = usable_area / m²/kW (varies by panel type)
-  const maxCapacityKW = usableArea / panel.sqmPerKW;
+  // Step 2: Calculate capacity and cost based on pricing mode
+  let kWMax: number;
+  let kWInstalled: number;
+  let systemCost: number;
+  let panelsCount: number;
+  let panelCost = 0;
+  let otherCosts = 0;
+  let totalWatts = 0;
 
-  // System cost based on scenario
-  const systemCost = maxCapacityKW * costScenarios[costScenario].value;
-
-  // Consistency check: warn if cost seems unrealistic for the area
-  let costWarning: string | undefined;
-  const expectedCost = maxCapacityKW * costScenarios[costScenario].value;
-  const maxReasonableCost = expectedCost * 1.2; // 20% tolerance
-  if (systemCost > 500000 && maxCapacityKW < 20) {
-    costWarning = `Note: For ${formatNumber(maxCapacityKW)} kW system, expected cost is ~${formatCurrency(expectedCost)}. Higher costs may indicate premium equipment or additional features.`;
+  if (pricingMode === "per_panel") {
+    const result = calculatePerPanel(usableArea, panel);
+    kWMax = result.kWMax;
+    kWInstalled = result.kWInstalled;
+    systemCost = result.systemCost;
+    panelsCount = result.panelsCount;
+    panelCost = result.panelCost;
+    otherCosts = result.otherCosts;
+    totalWatts = result.totalWatts;
+  } else {
+    const result = calculatePerKW(usableArea, panel, costScenario);
+    kWMax = result.kWMax;
+    kWInstalled = result.kWInstalled;
+    systemCost = result.systemCost;
+    panelsCount = result.panelsCount;
+    totalWatts = kWInstalled * 1000;
   }
 
-  // Annual energy production using Egypt yield factor (1800 kWh/kW/year)
-  const yearlyProduction = maxCapacityKW * ENERGY_YIELD_PER_KW;
+  // Step 3: Consistency check (MANDATORY)
+  const consistency = checkConsistency(systemCost, kWInstalled);
 
-  // Monthly distribution based on irradiance patterns
+  // Step 4: Calculate real cost per kW
+  const costPerKWReal = kWInstalled > 0 ? systemCost / kWInstalled : 0;
+
+  // Step 5: Energy production calculations
+  const yearlyProduction = kWInstalled * ENERGY_YIELD_PER_KW;
+  
   const totalIrradiance = climate.monthlyIrradiance.reduce((sum, v) => sum + v, 0);
   const monthlyProduction = climate.monthlyIrradiance.map((irradiance) => {
     const monthFraction = irradiance / totalIrradiance;
     return yearlyProduction * monthFraction;
   });
 
-  // Savings calculations
+  // Step 6: Savings calculations
   const yearlySavings = yearlyProduction * electricityPrice;
   const monthlySavings = yearlySavings / 12;
 
-  // Payback period
+  // Step 7: Payback period
   const paybackYears = yearlySavings > 0 ? systemCost / yearlySavings : 0;
 
-  // Environmental impact: kg CO2 saved per year, converted to tons
+  // Step 8: Environmental impact (tons CO2 per year)
   const co2Reduction = (yearlyProduction * CO2_FACTOR) / 1000;
 
   return {
-    maxCapacityKW,
     usableArea,
+    kWMax,
+    kWInstalled,
+    panelsCount,
+    totalWatts,
     systemCost,
+    panelCost,
+    otherCosts,
+    costPerKWReal,
     monthlyProduction,
     yearlyProduction,
     monthlySavings,
     yearlySavings,
     paybackYears,
     co2Reduction,
-    climateData: climate,
     panelType,
-    costWarning,
+    pricingMode,
+    climateData: climate,
+    expectedCost: consistency.expectedCost,
+    costWarning: consistency.warning,
   };
 }
+
+// ================================================
+// FORMATTING UTILITIES
+// ================================================
 
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-EG", {
