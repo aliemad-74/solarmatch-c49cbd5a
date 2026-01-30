@@ -1,9 +1,9 @@
-import { Home, Zap, DollarSign, MapPin } from "lucide-react";
+import { Home, Zap, DollarSign, MapPin, Cpu } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { costScenarios } from "@/lib/solarData";
+import { costScenarios, panelTypes, PanelType } from "@/lib/solarData";
 
 interface InputPanelProps {
   rooftopArea: number;
@@ -16,6 +16,8 @@ interface InputPanelProps {
   setElectricityPrice: (price: number) => void;
   usableFraction: number;
   setUsableFraction: (fraction: number) => void;
+  panelType: PanelType;
+  setPanelType: (type: PanelType) => void;
   onCalculate: () => void;
   locationName?: string;
   solarIrradiance?: number;
@@ -30,15 +32,23 @@ const InputPanel = ({
   setElectricityPrice,
   usableFraction,
   setUsableFraction,
+  panelType,
+  setPanelType,
   onCalculate,
   locationName,
   solarIrradiance,
 }: InputPanelProps) => {
   const scenarioIndex = costScenario === "low" ? 0 : costScenario === "medium" ? 1 : 2;
+  const panelTypeIndex = panelType === "modern" ? 0 : panelType === "standard" ? 1 : 2;
 
   const handleScenarioSlider = (value: number[]) => {
     const scenarios: ("low" | "medium" | "high")[] = ["low", "medium", "high"];
     setCostScenario(scenarios[value[0]]);
+  };
+
+  const handlePanelTypeSlider = (value: number[]) => {
+    const types: PanelType[] = ["modern", "standard", "economy"];
+    setPanelType(types[value[0]]);
   };
 
   return (
@@ -135,6 +145,39 @@ const InputPanel = ({
             </div>
             <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg py-2 px-4">
               {costScenarios[costScenario].description}
+            </p>
+          </div>
+
+          {/* Panel Type Slider */}
+          <div className="space-y-4 mb-8">
+            <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-muted-foreground" />
+              Panel Type
+            </Label>
+            <div className="px-2">
+              <Slider
+                value={[panelTypeIndex]}
+                onValueChange={handlePanelTypeSlider}
+                max={2}
+                step={1}
+                className="w-full"
+              />
+            </div>
+            <div className="flex justify-between text-xs">
+              {Object.entries(panelTypes).map(([key, data]) => (
+                <div
+                  key={key}
+                  className={`text-center transition-all flex-1 ${
+                    panelType === key ? "text-primary font-semibold scale-105" : "text-muted-foreground"
+                  }`}
+                >
+                  <p className="font-medium text-[11px]">{data.label}</p>
+                  <p>{data.sqmPerKW} m²/kW</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg py-2 px-4">
+              {panelTypes[panelType].description}
             </p>
           </div>
 
