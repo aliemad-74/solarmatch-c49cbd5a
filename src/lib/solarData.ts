@@ -37,39 +37,55 @@ export function selectOptimalPanelType(
   annualAvgIrradiance: number
 ): { type: PanelType; reason: string } {
   // Thresholds based on Egyptian market reality
-  const SMALL_ROOF_THRESHOLD = 40; // m² usable
-  const LARGE_ROOF_THRESHOLD = 120; // m² usable
-  const HIGH_IRRADIANCE = 6.0; // kWh/m²/day
-  const LOW_IRRADIANCE = 5.0; // kWh/m²/day
+  const SMALL_ROOF_THRESHOLD = 50; // m² usable
+  const MEDIUM_ROOF_THRESHOLD = 100; // m² usable
+  const LARGE_ROOF_THRESHOLD = 200; // m² usable
+  const HIGH_IRRADIANCE = 5.5; // kWh/m²/day (Egypt average is ~5.5-6.5)
 
-  // Small roof: prioritize high-efficiency panels to maximize capacity
+  // Very large roof (>200 m²): Economy panels are most cost-effective
+  if (usableArea > LARGE_ROOF_THRESHOLD) {
+    return {
+      type: "economy",
+      reason: `Large roof (${usableArea.toFixed(0)} m²) - Economy panels offer best value at 8.5 m²/kW`,
+    };
+  }
+
+  // Small roof (<50 m²): Prioritize high-efficiency to maximize capacity
   if (usableArea < SMALL_ROOF_THRESHOLD) {
     return {
       type: "modern",
-      reason: `Small roof (${usableArea.toFixed(0)} m²) - Modern panels maximize capacity with 6 m²/kW`,
+      reason: `Compact roof (${usableArea.toFixed(0)} m²) - Modern panels maximize capacity with 6 m²/kW`,
     };
   }
 
-  // Large roof with good sun: economy panels are cost-effective
-  if (usableArea > LARGE_ROOF_THRESHOLD && annualAvgIrradiance >= HIGH_IRRADIANCE) {
+  // Medium-large roof (100-200 m²) with good sun: Economy is viable
+  if (usableArea > MEDIUM_ROOF_THRESHOLD && annualAvgIrradiance >= HIGH_IRRADIANCE) {
     return {
       type: "economy",
-      reason: `Large roof with high irradiance (${annualAvgIrradiance.toFixed(1)} kWh/m²/day) - Economy panels offer best value`,
+      reason: `Medium-large roof with good irradiance (${annualAvgIrradiance.toFixed(1)} kWh/m²/day) - Economy panels are cost-effective`,
     };
   }
 
-  // Low irradiance: use more efficient panels
-  if (annualAvgIrradiance < LOW_IRRADIANCE) {
+  // Medium roof (50-100 m²) with high irradiance: Standard is optimal
+  if (usableArea >= SMALL_ROOF_THRESHOLD && annualAvgIrradiance >= HIGH_IRRADIANCE) {
+    return {
+      type: "standard",
+      reason: `Balanced choice for ${usableArea.toFixed(0)} m² with ${annualAvgIrradiance.toFixed(1)} kWh/m²/day irradiance`,
+    };
+  }
+
+  // Medium roof with lower irradiance: Modern for efficiency
+  if (usableArea < MEDIUM_ROOF_THRESHOLD && annualAvgIrradiance < HIGH_IRRADIANCE) {
     return {
       type: "modern",
-      reason: `Lower irradiance area (${annualAvgIrradiance.toFixed(1)} kWh/m²/day) - Modern panels maximize efficiency`,
+      reason: `Medium roof with moderate irradiance - Modern panels compensate with higher efficiency`,
     };
   }
 
   // Default: Standard panels for balanced performance
   return {
     type: "standard",
-    reason: `Optimal for ${usableArea.toFixed(0)} m² roof with ${annualAvgIrradiance.toFixed(1)} kWh/m²/day irradiance`,
+    reason: `Optimal balance for ${usableArea.toFixed(0)} m² roof with ${annualAvgIrradiance.toFixed(1)} kWh/m²/day`,
   };
 }
 
