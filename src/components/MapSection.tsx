@@ -148,6 +148,17 @@ const MapSection = ({
     return Math.round(areaInSqMeters * 100) / 100;
   }, []);
 
+  // Recalculate area whenever points change (for dragging updates)
+  useEffect(() => {
+    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
+      const area = calculatePolygonArea(polygonPoints);
+      setCalculatedArea(area);
+      if (onAreaCalculated && area > 0) {
+        onAreaCalculated(area);
+      }
+    }
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
+
   // Update polygon visualization
   useEffect(() => {
     if (!mapRef.current) return;
@@ -171,10 +182,10 @@ const MapSection = ({
       }).addTo(mapRef.current);
     }
 
-    // Draw draggable point markers
+    // Draw draggable point markers (only when not in drawing mode for better UX)
     polygonPoints.forEach((point, index) => {
       const marker = L.marker([point.lat, point.lng], {
-        draggable: true,
+        draggable: !isDrawingMode, // Only draggable after drawing is complete
         icon: L.divIcon({
           className: 'custom-marker',
           html: `<div style="
@@ -184,41 +195,29 @@ const MapSection = ({
             border: 2px solid white;
             border-radius: 50%;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            cursor: grab;
+            cursor: ${isDrawingMode ? 'crosshair' : 'grab'};
           "></div>`,
           iconSize: [14, 14],
           iconAnchor: [7, 7],
         }),
       }).addTo(mapRef.current!);
 
-      // Handle drag events to update polygon points
-      marker.on('drag', (e: L.LeafletEvent) => {
-        const target = e.target as L.Marker;
-        const newLatLng = target.getLatLng();
-        setPolygonPoints(prev => {
-          const updated = [...prev];
-          updated[index] = newLatLng;
-          return updated;
+      // Handle drag events to update polygon points (only when not drawing)
+      if (!isDrawingMode) {
+        marker.on('drag', (e: L.LeafletEvent) => {
+          const target = e.target as L.Marker;
+          const newLatLng = target.getLatLng();
+          setPolygonPoints(prev => {
+            const updated = [...prev];
+            updated[index] = newLatLng;
+            return updated;
+          });
         });
-      });
-
-      marker.on('dragend', () => {
-        // Recalculate area after drag ends
-        setPolygonPoints(prev => {
-          if (prev.length >= MIN_POLYGON_POINTS) {
-            const area = calculatePolygonArea(prev);
-            setCalculatedArea(area);
-            if (onAreaCalculated && area > 0) {
-              onAreaCalculated(area);
-            }
-          }
-          return prev;
-        });
-      });
+      }
 
       pointMarkersRef.current.push(marker as any);
     });
-  }, [polygonPoints, calculatePolygonArea, onAreaCalculated]);
+  }, [polygonPoints, isDrawingMode]);
 
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
