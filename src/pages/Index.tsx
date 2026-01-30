@@ -33,6 +33,7 @@ const Index = () => {
         <MapSection 
           selectedCity={selectedCity}
           onCityChange={setSelectedCity}
+          onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
         />
 
         <InputPanel
