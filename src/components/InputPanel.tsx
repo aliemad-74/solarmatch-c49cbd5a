@@ -2,9 +2,8 @@ import { Home, Zap, DollarSign } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { costScenarios, cityIrradianceData } from "@/lib/solarData";
+import { costScenarios } from "@/lib/solarData";
 
 interface InputPanelProps {
   rooftopArea: number;
@@ -21,8 +20,6 @@ interface InputPanelProps {
 const InputPanel = ({
   rooftopArea,
   setRooftopArea,
-  selectedCity,
-  setSelectedCity,
   costScenario,
   setCostScenario,
   electricityPrice,
@@ -69,26 +66,19 @@ const InputPanel = ({
               </p>
             </div>
 
-            {/* City Selector */}
+            {/* Location Info */}
             <div className="space-y-3">
-              <Label htmlFor="city" className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                 <Zap className="w-4 h-4 text-muted-foreground" />
-                Location (City)
+                Location
               </Label>
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="h-12 text-lg">
-                  <SelectValue placeholder="Select city" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(cityIrradianceData).map(([key, data]) => (
-                    <SelectItem key={key} value={key}>
-                      {data.name}, Egypt
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="h-12 flex items-center px-3 bg-muted/50 rounded-md border border-border">
+                <p className="text-sm text-muted-foreground">
+                  📍 Select location on the map above or use city quick buttons
+                </p>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Solar irradiance data optimized for selected region
+                Climate data fetched dynamically from NASA POWER API
               </p>
             </div>
           </div>
