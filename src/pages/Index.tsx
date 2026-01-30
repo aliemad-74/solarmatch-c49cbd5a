@@ -15,6 +15,7 @@ const Index = () => {
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
+  const [locationName, setLocationName] = useState<string>("");
 
   const handleCalculate = () => {
     const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice);
@@ -37,6 +38,7 @@ const Index = () => {
           onCityChange={setSelectedCity}
           onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
           onClimateDataFetched={setClimateData}
+          onLocationChange={setLocationName}
         />
 
         <InputPanel
@@ -49,6 +51,8 @@ const Index = () => {
           electricityPrice={electricityPrice}
           setElectricityPrice={setElectricityPrice}
           onCalculate={handleCalculate}
+          locationName={locationName}
+          solarIrradiance={climateData?.annualAvgIrradiance}
         />
 
         <div id="results">
