@@ -27,6 +27,52 @@ export const panelTypes = {
 
 export type PanelType = keyof typeof panelTypes;
 
+/**
+ * Auto-select optimal panel type based on:
+ * - Usable roof area (smaller roofs need more efficient panels)
+ * - Solar irradiance (high irradiance allows economy panels)
+ */
+export function selectOptimalPanelType(
+  usableArea: number,
+  annualAvgIrradiance: number
+): { type: PanelType; reason: string } {
+  // Thresholds based on Egyptian market reality
+  const SMALL_ROOF_THRESHOLD = 40; // m² usable
+  const LARGE_ROOF_THRESHOLD = 120; // m² usable
+  const HIGH_IRRADIANCE = 6.0; // kWh/m²/day
+  const LOW_IRRADIANCE = 5.0; // kWh/m²/day
+
+  // Small roof: prioritize high-efficiency panels to maximize capacity
+  if (usableArea < SMALL_ROOF_THRESHOLD) {
+    return {
+      type: "modern",
+      reason: `Small roof (${usableArea.toFixed(0)} m²) - Modern panels maximize capacity with 6 m²/kW`,
+    };
+  }
+
+  // Large roof with good sun: economy panels are cost-effective
+  if (usableArea > LARGE_ROOF_THRESHOLD && annualAvgIrradiance >= HIGH_IRRADIANCE) {
+    return {
+      type: "economy",
+      reason: `Large roof with high irradiance (${annualAvgIrradiance.toFixed(1)} kWh/m²/day) - Economy panels offer best value`,
+    };
+  }
+
+  // Low irradiance: use more efficient panels
+  if (annualAvgIrradiance < LOW_IRRADIANCE) {
+    return {
+      type: "modern",
+      reason: `Lower irradiance area (${annualAvgIrradiance.toFixed(1)} kWh/m²/day) - Modern panels maximize efficiency`,
+    };
+  }
+
+  // Default: Standard panels for balanced performance
+  return {
+    type: "standard",
+    reason: `Optimal for ${usableArea.toFixed(0)} m² roof with ${annualAvgIrradiance.toFixed(1)} kWh/m²/day irradiance`,
+  };
+}
+
 // Cost scenarios in EGP per kW
 export const costScenarios = {
   low: { value: 12000, label: "Economy", description: "Basic equipment, local installation" },

@@ -1,4 +1,4 @@
-import { Home, Zap, DollarSign, MapPin, Cpu } from "lucide-react";
+import { Home, Zap, DollarSign, MapPin, Cpu, Sparkles } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -17,7 +17,7 @@ interface InputPanelProps {
   usableFraction: number;
   setUsableFraction: (fraction: number) => void;
   panelType: PanelType;
-  setPanelType: (type: PanelType) => void;
+  panelTypeReason?: string;
   onCalculate: () => void;
   locationName?: string;
   solarIrradiance?: number;
@@ -33,22 +33,16 @@ const InputPanel = ({
   usableFraction,
   setUsableFraction,
   panelType,
-  setPanelType,
+  panelTypeReason,
   onCalculate,
   locationName,
   solarIrradiance,
 }: InputPanelProps) => {
   const scenarioIndex = costScenario === "low" ? 0 : costScenario === "medium" ? 1 : 2;
-  const panelTypeIndex = panelType === "modern" ? 0 : panelType === "standard" ? 1 : 2;
 
   const handleScenarioSlider = (value: number[]) => {
     const scenarios: ("low" | "medium" | "high")[] = ["low", "medium", "high"];
     setCostScenario(scenarios[value[0]]);
-  };
-
-  const handlePanelTypeSlider = (value: number[]) => {
-    const types: PanelType[] = ["modern", "standard", "economy"];
-    setPanelType(types[value[0]]);
   };
 
   return (
@@ -148,37 +142,36 @@ const InputPanel = ({
             </p>
           </div>
 
-          {/* Panel Type Slider */}
-          <div className="space-y-4 mb-8">
+          {/* Auto-Selected Panel Type Display */}
+          <div className="space-y-3 mb-8">
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Cpu className="w-4 h-4 text-muted-foreground" />
               Panel Type
+              <span className="ml-auto flex items-center gap-1 text-xs text-solar-green font-normal">
+                <Sparkles className="w-3 h-3" />
+                Auto-selected
+              </span>
             </Label>
-            <div className="px-2">
-              <Slider
-                value={[panelTypeIndex]}
-                onValueChange={handlePanelTypeSlider}
-                max={2}
-                step={1}
-                className="w-full"
-              />
-            </div>
-            <div className="flex justify-between text-xs">
+            <div className="flex gap-2">
               {Object.entries(panelTypes).map(([key, data]) => (
                 <div
                   key={key}
-                  className={`text-center transition-all flex-1 ${
-                    panelType === key ? "text-primary font-semibold scale-105" : "text-muted-foreground"
+                  className={`flex-1 text-center p-3 rounded-lg border transition-all ${
+                    panelType === key 
+                      ? "bg-primary/10 border-primary text-primary shadow-sm" 
+                      : "bg-muted/30 border-border/50 text-muted-foreground"
                   }`}
                 >
-                  <p className="font-medium text-[11px]">{data.label}</p>
-                  <p>{data.sqmPerKW} m²/kW</p>
+                  <p className="font-medium text-sm">{data.label}</p>
+                  <p className="text-xs opacity-80">{data.sqmPerKW} m²/kW</p>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg py-2 px-4">
-              {panelTypes[panelType].description}
-            </p>
+            {panelTypeReason && (
+              <p className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg py-2 px-4">
+                💡 {panelTypeReason}
+              </p>
+            )}
           </div>
 
           {/* Usable Area Fraction Slider */}
