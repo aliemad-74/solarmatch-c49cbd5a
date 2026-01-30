@@ -2,18 +2,24 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapContainer, TileLayer, Polygon, useMap, useMapEvents } from "react-leaflet";
 import * as turf from "@turf/turf";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { fetchClimateData, searchLocation, getLocationName, ClimateData } from "@/lib/climateApi";
+
+// Fix Leaflet default marker icons
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
 
 interface MapSectionProps {
   selectedCity: string;
   onCityChange: (city: string) => void;
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
-  onLocationChange?: (lat: number, lng: number, name: string) => void;
 }
 
 // Preset cities for quick selection
@@ -22,48 +28,6 @@ const presetCities = {
   cairo: { name: "Cairo", lat: 30.0444, lng: 31.2357 },
   alexandria: { name: "Alexandria", lat: 31.2001, lng: 29.9187 },
 };
-
-// Component to handle map center changes
-function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [map, center, zoom]);
-  
-  return null;
-}
-
-// Component to handle drawing polygon by clicking
-function PolygonDrawer({ 
-  isDrawing, 
-  onPointAdd, 
-  onComplete,
-  points 
-}: { 
-  isDrawing: boolean; 
-  onPointAdd: (latlng: L.LatLng) => void;
-  onComplete: () => void;
-  points: L.LatLng[];
-}) {
-  useMapEvents({
-    click: (e) => {
-      if (isDrawing) {
-        // Check if clicking near the first point to close polygon
-        if (points.length >= 3) {
-          const firstPoint = points[0];
-          const distance = e.latlng.distanceTo(firstPoint);
-          if (distance < 20) {
-            onComplete();
-            return;
-          }
-        }
-        onPointAdd(e.latlng);
-      }
-    },
-  });
-  return null;
-}
 
 const MapSection = ({ 
   selectedCity, 
@@ -84,39 +48,144 @@ const MapSection = ({
   });
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
+  
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const polygonLayerRef = useRef<L.Polygon | null>(null);
+  const pointMarkersRef = useRef<L.CircleMarker[]>([]);
+
+  // Initialize map
+  useEffect(() => {
+    if (mapContainerRef.current && !mapRef.current) {
+      mapRef.current = L.map(mapContainerRef.current).setView(
+        [currentLocation.lat, currentLocation.lng],
+        18
+      );
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(mapRef.current);
+
+      // Add click handler for drawing
+      mapRef.current.on("click", handleMapClick);
+    }
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle map clicks for polygon drawing
+  const handleMapClick = useCallback((e: L.LeafletMouseEvent) => {
+    if (!isDrawingMode) return;
+    
+    setPolygonPoints(prev => {
+      const newPoints = [...prev, e.latlng];
+      
+      // Check if clicking near the first point to close polygon
+      if (prev.length >= 3) {
+        const firstPoint = prev[0];
+        const distance = e.latlng.distanceTo(firstPoint);
+        if (distance < 20) {
+          // Complete the polygon
+          completePolygon(prev);
+          return prev;
+        }
+      }
+      
+      return newPoints;
+    });
+  }, [isDrawingMode]);
+
+  // Update click handler when drawing mode changes
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.off("click");
+      mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
+        if (isDrawingMode) {
+          setPolygonPoints(prev => {
+            const newPoints = [...prev, e.latlng];
+            
+            // Check if clicking near the first point to close polygon
+            if (prev.length >= 3) {
+              const firstPoint = prev[0];
+              const distance = e.latlng.distanceTo(firstPoint);
+              if (distance < 20) {
+                completePolygon(prev);
+                return prev;
+              }
+            }
+            
+            return newPoints;
+          });
+        }
+      });
+    }
+  }, [isDrawingMode]);
+
+  // Update polygon visualization
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear existing polygon and markers
+    if (polygonLayerRef.current) {
+      mapRef.current.removeLayer(polygonLayerRef.current);
+      polygonLayerRef.current = null;
+    }
+    pointMarkersRef.current.forEach(marker => mapRef.current?.removeLayer(marker));
+    pointMarkersRef.current = [];
+
+    // Draw new polygon if we have points
+    if (polygonPoints.length >= 2) {
+      const positions: L.LatLngExpression[] = polygonPoints.map(p => [p.lat, p.lng]);
+      polygonLayerRef.current = L.polygon(positions, {
+        color: "#14b8a6",
+        fillColor: "#14b8a6",
+        fillOpacity: 0.4,
+        weight: 2,
+      }).addTo(mapRef.current);
+    }
+
+    // Draw point markers
+    polygonPoints.forEach((point, index) => {
+      const marker = L.circleMarker([point.lat, point.lng], {
+        radius: 6,
+        color: index === 0 ? "#f59e0b" : "#14b8a6",
+        fillColor: index === 0 ? "#f59e0b" : "#14b8a6",
+        fillOpacity: 1,
+        weight: 2,
+      }).addTo(mapRef.current!);
+      pointMarkersRef.current.push(marker);
+    });
+  }, [polygonPoints]);
 
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
     if (points.length < 3) return 0;
 
-    // Convert to GeoJSON coordinates
     const coordinates = points.map((ll) => [ll.lng, ll.lat]);
-    // Close the polygon
     coordinates.push(coordinates[0]);
 
-    // Create Turf polygon and calculate area
     const polygon = turf.polygon([coordinates]);
     const areaInSqMeters = turf.area(polygon);
     
     return Math.round(areaInSqMeters * 100) / 100;
   }, []);
 
-  // Handle adding a point to polygon
-  const handlePointAdd = useCallback((latlng: L.LatLng) => {
-    setPolygonPoints(prev => [...prev, latlng]);
-  }, []);
-
-  // Handle completing the polygon
-  const handlePolygonComplete = useCallback(() => {
-    if (polygonPoints.length >= 3) {
-      const area = calculatePolygonArea(polygonPoints);
+  // Complete polygon drawing
+  const completePolygon = useCallback((points: L.LatLng[]) => {
+    if (points.length >= 3) {
+      const area = calculatePolygonArea(points);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) {
         onAreaCalculated(area);
       }
     }
     setIsDrawingMode(false);
-  }, [polygonPoints, calculatePolygonArea, onAreaCalculated]);
+  }, [calculatePolygonArea, onAreaCalculated]);
 
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
@@ -138,13 +207,18 @@ const MapSection = ({
   const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
     const locationName = name || await getLocationName(lat, lng);
     setCurrentLocation({ lat, lng, name: locationName });
+    
+    if (mapRef.current) {
+      mapRef.current.setView([lat, lng], 18);
+    }
+    
     fetchClimateForLocation(lat, lng);
   }, [fetchClimateForLocation]);
 
   // Initial climate data fetch
   useEffect(() => {
     fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle city preset change
   useEffect(() => {
@@ -163,16 +237,15 @@ const MapSection = ({
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
-      // If exiting drawing mode with points, complete the polygon
       if (polygonPoints.length >= 3) {
-        handlePolygonComplete();
+        completePolygon(polygonPoints);
       }
       setIsDrawingMode(false);
     } else {
       clearPolygon();
       setIsDrawingMode(true);
     }
-  }, [isDrawingMode, polygonPoints.length, handlePolygonComplete, clearPolygon]);
+  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
   // Search for location
   const handleSearch = async () => {
@@ -183,7 +256,6 @@ const MapSection = ({
       const results = await searchLocation(searchQuery);
       setSearchResults(results);
       
-      // If we got results, select the first one
       if (results.length > 0) {
         const first = results[0];
         updateLocation(first.lat, first.lng, first.name.split(",")[0]);
@@ -194,9 +266,6 @@ const MapSection = ({
       setIsSearching(false);
     }
   };
-
-  // Convert points to positions for Polygon component
-  const polygonPositions: [number, number][] = polygonPoints.map(p => [p.lat, p.lng]);
 
   return (
     <section className="relative">
@@ -328,42 +397,11 @@ const MapSection = ({
         {/* Map Container */}
         <div className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in" style={{ animationDelay: "0.2s" }}>
           <div className="aspect-[16/9] md:aspect-[21/9] bg-muted relative">
-            <MapContainer
-              center={[currentLocation.lat, currentLocation.lng]}
-              zoom={18}
-              style={{ height: "100%", width: "100%" }}
-              className="z-0"
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              
-              <MapController 
-                center={[currentLocation.lat, currentLocation.lng]} 
-                zoom={18} 
-              />
-              
-              <PolygonDrawer 
-                isDrawing={isDrawingMode}
-                onPointAdd={handlePointAdd}
-                onComplete={handlePolygonComplete}
-                points={polygonPoints}
-              />
-              
-              {/* Show polygon if we have at least 2 points */}
-              {polygonPoints.length >= 2 && (
-                <Polygon
-                  positions={polygonPositions}
-                  pathOptions={{
-                    color: "#14b8a6",
-                    fillColor: "#14b8a6",
-                    fillOpacity: 0.4,
-                    weight: 2,
-                  }}
-                />
-              )}
-            </MapContainer>
+            <div 
+              ref={mapContainerRef} 
+              className="w-full h-full z-0"
+              style={{ cursor: isDrawingMode ? "crosshair" : "grab" }}
+            />
           </div>
           
           {/* Map Overlay Info */}
