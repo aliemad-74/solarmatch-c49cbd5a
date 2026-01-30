@@ -177,18 +177,6 @@ const MapSection = ({
     return Math.round(areaInSqMeters * 100) / 100;
   }, []);
 
-  // Complete polygon drawing
-  const completePolygon = useCallback((points: L.LatLng[]) => {
-    if (points.length >= 4) {
-      const area = calculatePolygonArea(points);
-      setCalculatedArea(area);
-      if (onAreaCalculated && area > 0) {
-        onAreaCalculated(area);
-      }
-    }
-    setIsDrawingMode(false);
-  }, [calculatePolygonArea, onAreaCalculated]);
-
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
     setIsLoadingClimate(true);
@@ -204,6 +192,30 @@ const MapSection = ({
       setIsLoadingClimate(false);
     }
   }, [onClimateDataFetched]);
+
+  // Complete polygon drawing and update location based on polygon center
+  const completePolygon = useCallback(async (points: L.LatLng[]) => {
+    if (points.length >= 4) {
+      const area = calculatePolygonArea(points);
+      setCalculatedArea(area);
+      if (onAreaCalculated && area > 0) {
+        onAreaCalculated(area);
+      }
+
+      // Calculate the center of the polygon using Turf.js
+      const coordinates = points.map((ll) => [ll.lng, ll.lat]);
+      coordinates.push(coordinates[0]); // Close the polygon
+      const polygon = turf.polygon([coordinates]);
+      const centroid = turf.centroid(polygon);
+      const [lng, lat] = centroid.geometry.coordinates;
+
+      // Update location based on polygon center and fetch climate data
+      const locationName = await getLocationName(lat, lng);
+      setCurrentLocation({ lat, lng, name: locationName });
+      fetchClimateForLocation(lat, lng);
+    }
+    setIsDrawingMode(false);
+  }, [calculatePolygonArea, onAreaCalculated, fetchClimateForLocation]);
 
   // Update location and fetch climate data
   const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
