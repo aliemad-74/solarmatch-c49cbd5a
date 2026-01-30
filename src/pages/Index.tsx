@@ -4,33 +4,42 @@ import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import Footer from "@/components/Footer";
-import { calculateSolarFeasibility, SolarCalculation, PanelType, selectOptimalPanelType, defaultClimateData } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PanelType, defaultClimateData } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
+import { deriveAllInsights, DerivedInsights } from "@/lib/autoDerive";
 
 const Index = () => {
   const [rooftopArea, setRooftopArea] = useState<number>(100);
   const [selectedCity, setSelectedCity] = useState<string>("zagazig");
-  const [costScenario, setCostScenario] = useState<"low" | "medium" | "high">("medium");
-  const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
-  const [usableFraction, setUsableFraction] = useState<number>(0.60);
-  const [panelType, setPanelType] = useState<PanelType>("standard");
-  const [panelTypeReason, setPanelTypeReason] = useState<string>("");
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [locationName, setLocationName] = useState<string>("");
+  
+  // Auto-derived insights from location + NASA data
+  const [insights, setInsights] = useState<DerivedInsights | null>(null);
 
-  // Auto-select optimal panel type when area or climate data changes
+  // Auto-derive ALL parameters when area or climate data changes
   useEffect(() => {
-    const usableArea = rooftopArea * usableFraction;
-    const irradiance = climateData?.annualAvgIrradiance ?? defaultClimateData.annualAvgIrradiance;
-    const optimal = selectOptimalPanelType(usableArea, irradiance);
-    setPanelType(optimal.type);
-    setPanelTypeReason(optimal.reason);
-  }, [rooftopArea, usableFraction, climateData]);
+    const climate = climateData ?? defaultClimateData;
+    const lat = climate.location?.lat ?? 30.0444;
+    const lng = climate.location?.lng ?? 31.2357;
+    
+    const derived = deriveAllInsights(rooftopArea, lat, lng, climate);
+    setInsights(derived);
+  }, [rooftopArea, climateData]);
 
   const handleCalculate = () => {
-    const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice, usableFraction, panelType);
+    if (!insights) return;
+    
+    const calculation = calculateSolarFeasibility(
+      rooftopArea, 
+      climateData, 
+      insights.costScenario, 
+      insights.electricityPrice, 
+      insights.usableFraction, 
+      insights.panelType
+    );
     setResults(calculation);
     setShowResults(true);
 
@@ -56,19 +65,10 @@ const Index = () => {
         <InputPanel
           rooftopArea={rooftopArea}
           setRooftopArea={setRooftopArea}
-          selectedCity={selectedCity}
-          setSelectedCity={setSelectedCity}
-          costScenario={costScenario}
-          setCostScenario={setCostScenario}
-          electricityPrice={electricityPrice}
-          setElectricityPrice={setElectricityPrice}
-          usableFraction={usableFraction}
-          setUsableFraction={setUsableFraction}
-          panelType={panelType}
-          panelTypeReason={panelTypeReason}
           onCalculate={handleCalculate}
           locationName={locationName}
-          solarIrradiance={climateData?.annualAvgIrradiance}
+          climateData={climateData}
+          insights={insights}
         />
 
         <div id="results">
