@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import Footer from "@/components/Footer";
-import { calculateSolarFeasibility, SolarCalculation, PanelType } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PanelType, selectOptimalPanelType, defaultClimateData } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 
 const Index = () => {
@@ -14,10 +14,20 @@ const Index = () => {
   const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
   const [usableFraction, setUsableFraction] = useState<number>(0.60);
   const [panelType, setPanelType] = useState<PanelType>("standard");
+  const [panelTypeReason, setPanelTypeReason] = useState<string>("");
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [locationName, setLocationName] = useState<string>("");
+
+  // Auto-select optimal panel type when area or climate data changes
+  useEffect(() => {
+    const usableArea = rooftopArea * usableFraction;
+    const irradiance = climateData?.annualAvgIrradiance ?? defaultClimateData.annualAvgIrradiance;
+    const optimal = selectOptimalPanelType(usableArea, irradiance);
+    setPanelType(optimal.type);
+    setPanelTypeReason(optimal.reason);
+  }, [rooftopArea, usableFraction, climateData]);
 
   const handleCalculate = () => {
     const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice, usableFraction, panelType);
@@ -55,7 +65,7 @@ const Index = () => {
           usableFraction={usableFraction}
           setUsableFraction={setUsableFraction}
           panelType={panelType}
-          setPanelType={setPanelType}
+          panelTypeReason={panelTypeReason}
           onCalculate={handleCalculate}
           locationName={locationName}
           solarIrradiance={climateData?.annualAvgIrradiance}
