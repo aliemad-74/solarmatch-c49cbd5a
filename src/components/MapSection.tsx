@@ -88,7 +88,7 @@ const MapSection = ({
       const newPoints = [...prev, e.latlng];
       
       // Check if clicking near the first point to close polygon
-      if (prev.length >= 3) {
+      if (prev.length >= 4) {
         const firstPoint = prev[0];
         const distance = e.latlng.distanceTo(firstPoint);
         if (distance < 20) {
@@ -112,7 +112,7 @@ const MapSection = ({
             const newPoints = [...prev, e.latlng];
             
             // Check if clicking near the first point to close polygon
-            if (prev.length >= 3) {
+            if (prev.length >= 4) {
               const firstPoint = prev[0];
               const distance = e.latlng.distanceTo(firstPoint);
               if (distance < 20) {
@@ -166,7 +166,7 @@ const MapSection = ({
 
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
-    if (points.length < 3) return 0;
+    if (points.length < 4) return 0;
 
     const coordinates = points.map((ll) => [ll.lng, ll.lat]);
     coordinates.push(coordinates[0]);
@@ -179,7 +179,7 @@ const MapSection = ({
 
   // Complete polygon drawing
   const completePolygon = useCallback((points: L.LatLng[]) => {
-    if (points.length >= 3) {
+    if (points.length >= 4) {
       const area = calculatePolygonArea(points);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) {
@@ -239,7 +239,7 @@ const MapSection = ({
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
-      if (polygonPoints.length >= 3) {
+      if (polygonPoints.length >= 4) {
         completePolygon(polygonPoints);
       }
       setIsDrawingMode(false);
@@ -379,8 +379,8 @@ const MapSection = ({
         {isDrawingMode && (
           <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
-              {polygonPoints.length < 3 
-                ? `Click on the map to add points (${polygonPoints.length}/3 minimum)`
+              {polygonPoints.length < 4 
+                ? `Click on the map to add points (${polygonPoints.length}/4 minimum)`
                 : "Click near the first point to complete, or click 'Finish Drawing'"}
             </p>
           </div>
