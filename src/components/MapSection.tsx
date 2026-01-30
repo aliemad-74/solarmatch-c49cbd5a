@@ -1,157 +1,203 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Search, PenTool, Trash2, MousePointer } from "lucide-react";
+import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { GoogleMap, useJsApiLoader, DrawingManager, Polygon } from "@react-google-maps/api";
-import { cityIrradianceData } from "@/lib/solarData";
+import { MapContainer, TileLayer, FeatureGroup, useMap, useMapEvents } from "react-leaflet";
+import { EditControl } from "react-leaflet-draw";
+import * as turf from "@turf/turf";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet-draw/dist/leaflet.draw.css";
+import { fetchClimateData, searchLocation, getLocationName, ClimateData } from "@/lib/climateApi";
+
+// Fix Leaflet default marker icons
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
+
+L.Icon.Default.mergeOptions({
+  iconUrl: icon,
+  iconRetinaUrl: iconRetina,
+  shadowUrl: iconShadow,
+});
 
 interface MapSectionProps {
   selectedCity: string;
   onCityChange: (city: string) => void;
   onAreaCalculated?: (area: number) => void;
+  onClimateDataFetched?: (data: ClimateData) => void;
+  onLocationChange?: (lat: number, lng: number, name: string) => void;
 }
 
-const libraries: ("drawing" | "geometry")[] = ["drawing", "geometry"];
-
-const mapContainerStyle = {
-  width: "100%",
-  height: "100%",
+// Preset cities for quick selection
+const presetCities = {
+  zagazig: { name: "Zagazig", lat: 30.5877, lng: 31.502 },
+  cairo: { name: "Cairo", lat: 30.0444, lng: 31.2357 },
+  alexandria: { name: "Alexandria", lat: 31.2001, lng: 29.9187 },
 };
 
-const MapSection = ({ selectedCity, onCityChange, onAreaCalculated }: MapSectionProps) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [drawnPolygon, setDrawnPolygon] = useState<google.maps.Polygon | null>(null);
-  const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
+// Component to handle map center changes
+function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [map, center, zoom]);
+  
+  return null;
+}
 
-  const city = cityIrradianceData[selectedCity];
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyBFw0Qbyq9zTFTd-tUY6cew4e_xMcFPz_E",
-    libraries,
+// Component to handle map clicks for location selection
+function LocationSelector({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    },
   });
+  return null;
+}
 
-  const mapCenter = {
-    lat: city?.lat || 30.0444,
-    lng: city?.lng || 31.2357,
-  };
+const MapSection = ({ 
+  selectedCity, 
+  onCityChange, 
+  onAreaCalculated,
+  onClimateDataFetched,
+  onLocationChange 
+}: MapSectionProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ lat: number; lng: number; name: string }[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; name: string }>({
+    lat: presetCities[selectedCity as keyof typeof presetCities]?.lat || 30.0444,
+    lng: presetCities[selectedCity as keyof typeof presetCities]?.lng || 31.2357,
+    name: presetCities[selectedCity as keyof typeof presetCities]?.name || "Cairo",
+  });
+  const [isLoadingClimate, setIsLoadingClimate] = useState(false);
+  const [climateData, setClimateData] = useState<ClimateData | null>(null);
+  const featureGroupRef = useRef<L.FeatureGroup | null>(null);
 
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-  }, []);
-
-  const onDrawingManagerLoad = useCallback((drawingManager: google.maps.drawing.DrawingManager) => {
-    drawingManagerRef.current = drawingManager;
-  }, []);
-
-  const calculatePolygonArea = useCallback((polygon: google.maps.Polygon) => {
-    if (window.google && window.google.maps && window.google.maps.geometry) {
-      const path = polygon.getPath();
-      const areaInSqMeters = google.maps.geometry.spherical.computeArea(path);
-      return Math.round(areaInSqMeters * 100) / 100;
+  // Fetch climate data when location changes
+  const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
+    setIsLoadingClimate(true);
+    try {
+      const data = await fetchClimateData(lat, lng);
+      setClimateData(data);
+      if (onClimateDataFetched) {
+        onClimateDataFetched(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch climate data:", error);
+    } finally {
+      setIsLoadingClimate(false);
     }
-    return 0;
+  }, [onClimateDataFetched]);
+
+  // Update location and fetch climate data
+  const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
+    const locationName = name || await getLocationName(lat, lng);
+    setCurrentLocation({ lat, lng, name: locationName });
+    if (onLocationChange) {
+      onLocationChange(lat, lng, locationName);
+    }
+    fetchClimateForLocation(lat, lng);
+  }, [onLocationChange, fetchClimateForLocation]);
+
+  // Initial climate data fetch
+  useEffect(() => {
+    fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle city preset change
+  useEffect(() => {
+    const city = presetCities[selectedCity as keyof typeof presetCities];
+    if (city) {
+      updateLocation(city.lat, city.lng, city.name);
+    }
+  }, [selectedCity, updateLocation]);
+
+  // Calculate polygon area using Turf.js
+  const calculatePolygonArea = useCallback((layer: L.Polygon) => {
+    const latlngs = layer.getLatLngs()[0] as L.LatLng[];
+    if (latlngs.length < 3) return 0;
+
+    // Convert to GeoJSON coordinates
+    const coordinates = latlngs.map((ll) => [ll.lng, ll.lat]);
+    // Close the polygon
+    coordinates.push(coordinates[0]);
+
+    // Create Turf polygon and calculate area
+    const polygon = turf.polygon([coordinates]);
+    const areaInSqMeters = turf.area(polygon);
+    
+    return Math.round(areaInSqMeters * 100) / 100;
   }, []);
 
-  const onPolygonComplete = useCallback((polygon: google.maps.Polygon) => {
-    // Remove previous polygon if exists
-    if (drawnPolygon) {
-      drawnPolygon.setMap(null);
-    }
-
-    setDrawnPolygon(polygon);
-    const area = calculatePolygonArea(polygon);
+  // Handle polygon creation
+  const onCreated = useCallback((e: L.DrawEvents.Created) => {
+    const layer = e.layer as L.Polygon;
+    const area = calculatePolygonArea(layer);
     setCalculatedArea(area);
     
     if (onAreaCalculated && area > 0) {
       onAreaCalculated(area);
     }
-
-    // Exit drawing mode after completing a polygon
     setIsDrawingMode(false);
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setDrawingMode(null);
-    }
+  }, [calculatePolygonArea, onAreaCalculated]);
 
-    // Add listener for polygon edits
-    google.maps.event.addListener(polygon.getPath(), "set_at", () => {
-      const newArea = calculatePolygonArea(polygon);
-      setCalculatedArea(newArea);
-      if (onAreaCalculated && newArea > 0) {
-        onAreaCalculated(newArea);
+  // Handle polygon edit
+  const onEdited = useCallback((e: L.DrawEvents.Edited) => {
+    const layers = e.layers;
+    layers.eachLayer((layer) => {
+      const area = calculatePolygonArea(layer as L.Polygon);
+      setCalculatedArea(area);
+      if (onAreaCalculated && area > 0) {
+        onAreaCalculated(area);
       }
     });
+  }, [calculatePolygonArea, onAreaCalculated]);
 
-    google.maps.event.addListener(polygon.getPath(), "insert_at", () => {
-      const newArea = calculatePolygonArea(polygon);
-      setCalculatedArea(newArea);
-      if (onAreaCalculated && newArea > 0) {
-        onAreaCalculated(newArea);
-      }
-    });
-  }, [drawnPolygon, calculatePolygonArea, onAreaCalculated]);
+  // Handle polygon deletion
+  const onDeleted = useCallback(() => {
+    setCalculatedArea(null);
+  }, []);
 
-  const clearPolygon = useCallback(() => {
-    if (drawnPolygon) {
-      drawnPolygon.setMap(null);
-      setDrawnPolygon(null);
+  // Clear all polygons
+  const clearPolygons = useCallback(() => {
+    if (featureGroupRef.current) {
+      featureGroupRef.current.clearLayers();
       setCalculatedArea(null);
     }
-  }, [drawnPolygon]);
+  }, []);
 
-  const toggleDrawingMode = useCallback(() => {
-    if (isDrawingMode) {
-      setIsDrawingMode(false);
-      if (drawingManagerRef.current) {
-        drawingManagerRef.current.setDrawingMode(null);
+  // Search for location
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const results = await searchLocation(searchQuery);
+      setSearchResults(results);
+      
+      // If we got results, select the first one
+      if (results.length > 0) {
+        const first = results[0];
+        updateLocation(first.lat, first.lng, first.name.split(",")[0]);
       }
-    } else {
-      setIsDrawingMode(true);
-      if (drawingManagerRef.current) {
-        drawingManagerRef.current.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-      }
+    } catch (error) {
+      console.error("Search failed:", error);
+    } finally {
+      setIsSearching(false);
     }
-  }, [isDrawingMode]);
-
-  // Update drawing mode when state changes
-  useEffect(() => {
-    if (drawingManagerRef.current) {
-      if (isDrawingMode) {
-        drawingManagerRef.current.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-      } else {
-        drawingManagerRef.current.setDrawingMode(null);
-      }
-    }
-  }, [isDrawingMode]);
-
-  // Pan to new city when selected
-  useEffect(() => {
-    if (mapRef.current && city) {
-      mapRef.current.panTo({ lat: city.lat, lng: city.lng });
-    }
-  }, [selectedCity, city]);
-
-  const handleSearch = () => {
-    const query = searchQuery.toLowerCase().trim();
-    if (query.includes("zagazig") || query.includes("zag")) {
-      onCityChange("zagazig");
-    } else if (query.includes("cairo") || query.includes("cai")) {
-      onCityChange("cairo");
-    } else if (query.includes("alex") || query.includes("alexandria")) {
-      onCityChange("alexandria");
-    }
-    setSearchQuery("");
   };
 
-  if (loadError) {
-    return (
-      <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
-        <p className="text-destructive">Error loading maps</p>
-      </div>
-    );
-  }
+  // Handle location click on map
+  const handleLocationSelect = useCallback((lat: number, lng: number) => {
+    if (!isDrawingMode) {
+      updateLocation(lat, lng);
+    }
+  }, [isDrawingMode, updateLocation]);
 
   return (
     <section className="relative">
@@ -163,7 +209,7 @@ const MapSection = ({ selectedCity, onCityChange, onAreaCalculated }: MapSection
             Find Your <span className="text-gradient-solar">Solar Potential</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Select your location and draw your rooftop to calculate solar feasibility with real climate data for Egypt
+            Select your location and draw your rooftop to calculate solar feasibility with real NASA climate data
           </p>
         </div>
 
@@ -174,7 +220,7 @@ const MapSection = ({ selectedCity, onCityChange, onAreaCalculated }: MapSection
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search city... (Cairo, Zagazig, Alexandria)"
+                placeholder="Search any location in Egypt..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -183,16 +229,36 @@ const MapSection = ({ selectedCity, onCityChange, onAreaCalculated }: MapSection
             </div>
             <Button 
               onClick={handleSearch}
+              disabled={isSearching}
               className="h-12 px-6 gradient-solar text-primary-foreground shadow-glow hover:opacity-90 transition-opacity"
             >
-              Search
+              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
             </Button>
           </div>
+          
+          {/* Search Results Dropdown */}
+          {searchResults.length > 1 && (
+            <div className="absolute z-50 mt-2 w-full max-w-lg bg-card border border-border rounded-lg shadow-lg">
+              {searchResults.map((result, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    updateLocation(result.lat, result.lng, result.name.split(",")[0]);
+                    setSearchResults([]);
+                    setSearchQuery("");
+                  }}
+                  className="w-full px-4 py-2 text-left hover:bg-muted text-sm truncate first:rounded-t-lg last:rounded-b-lg"
+                >
+                  {result.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* City Quick Select */}
         <div className="flex justify-center gap-3 mb-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          {Object.entries(cityIrradianceData).map(([key, data]) => (
+          {Object.entries(presetCities).map(([key, data]) => (
             <button
               key={key}
               onClick={() => onCityChange(key)}
@@ -211,7 +277,7 @@ const MapSection = ({ selectedCity, onCityChange, onAreaCalculated }: MapSection
         {/* Drawing Tools */}
         <div className="flex justify-center gap-3 mb-4 animate-slide-up" style={{ animationDelay: "0.15s" }}>
           <Button
-            onClick={toggleDrawingMode}
+            onClick={() => setIsDrawingMode(!isDrawingMode)}
             variant={isDrawingMode ? "default" : "outline"}
             className={`flex items-center gap-2 ${isDrawingMode ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
           >
@@ -227,9 +293,9 @@ const MapSection = ({ selectedCity, onCityChange, onAreaCalculated }: MapSection
               </>
             )}
           </Button>
-          {drawnPolygon && (
+          {calculatedArea !== null && (
             <Button
-              onClick={clearPolygon}
+              onClick={clearPolygons}
               variant="outline"
               className="flex items-center gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
             >
@@ -261,57 +327,75 @@ const MapSection = ({ selectedCity, onCityChange, onAreaCalculated }: MapSection
         {/* Map Container */}
         <div className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in" style={{ animationDelay: "0.2s" }}>
           <div className="aspect-[16/9] md:aspect-[21/9] bg-muted relative">
-            {!isLoaded ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm text-muted-foreground">Loading satellite view...</span>
-                </div>
-              </div>
-            ) : (
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={mapCenter}
-                zoom={18}
-                onLoad={onMapLoad}
-                mapTypeId="satellite"
-                options={{
-                  disableDefaultUI: false,
-                  zoomControl: true,
-                  mapTypeControl: true,
-                  streetViewControl: false,
-                  fullscreenControl: true,
-                }}
-              >
-                <DrawingManager
-                  onLoad={onDrawingManagerLoad}
-                  onPolygonComplete={onPolygonComplete}
-                  options={{
-                    drawingMode: isDrawingMode ? google.maps.drawing.OverlayType.POLYGON : null,
-                    drawingControl: false,
-                    polygonOptions: {
-                      fillColor: "#14b8a6",
-                      fillOpacity: 0.4,
-                      strokeColor: "#14b8a6",
-                      strokeOpacity: 1,
-                      strokeWeight: 2,
-                      editable: true,
-                      draggable: true,
-                    },
+            <MapContainer
+              center={[currentLocation.lat, currentLocation.lng]}
+              zoom={18}
+              style={{ height: "100%", width: "100%" }}
+              className="z-0"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              
+              <MapController 
+                center={[currentLocation.lat, currentLocation.lng]} 
+                zoom={18} 
+              />
+              
+              <LocationSelector onLocationSelect={handleLocationSelect} />
+              
+              <FeatureGroup ref={featureGroupRef}>
+                {/* @ts-ignore - react-leaflet-draw types are incomplete */}
+                <EditControl
+                  position="topright"
+                  onCreated={onCreated}
+                  onEdited={onEdited}
+                  onDeleted={onDeleted}
+                  draw={{
+                    rectangle: false,
+                    circle: false,
+                    circlemarker: false,
+                    marker: false,
+                    polyline: false,
+                    polygon: isDrawingMode ? {
+                      allowIntersection: false,
+                      shapeOptions: {
+                        color: "#14b8a6",
+                        fillColor: "#14b8a6",
+                        fillOpacity: 0.4,
+                        weight: 2,
+                      },
+                    } : false,
                   }}
+                  edit={false as unknown as object}
                 />
-              </GoogleMap>
-            )}
+              </FeatureGroup>
+            </MapContainer>
           </div>
           
           {/* Map Overlay Info */}
-          <div className="absolute bottom-4 left-4 glass rounded-lg px-4 py-2 shadow-lg">
+          <div className="absolute bottom-4 left-4 glass rounded-lg px-4 py-2 shadow-lg z-[1000]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
-              <span className="text-sm font-medium text-foreground">{city?.name}, Egypt</span>
+              <span className="text-sm font-medium text-foreground">{currentLocation.name}, Egypt</span>
             </div>
+            {isLoadingClimate ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Loading climate data...
+              </div>
+            ) : climateData ? (
+              <p className="text-xs text-muted-foreground">
+                Avg. Solar Irradiance: {climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day
+              </p>
+            ) : null}
+          </div>
+
+          {/* Data Source Badge */}
+          <div className="absolute bottom-4 right-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
             <p className="text-xs text-muted-foreground">
-              Avg. Solar Irradiance: {(city?.monthlyIrradiance.reduce((a, b) => a + b, 0) / 12).toFixed(1)} kWh/m²/day
+              Data: <span className="text-foreground font-medium">NASA POWER</span>
             </p>
           </div>
         </div>

@@ -1,25 +1,4 @@
-// Mock climate data for Egyptian cities (kWh/m²/day average solar irradiance)
-export const cityIrradianceData: Record<string, { name: string; lat: number; lng: number; monthlyIrradiance: number[] }> = {
-  zagazig: {
-    name: "Zagazig",
-    lat: 30.5877,
-    lng: 31.5020,
-    // Monthly average solar irradiance (kWh/m²/day)
-    monthlyIrradiance: [4.2, 5.0, 5.8, 6.5, 7.0, 7.5, 7.3, 7.0, 6.2, 5.3, 4.5, 4.0],
-  },
-  cairo: {
-    name: "Cairo",
-    lat: 30.0444,
-    lng: 31.2357,
-    monthlyIrradiance: [4.0, 4.8, 5.6, 6.3, 6.8, 7.2, 7.0, 6.8, 6.0, 5.1, 4.3, 3.8],
-  },
-  alexandria: {
-    name: "Alexandria",
-    lat: 31.2001,
-    lng: 29.9187,
-    monthlyIrradiance: [3.8, 4.5, 5.3, 6.0, 6.5, 7.0, 6.8, 6.5, 5.7, 4.8, 4.0, 3.5],
-  },
-};
+import { ClimateData } from "./climateApi";
 
 // Cost scenarios in EGP per kW
 export const costScenarios = {
@@ -29,12 +8,21 @@ export const costScenarios = {
 };
 
 // System constants
-export const SYSTEM_EFFICIENCY = 0.18; // 18% panel efficiency
 export const PERFORMANCE_RATIO = 0.80; // System losses (inverter, wiring, etc.)
 export const KW_PER_SQM = 0.18; // kW capacity per square meter (typical)
 export const CO2_FACTOR = 0.5; // kg CO2 saved per kWh (Egypt grid average)
 export const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 export const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Default climate data (fallback)
+export const defaultClimateData: ClimateData = {
+  monthlyIrradiance: [4.2, 5.0, 5.8, 6.5, 7.0, 7.5, 7.3, 7.0, 6.2, 5.3, 4.5, 4.0],
+  monthlyTemperature: [14, 15, 18, 22, 26, 29, 30, 30, 28, 24, 19, 15],
+  monthlyWindSpeed: [3.5, 3.8, 4.2, 4.0, 3.8, 4.5, 4.8, 4.5, 4.0, 3.5, 3.2, 3.3],
+  monthlyCloudCover: [25, 22, 18, 12, 8, 5, 3, 4, 8, 15, 20, 25],
+  annualAvgIrradiance: 5.78,
+  location: { lat: 30.0444, lng: 31.2357 },
+};
 
 export interface SolarCalculation {
   maxCapacityKW: number;
@@ -45,18 +33,16 @@ export interface SolarCalculation {
   yearlySavings: number;
   paybackYears: number;
   co2Reduction: number;
+  climateData?: ClimateData;
 }
 
 export function calculateSolarFeasibility(
   rooftopArea: number,
-  cityKey: string,
+  climateData: ClimateData | null,
   costScenario: "low" | "medium" | "high",
   electricityPrice: number
 ): SolarCalculation {
-  const city = cityIrradianceData[cityKey];
-  if (!city) {
-    throw new Error("Invalid city selected");
-  }
+  const climate = climateData || defaultClimateData;
 
   // Maximum installable capacity
   const maxCapacityKW = rooftopArea * KW_PER_SQM;
@@ -65,7 +51,7 @@ export function calculateSolarFeasibility(
   const systemCost = maxCapacityKW * costScenarios[costScenario].value;
 
   // Monthly energy production (kWh)
-  const monthlyProduction = city.monthlyIrradiance.map((irradiance, index) => {
+  const monthlyProduction = climate.monthlyIrradiance.map((irradiance, index) => {
     const dailyProduction = maxCapacityKW * irradiance * PERFORMANCE_RATIO;
     return dailyProduction * DAYS_PER_MONTH[index];
   });
@@ -90,6 +76,7 @@ export function calculateSolarFeasibility(
     yearlySavings,
     paybackYears,
     co2Reduction,
+    climateData: climate,
   };
 }
 

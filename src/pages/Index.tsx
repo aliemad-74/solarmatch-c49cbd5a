@@ -5,6 +5,7 @@ import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import Footer from "@/components/Footer";
 import { calculateSolarFeasibility, SolarCalculation } from "@/lib/solarData";
+import { ClimateData } from "@/lib/climateApi";
 
 const Index = () => {
   const [rooftopArea, setRooftopArea] = useState<number>(100);
@@ -13,9 +14,10 @@ const Index = () => {
   const [electricityPrice, setElectricityPrice] = useState<number>(1.45);
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [climateData, setClimateData] = useState<ClimateData | null>(null);
 
   const handleCalculate = () => {
-    const calculation = calculateSolarFeasibility(rooftopArea, selectedCity, costScenario, electricityPrice);
+    const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice);
     setResults(calculation);
     setShowResults(true);
 
@@ -34,6 +36,7 @@ const Index = () => {
           selectedCity={selectedCity}
           onCityChange={setSelectedCity}
           onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
+          onClimateDataFetched={setClimateData}
         />
 
         <InputPanel
