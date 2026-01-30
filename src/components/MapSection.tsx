@@ -29,6 +29,9 @@ const presetCities = {
   alexandria: { name: "Alexandria", lat: 31.2001, lng: 29.9187 },
 };
 
+const MAX_POLYGON_POINTS = 7;
+const MIN_POLYGON_POINTS = 4;
+
 const MapSection = ({ 
   selectedCity, 
   onCityChange, 
@@ -41,10 +44,11 @@ const MapSection = ({
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [polygonPoints, setPolygonPoints] = useState<L.LatLng[]>([]);
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; name: string }>({
-    lat: presetCities[selectedCity as keyof typeof presetCities]?.lat || 30.0444,
-    lng: presetCities[selectedCity as keyof typeof presetCities]?.lng || 31.2357,
-    name: presetCities[selectedCity as keyof typeof presetCities]?.name || "Cairo",
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; name: string }>(() => {
+    const city = presetCities[selectedCity as keyof typeof presetCities];
+    return city 
+      ? { lat: city.lat, lng: city.lng, name: city.name }
+      : { lat: 30.0444, lng: 31.2357, name: "Cairo" };
   });
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
@@ -109,16 +113,27 @@ const MapSection = ({
       mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
         if (isDrawingMode) {
           setPolygonPoints(prev => {
+            // Don't add more points if we've reached the maximum
+            if (prev.length >= MAX_POLYGON_POINTS) {
+              return prev;
+            }
+            
             const newPoints = [...prev, e.latlng];
             
-            // Check if clicking near the first point to close polygon
-            if (prev.length >= 4) {
+            // Check if clicking near the first point to close polygon (only if we have minimum points)
+            if (prev.length >= MIN_POLYGON_POINTS) {
               const firstPoint = prev[0];
               const distance = e.latlng.distanceTo(firstPoint);
               if (distance < 20) {
                 completePolygon(prev);
                 return prev;
               }
+            }
+            
+            // Auto-complete if we've reached max points
+            if (newPoints.length >= MAX_POLYGON_POINTS) {
+              completePolygon(newPoints);
+              return newPoints;
             }
             
             return newPoints;
@@ -166,7 +181,7 @@ const MapSection = ({
 
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
-    if (points.length < 4) return 0;
+    if (points.length < MIN_POLYGON_POINTS) return 0;
 
     const coordinates = points.map((ll) => [ll.lng, ll.lat]);
     coordinates.push(coordinates[0]);
@@ -195,7 +210,7 @@ const MapSection = ({
 
   // Complete polygon drawing and update location based on polygon center
   const completePolygon = useCallback(async (points: L.LatLng[]) => {
-    if (points.length >= 4) {
+    if (points.length >= MIN_POLYGON_POINTS) {
       const area = calculatePolygonArea(points);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) {
@@ -215,7 +230,7 @@ const MapSection = ({
       fetchClimateForLocation(lat, lng);
     }
     setIsDrawingMode(false);
-  }, [calculatePolygonArea, onAreaCalculated, fetchClimateForLocation]);
+  }, [calculatePolygonArea, onAreaCalculated]);
 
   // Update location and fetch climate data
   const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
@@ -226,8 +241,20 @@ const MapSection = ({
       mapRef.current.setView([lat, lng], 18);
     }
     
-    fetchClimateForLocation(lat, lng);
-  }, [fetchClimateForLocation]);
+    // Fetch climate data for new location
+    setIsLoadingClimate(true);
+    try {
+      const data = await fetchClimateData(lat, lng);
+      setClimateData(data);
+      if (onClimateDataFetched) {
+        onClimateDataFetched(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch climate data:", error);
+    } finally {
+      setIsLoadingClimate(false);
+    }
+  }, [onClimateDataFetched]);
 
   // Initial climate data fetch
   useEffect(() => {
@@ -251,7 +278,7 @@ const MapSection = ({
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
-      if (polygonPoints.length >= 4) {
+      if (polygonPoints.length >= MIN_POLYGON_POINTS) {
         completePolygon(polygonPoints);
       }
       setIsDrawingMode(false);
@@ -391,9 +418,11 @@ const MapSection = ({
         {isDrawingMode && (
           <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
-              {polygonPoints.length < 4 
-                ? `Click on the map to add points (${polygonPoints.length}/4 minimum)`
-                : "Click near the first point to complete, or click 'Finish Drawing'"}
+              {polygonPoints.length < MIN_POLYGON_POINTS 
+                ? `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum, ${MAX_POLYGON_POINTS} max)`
+                : polygonPoints.length >= MAX_POLYGON_POINTS
+                  ? "Maximum points reached - polygon will auto-complete"
+                  : `${polygonPoints.length}/${MAX_POLYGON_POINTS} points - Click near first point or 'Finish Drawing'`}
             </p>
           </div>
         )}
