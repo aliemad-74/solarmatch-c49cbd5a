@@ -74,8 +74,7 @@ const MapSection = ({
         maxZoom: 19,
       }).addTo(mapRef.current);
 
-      // Add click handler for drawing
-      mapRef.current.on("click", handleMapClick);
+      // Click handler will be set up by the useEffect below
     }
 
     return () => {
@@ -86,27 +85,17 @@ const MapSection = ({
     };
   }, []);
 
-  // Handle map clicks for polygon drawing
-  const handleMapClick = useCallback((e: L.LeafletMouseEvent) => {
-    if (!isDrawingMode) return;
-    
-    setPolygonPoints(prev => {
-      const newPoints = [...prev, e.latlng];
-      
-      // Check if clicking near the first point to close polygon
-      if (prev.length >= 4) {
-        const firstPoint = prev[0];
-        const distance = e.latlng.distanceTo(firstPoint);
-        if (distance < 20) {
-          // Complete the polygon
-          completePolygon(prev);
-          return prev;
-        }
-      }
-      
-      return newPoints;
-    });
-  }, [isDrawingMode]);
+  // Reference to track if we should complete polygon
+  const shouldCompleteRef = useRef<L.LatLng[] | null>(null);
+
+  // Effect to handle polygon completion outside of state setter
+  useEffect(() => {
+    if (shouldCompleteRef.current) {
+      const points = shouldCompleteRef.current;
+      shouldCompleteRef.current = null;
+      completePolygon(points);
+    }
+  });
 
   // Update click handler when drawing mode changes
   useEffect(() => {
@@ -120,21 +109,22 @@ const MapSection = ({
               return prev;
             }
             
-            const newPoints = [...prev, e.latlng];
-            
             // Check if clicking near the first point to close polygon (only if we have minimum points)
             if (prev.length >= MIN_POLYGON_POINTS) {
               const firstPoint = prev[0];
               const distance = e.latlng.distanceTo(firstPoint);
               if (distance < 20) {
-                completePolygon(prev);
+                // Schedule polygon completion after state update
+                shouldCompleteRef.current = prev;
                 return prev;
               }
             }
             
+            const newPoints = [...prev, e.latlng];
+            
             // Auto-complete if we've reached max points
             if (newPoints.length >= MAX_POLYGON_POINTS) {
-              completePolygon(newPoints);
+              shouldCompleteRef.current = newPoints;
               return newPoints;
             }
             
