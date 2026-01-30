@@ -1,4 +1,4 @@
-import { Home, Zap, DollarSign } from "lucide-react";
+import { Home, Zap, DollarSign, MapPin } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -15,6 +15,8 @@ interface InputPanelProps {
   electricityPrice: number;
   setElectricityPrice: (price: number) => void;
   onCalculate: () => void;
+  locationName?: string;
+  solarIrradiance?: number;
 }
 
 const InputPanel = ({
@@ -25,6 +27,8 @@ const InputPanel = ({
   electricityPrice,
   setElectricityPrice,
   onCalculate,
+  locationName,
+  solarIrradiance,
 }: InputPanelProps) => {
   const scenarioIndex = costScenario === "low" ? 0 : costScenario === "medium" ? 1 : 2;
 
@@ -69,13 +73,27 @@ const InputPanel = ({
             {/* Location Info */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Zap className="w-4 h-4 text-muted-foreground" />
+                <MapPin className="w-4 h-4 text-muted-foreground" />
                 Location
               </Label>
               <div className="h-12 flex items-center px-3 bg-muted/50 rounded-md border border-border">
-                <p className="text-sm text-muted-foreground">
-                  📍 Select location on the map above or use city quick buttons
-                </p>
+                {locationName ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
+                    <p className="text-sm font-medium text-foreground">
+                      {locationName}, Egypt
+                    </p>
+                    {solarIrradiance && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        ({solarIrradiance.toFixed(1)} kWh/m²/day)
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    📍 Select location on the map above or use city quick buttons
+                  </p>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 Climate data fetched dynamically from NASA POWER API

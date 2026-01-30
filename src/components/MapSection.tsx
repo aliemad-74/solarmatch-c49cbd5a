@@ -20,6 +20,7 @@ interface MapSectionProps {
   onCityChange: (city: string) => void;
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
+  onLocationChange?: (locationName: string) => void;
 }
 
 // Preset cities for quick selection
@@ -37,6 +38,7 @@ const MapSection = ({
   onCityChange, 
   onAreaCalculated,
   onClimateDataFetched,
+  onLocationChange,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ lat: number; lng: number; name: string }[]>([]);
@@ -227,6 +229,9 @@ const MapSection = ({
       // Update location based on polygon center and fetch climate data
       const locationName = await getLocationName(lat, lng);
       setCurrentLocation({ lat, lng, name: locationName });
+      if (onLocationChange) {
+        onLocationChange(locationName);
+      }
       fetchClimateForLocation(lat, lng);
     }
     setIsDrawingMode(false);
@@ -236,6 +241,11 @@ const MapSection = ({
   const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
     const locationName = name || await getLocationName(lat, lng);
     setCurrentLocation({ lat, lng, name: locationName });
+    
+    // Notify parent of location change
+    if (onLocationChange) {
+      onLocationChange(locationName);
+    }
     
     if (mapRef.current) {
       mapRef.current.setView([lat, lng], 18);
@@ -254,7 +264,7 @@ const MapSection = ({
     } finally {
       setIsLoadingClimate(false);
     }
-  }, [onClimateDataFetched]);
+  }, [onClimateDataFetched, onLocationChange]);
 
   // Initial climate data fetch
   useEffect(() => {
