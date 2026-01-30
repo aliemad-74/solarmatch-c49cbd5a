@@ -4,7 +4,7 @@ import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import Footer from "@/components/Footer";
-import { calculateSolarFeasibility, SolarCalculation } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PanelType } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 
 const Index = () => {
@@ -13,13 +13,14 @@ const Index = () => {
   const [costScenario, setCostScenario] = useState<"low" | "medium" | "high">("medium");
   const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
   const [usableFraction, setUsableFraction] = useState<number>(0.60);
+  const [panelType, setPanelType] = useState<PanelType>("standard");
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [locationName, setLocationName] = useState<string>("");
 
   const handleCalculate = () => {
-    const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice, usableFraction);
+    const calculation = calculateSolarFeasibility(rooftopArea, climateData, costScenario, electricityPrice, usableFraction, panelType);
     setResults(calculation);
     setShowResults(true);
 
@@ -53,6 +54,8 @@ const Index = () => {
           setElectricityPrice={setElectricityPrice}
           usableFraction={usableFraction}
           setUsableFraction={setUsableFraction}
+          panelType={panelType}
+          setPanelType={setPanelType}
           onCalculate={handleCalculate}
           locationName={locationName}
           solarIrradiance={climateData?.annualAvgIrradiance}

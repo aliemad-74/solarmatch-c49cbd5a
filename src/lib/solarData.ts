@@ -1,5 +1,32 @@
 import { ClimateData } from "./climateApi";
 
+// Panel types available in Egypt (2025)
+export const panelTypes = {
+  modern: { 
+    label: "Modern High-Power", 
+    description: "540-700W monocrystalline, 20% efficiency",
+    sqmPerKW: 6, 
+    degradation: 0.005,
+    pricePerWatt: 7.5 
+  },
+  standard: { 
+    label: "Standard Mono", 
+    description: "360-450W monocrystalline, 18% efficiency",
+    sqmPerKW: 7, 
+    degradation: 0.005,
+    pricePerWatt: 7.0 
+  },
+  economy: { 
+    label: "Economy Poly", 
+    description: "Polycrystalline, 16% efficiency, needs more space",
+    sqmPerKW: 8.5, 
+    degradation: 0.006,
+    pricePerWatt: 6.5 
+  },
+};
+
+export type PanelType = keyof typeof panelTypes;
+
 // Cost scenarios in EGP per kW
 export const costScenarios = {
   low: { value: 12000, label: "Economy", description: "Basic equipment, local installation" },
@@ -8,10 +35,10 @@ export const costScenarios = {
 };
 
 // System constants (Egypt 2025 market data)
-export const SQM_PER_KW = 7; // 7 m² per kW (modern 540-700W panels)
 export const DEFAULT_USABLE_FRACTION = 0.60; // 60% of roof usable (residential default)
 export const ENERGY_YIELD_PER_KW = 1800; // kWh per kW per year (Egypt realistic average)
 export const CO2_FACTOR = 0.55; // kg CO2 saved per kWh (Egypt grid emission factor)
+export const SYSTEM_LIFETIME_YEARS = 25; // Standard PV system lifetime
 export const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 export const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -36,6 +63,8 @@ export interface SolarCalculation {
   paybackYears: number;
   co2Reduction: number;
   climateData?: ClimateData;
+  panelType: PanelType;
+  costWarning?: string;
 }
 
 export function calculateSolarFeasibility(
@@ -43,18 +72,28 @@ export function calculateSolarFeasibility(
   climateData: ClimateData | null,
   costScenario: "low" | "medium" | "high",
   electricityPrice: number,
-  usableFraction: number = DEFAULT_USABLE_FRACTION
+  usableFraction: number = DEFAULT_USABLE_FRACTION,
+  panelType: PanelType = "standard"
 ): SolarCalculation {
   const climate = climateData || defaultClimateData;
+  const panel = panelTypes[panelType];
 
   // Calculate usable roof area
   const usableArea = rooftopArea * usableFraction;
 
-  // Maximum installable capacity: kW = usable_area / 7 m²/kW
-  const maxCapacityKW = usableArea / SQM_PER_KW;
+  // Maximum installable capacity: kW = usable_area / m²/kW (varies by panel type)
+  const maxCapacityKW = usableArea / panel.sqmPerKW;
 
   // System cost based on scenario
   const systemCost = maxCapacityKW * costScenarios[costScenario].value;
+
+  // Consistency check: warn if cost seems unrealistic for the area
+  let costWarning: string | undefined;
+  const expectedCost = maxCapacityKW * costScenarios[costScenario].value;
+  const maxReasonableCost = expectedCost * 1.2; // 20% tolerance
+  if (systemCost > 500000 && maxCapacityKW < 20) {
+    costWarning = `Note: For ${formatNumber(maxCapacityKW)} kW system, expected cost is ~${formatCurrency(expectedCost)}. Higher costs may indicate premium equipment or additional features.`;
+  }
 
   // Annual energy production using Egypt yield factor (1800 kWh/kW/year)
   const yearlyProduction = maxCapacityKW * ENERGY_YIELD_PER_KW;
@@ -87,6 +126,8 @@ export function calculateSolarFeasibility(
     paybackYears,
     co2Reduction,
     climateData: climate,
+    panelType,
+    costWarning,
   };
 }
 
