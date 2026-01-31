@@ -187,16 +187,16 @@ const MapSection = ({
         icon: L.divIcon({
           className: 'custom-marker',
           html: `<div style="
-            width: 14px;
-            height: 14px;
+            width: 8px;
+            height: 8px;
             background: ${index === 0 ? '#f59e0b' : '#14b8a6'};
-            border: 2px solid white;
+            border: 1px solid white;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
             cursor: ${isDrawingMode ? 'crosshair' : 'grab'};
           "></div>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7],
+          iconSize: [8, 8],
+          iconAnchor: [4, 4],
         }),
       }).addTo(mapRef.current!);
 
