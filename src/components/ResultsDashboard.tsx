@@ -1,15 +1,33 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2 } from "lucide-react";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import ResultCard from "./ResultCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { generateSolarReport } from "@/lib/pdfReport";
+import { useState } from "react";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
   isVisible: boolean;
+  locationName?: string;
 }
 
-const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboardProps) => {
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   if (!results || !isVisible) return null;
+
+  const handleDownloadReport = async () => {
+    if (!results || isGeneratingPdf) return;
+    
+    setIsGeneratingPdf(true);
+    try {
+      await generateSolarReport(results, locationName);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   // Prepare chart data
   const monthlyData = MONTH_NAMES.map((month, index) => ({
@@ -441,8 +459,17 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="px-6 py-3 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors">
-                Download Report
+              <button 
+                onClick={handleDownloadReport}
+                disabled={isGeneratingPdf}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingPdf ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {isGeneratingPdf ? "Generating..." : "Download Report"}
               </button>
               <button className="px-6 py-3 rounded-xl gradient-solar text-primary-foreground font-medium shadow-glow hover:opacity-90 transition-opacity">
                 Contact Expert

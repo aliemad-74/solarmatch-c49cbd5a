@@ -97,6 +97,7 @@ const Index = () => {
           <ResultsDashboard 
             results={results}
             isVisible={showResults}
+            locationName={locationName}
           />
         </div>
       </main>
