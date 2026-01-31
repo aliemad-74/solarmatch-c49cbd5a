@@ -1,4 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users } from "lucide-react";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios } from "@/lib/solarData";
 import ResultCard from "./ResultCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -60,6 +60,40 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
                 </ul>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Building Mode Stats */}
+        {results.buildingMode && (
+          <div className="mb-6 p-5 bg-gradient-to-r from-primary/5 to-solar-green/5 border border-primary/20 rounded-xl animate-fade-in">
+            <div className="flex items-center gap-2 mb-4">
+              <Building className="w-5 h-5 text-primary" />
+              <h4 className="font-semibold text-foreground">Building Mode Analysis</h4>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="p-3 bg-card rounded-lg border border-border/50">
+                <p className="text-2xl font-bold text-foreground">{results.numberOfUnits}</p>
+                <p className="text-xs text-muted-foreground">Total Units</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border border-border/50">
+                <p className="text-2xl font-bold text-foreground">{results.avgUnitConsumption}</p>
+                <p className="text-xs text-muted-foreground">kWh/Unit/Month</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border border-border/50">
+                <p className="text-2xl font-bold text-primary">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Total kWh/Month</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border border-border/50">
+                <div className="flex items-center justify-center gap-1">
+                  <Users className="w-4 h-4 text-solar-green" />
+                  <p className="text-2xl font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Units Covered</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-3 text-center">
+              Your solar system can cover the consumption of <span className="font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</span> out of <span className="font-bold text-foreground">{results.numberOfUnits}</span> apartment units
+            </p>
           </div>
         )}
 

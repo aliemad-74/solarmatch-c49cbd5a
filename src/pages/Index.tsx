@@ -16,6 +16,11 @@ const Index = () => {
   const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
   const [monthlyConsumption, setMonthlyConsumption] = useState<number>(500);
   
+  // Building Mode inputs
+  const [buildingMode, setBuildingMode] = useState<boolean>(false);
+  const [numberOfUnits, setNumberOfUnits] = useState<number>(10);
+  const [avgUnitConsumption, setAvgUnitConsumption] = useState<number>(300);
+  
   // Map/location state
   const [selectedCity, setSelectedCity] = useState<string>("zagazig");
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
@@ -25,6 +30,11 @@ const Index = () => {
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
 
+  // Calculate effective monthly consumption
+  const effectiveMonthlyConsumption = buildingMode 
+    ? numberOfUnits * avgUnitConsumption 
+    : monthlyConsumption;
+
   const handleCalculate = () => {
     const calculation = calculateSolarFeasibility(
       rooftopArea, 
@@ -33,7 +43,10 @@ const Index = () => {
       pvType,
       buildingType,
       costScenario,
-      monthlyConsumption
+      effectiveMonthlyConsumption,
+      buildingMode,
+      numberOfUnits,
+      avgUnitConsumption
     );
     setResults(calculation);
     setShowResults(true);
@@ -69,6 +82,12 @@ const Index = () => {
           setElectricityPrice={setElectricityPrice}
           monthlyConsumption={monthlyConsumption}
           setMonthlyConsumption={setMonthlyConsumption}
+          buildingMode={buildingMode}
+          setBuildingMode={setBuildingMode}
+          numberOfUnits={numberOfUnits}
+          setNumberOfUnits={setNumberOfUnits}
+          avgUnitConsumption={avgUnitConsumption}
+          setAvgUnitConsumption={setAvgUnitConsumption}
           onCalculate={handleCalculate}
           locationName={locationName}
           climateData={climateData}
