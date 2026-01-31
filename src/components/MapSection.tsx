@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2 } from "lucide-react";
+import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as turf from "@turf/turf";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { fetchClimateData, searchLocation, getLocationName, ClimateData } from "@/lib/climateApi";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -24,6 +26,12 @@ interface MapSectionProps {
   onLocationChange?: (locationName: string) => void;
 }
 
+interface DetectedBuilding {
+  id: number;
+  coordinates: [number, number][];
+  area?: number;
+}
+
 // Preset cities for quick selection
 const presetCities = {
   zagazig: { name: "Zagazig", lat: 30.5877, lng: 31.502 },
@@ -34,6 +42,7 @@ const presetCities = {
 const MIN_POLYGON_POINTS = 4;
 
 type MapSize = "normal" | "large";
+type SelectionMode = "quickSelect" | "manualDraw";
 
 const MapSection = ({ 
   selectedCity, 
@@ -58,10 +67,20 @@ const MapSection = ({
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
   
+  // Quick Select mode states
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>("quickSelect");
+  const [isSearchingBuildings, setIsSearchingBuildings] = useState(false);
+  const [detectedBuildings, setDetectedBuildings] = useState<DetectedBuilding[]>([]);
+  const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
+  
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const polygonLayerRef = useRef<L.Polygon | null>(null);
   const pointMarkersRef = useRef<L.CircleMarker[]>([]);
+  const buildingLayersRef = useRef<L.Polygon[]>([]);
+
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
 
   // Initialize map
   useEffect(() => {
@@ -76,8 +95,6 @@ const MapSection = ({
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
         maxZoom: 19,
       }).addTo(mapRef.current);
-
-      // Click handler will be set up by the useEffect below
     }
 
     return () => {
@@ -97,6 +114,138 @@ const MapSection = ({
     }
   }, [mapSize]);
 
+  // Clear detected buildings from map
+  const clearDetectedBuildings = useCallback(() => {
+    buildingLayersRef.current.forEach(layer => mapRef.current?.removeLayer(layer));
+    buildingLayersRef.current = [];
+    setDetectedBuildings([]);
+    setSelectedBuildingId(null);
+  }, []);
+
+  // Fetch buildings from Overpass API via edge function
+  const fetchBuildingsAtLocation = useCallback(async (lat: number, lng: number) => {
+    setIsSearchingBuildings(true);
+    clearDetectedBuildings();
+    
+    try {
+      const response = await supabase.functions.invoke('building-footprints', {
+        body: { lat, lng, radius: 50 }
+      });
+
+      if (response.error) {
+        console.error('Error fetching buildings:', response.error);
+        toast.error(t('map.noBuildingsFound'));
+        return;
+      }
+
+      const { buildings } = response.data;
+      
+      if (!buildings || buildings.length === 0) {
+        toast.info(t('map.noBuildingsFound'));
+        setSelectionMode("manualDraw");
+        return;
+      }
+
+      setDetectedBuildings(buildings);
+      toast.success(t('map.buildingsFound', { count: buildings.length }));
+
+      // Draw buildings on map
+      buildings.forEach((building: DetectedBuilding) => {
+        if (!mapRef.current) return;
+        
+        const positions: L.LatLngExpression[] = building.coordinates.map(
+          ([lat, lng]) => [lat, lng]
+        );
+        
+        const polygon = L.polygon(positions, {
+          color: "#f97316", // Orange for detected
+          fillColor: "#f97316",
+          fillOpacity: 0.3,
+          weight: 2,
+          className: 'detected-building',
+        }).addTo(mapRef.current);
+
+        // Click handler for selecting building
+        polygon.on('click', () => {
+          selectBuilding(building);
+        });
+
+        // Hover effects
+        polygon.on('mouseover', () => {
+          if (selectedBuildingId !== building.id) {
+            polygon.setStyle({ fillOpacity: 0.5 });
+          }
+        });
+        
+        polygon.on('mouseout', () => {
+          if (selectedBuildingId !== building.id) {
+            polygon.setStyle({ fillOpacity: 0.3 });
+          }
+        });
+
+        buildingLayersRef.current.push(polygon);
+      });
+
+    } catch (error) {
+      console.error('Failed to fetch buildings:', error);
+      toast.error(t('map.noBuildingsFound'));
+    } finally {
+      setIsSearchingBuildings(false);
+    }
+  }, [t, clearDetectedBuildings]);
+
+  // Select a detected building
+  const selectBuilding = useCallback(async (building: DetectedBuilding) => {
+    setSelectedBuildingId(building.id);
+    
+    // Update polygon styling
+    buildingLayersRef.current.forEach((layer, index) => {
+      if (detectedBuildings[index]?.id === building.id) {
+        layer.setStyle({
+          color: "#14b8a6",
+          fillColor: "#14b8a6",
+          fillOpacity: 0.4,
+        });
+      } else {
+        layer.setStyle({
+          color: "#f97316",
+          fillColor: "#f97316",
+          fillOpacity: 0.3,
+        });
+      }
+    });
+
+    // Convert coordinates to polygon points for further processing
+    const points = building.coordinates.map(([lat, lng]) => L.latLng(lat, lng));
+    setPolygonPoints(points);
+
+    // Calculate area using Turf.js for accuracy
+    const coordinates = building.coordinates.map(([lat, lng]) => [lng, lat]);
+    coordinates.push(coordinates[0]); // Close polygon
+    const polygon = turf.polygon([coordinates]);
+    const areaInSqMeters = turf.area(polygon);
+    const area = Math.round(areaInSqMeters * 100) / 100;
+    
+    setCalculatedArea(area);
+    if (onAreaCalculated && area > 0) {
+      onAreaCalculated(area);
+    }
+
+    // Calculate centroid for location
+    const centroid = turf.centroid(polygon);
+    const [lng, lat] = centroid.geometry.coordinates;
+    
+    // Update location and fetch climate data
+    const locationName = await getLocationName(lat, lng);
+    setCurrentLocation({ lat, lng, name: locationName });
+    if (onLocationChange) {
+      onLocationChange(locationName);
+    }
+    fetchClimateForLocation(lat, lng);
+    
+    toast.success(t('map.selectedBuilding'));
+  }, [detectedBuildings, onAreaCalculated, onLocationChange, t]);
+
   // Reference to track if we should complete polygon
   const shouldCompleteRef = useRef<L.LatLng[] | null>(null);
 
@@ -109,30 +258,31 @@ const MapSection = ({
     }
   });
 
-  // Update click handler when drawing mode changes
+  // Update click handler when drawing mode or selection mode changes
   useEffect(() => {
     if (mapRef.current) {
       mapRef.current.off("click");
       mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
-        if (isDrawingMode) {
+        if (selectionMode === "quickSelect" && !isDrawingMode) {
+          // Quick select mode - fetch buildings at clicked location
+          fetchBuildingsAtLocation(e.latlng.lat, e.latlng.lng);
+        } else if (isDrawingMode) {
           setPolygonPoints(prev => {
-            // Check if clicking near the first point to close polygon (only if we have minimum points)
+            // Check if clicking near the first point to close polygon
             if (prev.length >= MIN_POLYGON_POINTS) {
               const firstPoint = prev[0];
               const distance = e.latlng.distanceTo(firstPoint);
               if (distance < 5) {
-                // Schedule polygon completion after state update
                 shouldCompleteRef.current = prev;
                 return prev;
               }
             }
-            
             return [...prev, e.latlng];
           });
         }
       });
     }
-  }, [isDrawingMode]);
+  }, [isDrawingMode, selectionMode, fetchBuildingsAtLocation]);
 
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
@@ -149,18 +299,18 @@ const MapSection = ({
 
   // Recalculate area whenever points change (for dragging updates)
   useEffect(() => {
-    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
+    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS && selectionMode === "manualDraw") {
       const area = calculatePolygonArea(polygonPoints);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) {
         onAreaCalculated(area);
       }
     }
-  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated, selectionMode]);
 
   // Update polygon visualization
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || selectionMode === "quickSelect") return;
 
     // Clear existing polygon and markers
     if (polygonLayerRef.current) {
@@ -184,7 +334,7 @@ const MapSection = ({
     // Draw draggable point markers (only when not in drawing mode for better UX)
     polygonPoints.forEach((point, index) => {
       const marker = L.marker([point.lat, point.lng], {
-        draggable: !isDrawingMode, // Only draggable after drawing is complete
+        draggable: !isDrawingMode,
         icon: L.divIcon({
           className: 'custom-marker',
           html: `<div style="
@@ -201,7 +351,7 @@ const MapSection = ({
         }),
       }).addTo(mapRef.current!);
 
-      // Handle drag events to update polygon points (only when not drawing)
+      // Handle drag events to update polygon points
       if (!isDrawingMode) {
         marker.on('drag', (e: L.LeafletEvent) => {
           const target = e.target as L.Marker;
@@ -216,7 +366,7 @@ const MapSection = ({
 
       pointMarkersRef.current.push(marker as any);
     });
-  }, [polygonPoints, isDrawingMode]);
+  }, [polygonPoints, isDrawingMode, selectionMode]);
 
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
@@ -245,7 +395,7 @@ const MapSection = ({
 
       // Calculate the center of the polygon using Turf.js
       const coordinates = points.map((ll) => [ll.lng, ll.lat]);
-      coordinates.push(coordinates[0]); // Close the polygon
+      coordinates.push(coordinates[0]);
       const polygon = turf.polygon([coordinates]);
       const centroid = turf.centroid(polygon);
       const [lng, lat] = centroid.geometry.coordinates;
@@ -259,14 +409,13 @@ const MapSection = ({
       fetchClimateForLocation(lat, lng);
     }
     setIsDrawingMode(false);
-  }, [calculatePolygonArea, onAreaCalculated]);
+  }, [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]);
 
   // Update location and fetch climate data
   const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
     const locationName = name || await getLocationName(lat, lng);
     setCurrentLocation({ lat, lng, name: locationName });
     
-    // Notify parent of location change
     if (onLocationChange) {
       onLocationChange(locationName);
     }
@@ -307,7 +456,16 @@ const MapSection = ({
   const clearPolygon = useCallback(() => {
     setPolygonPoints([]);
     setCalculatedArea(null);
-  }, []);
+    clearDetectedBuildings();
+    
+    // Clear manual drawing polygon
+    if (polygonLayerRef.current && mapRef.current) {
+      mapRef.current.removeLayer(polygonLayerRef.current);
+      polygonLayerRef.current = null;
+    }
+    pointMarkersRef.current.forEach(marker => mapRef.current?.removeLayer(marker));
+    pointMarkersRef.current = [];
+  }, [clearDetectedBuildings]);
 
   // Undo last point
   const undoLastPoint = useCallback(() => {
@@ -326,6 +484,17 @@ const MapSection = ({
       setIsDrawingMode(true);
     }
   }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
+
+  // Switch selection mode
+  const switchSelectionMode = useCallback((mode: SelectionMode) => {
+    setSelectionMode(mode);
+    clearPolygon();
+    if (mode === "manualDraw") {
+      setIsDrawingMode(true);
+    } else {
+      setIsDrawingMode(false);
+    }
+  }, [clearPolygon]);
 
   // Debounced search ref
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -351,7 +520,7 @@ const MapSection = ({
       } finally {
         setIsSearching(false);
       }
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -366,9 +535,6 @@ const MapSection = ({
     setSearchResults([]);
     setSearchQuery("");
   };
-
-  const { t, i18n } = useTranslation();
-  const isArabic = i18n.language === 'ar';
 
   return (
     <section className="relative">
@@ -434,35 +600,24 @@ const MapSection = ({
           ))}
         </div>
 
-        {/* Drawing Tools */}
+        {/* Selection Mode Toggle */}
         <div className="flex justify-center gap-3 mb-4 animate-slide-up" style={{ animationDelay: "0.15s" }}>
           <Button
-            onClick={toggleDrawingMode}
-            variant={isDrawingMode ? "default" : "outline"}
-            className={`flex items-center gap-2 ${isDrawingMode ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
+            onClick={() => switchSelectionMode("quickSelect")}
+            variant={selectionMode === "quickSelect" ? "default" : "outline"}
+            className={`flex items-center gap-2 ${selectionMode === "quickSelect" ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
           >
-            {isDrawingMode ? (
-              <>
-                <MousePointer className="w-4 h-4" />
-                {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
-              </>
-            ) : (
-              <>
-                <PenTool className="w-4 h-4" />
-                {isArabic ? 'ارسم السطح' : 'Draw Rooftop'}
-              </>
-            )}
+            <Building2 className="w-4 h-4" />
+            {t('map.quickSelect')}
           </Button>
-          {isDrawingMode && polygonPoints.length > 0 && (
-            <Button
-              onClick={undoLastPoint}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Undo2 className="w-4 h-4" />
-              {isArabic ? 'تراجع' : 'Undo'}
-            </Button>
-          )}
+          <Button
+            onClick={() => switchSelectionMode("manualDraw")}
+            variant={selectionMode === "manualDraw" ? "default" : "outline"}
+            className={`flex items-center gap-2 ${selectionMode === "manualDraw" ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
+          >
+            <PenTool className="w-4 h-4" />
+            {t('map.manualDraw')}
+          </Button>
           {(polygonPoints.length > 0 || calculatedArea !== null) && (
             <Button
               onClick={clearPolygon}
@@ -475,9 +630,51 @@ const MapSection = ({
           )}
         </div>
 
-        {/* Drawing Instructions */}
-        {isDrawingMode && (
-          <div className="text-center mb-4 animate-fade-in">
+        {/* Manual Draw Controls */}
+        {selectionMode === "manualDraw" && (
+          <div className="flex justify-center gap-3 mb-4 animate-fade-in">
+            <Button
+              onClick={toggleDrawingMode}
+              variant={isDrawingMode ? "default" : "outline"}
+              className={`flex items-center gap-2 ${isDrawingMode ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
+            >
+              {isDrawingMode ? (
+                <>
+                  <MousePointer className="w-4 h-4" />
+                  {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
+                </>
+              ) : (
+                <>
+                  <PenTool className="w-4 h-4" />
+                  {isArabic ? 'ارسم السطح' : 'Draw Rooftop'}
+                </>
+              )}
+            </Button>
+            {isDrawingMode && polygonPoints.length > 0 && (
+              <Button
+                onClick={undoLastPoint}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Undo2 className="w-4 h-4" />
+                {isArabic ? 'تراجع' : 'Undo'}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Instructions */}
+        <div className="text-center mb-4 animate-fade-in">
+          {isSearchingBuildings ? (
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm font-medium">{t('map.searchingBuildings')}</span>
+            </div>
+          ) : selectionMode === "quickSelect" && detectedBuildings.length === 0 && !calculatedArea ? (
+            <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
+              {t('map.clickToDetect')}
+            </p>
+          ) : isDrawingMode ? (
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
               {polygonPoints.length < MIN_POLYGON_POINTS 
                 ? (isArabic 
@@ -487,14 +684,14 @@ const MapSection = ({
                     ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو 'إنهاء الرسم'`
                     : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`)}
             </p>
-          </div>
-        )}
+          ) : null}
+        </div>
 
         {/* Calculated Area Display */}
         {calculatedArea !== null && (
           <div className="text-center mb-4 animate-scale-in">
             <div className="inline-flex items-center gap-2 bg-solar-green/20 text-solar-green px-4 py-2 rounded-lg border border-solar-green/30">
-              <span className="text-sm font-medium">{isArabic ? 'مساحة السطح:' : 'Rooftop Area:'}</span>
+              <span className="text-sm font-medium">{t('map.rooftopArea')}:</span>
               <span className="text-lg font-bold">{calculatedArea.toFixed(1)} m²</span>
             </div>
           </div>
@@ -537,7 +734,7 @@ const MapSection = ({
             <div 
               ref={mapContainerRef} 
               className="w-full h-full z-0"
-              style={{ cursor: isDrawingMode ? "crosshair" : "grab" }}
+              style={{ cursor: isDrawingMode ? "crosshair" : selectionMode === "quickSelect" ? "pointer" : "grab" }}
             />
           </div>
           
