@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2 } from "lucide-react";
+import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as turf from "@turf/turf";
@@ -65,7 +65,7 @@ const MapSection = ({
     if (mapContainerRef.current && !mapRef.current) {
       mapRef.current = L.map(mapContainerRef.current).setView(
         [currentLocation.lat, currentLocation.lng],
-        18
+        20
       );
 
       // ESRI World Imagery (satellite view) - free for basic use
@@ -273,7 +273,7 @@ const MapSection = ({
     }
     
     if (mapRef.current) {
-      mapRef.current.setView([lat, lng], 18);
+      mapRef.current.setView([lat, lng], 20);
     }
     
     // Fetch climate data for new location
@@ -308,6 +308,11 @@ const MapSection = ({
   const clearPolygon = useCallback(() => {
     setPolygonPoints([]);
     setCalculatedArea(null);
+  }, []);
+
+  // Undo last point
+  const undoLastPoint = useCallback(() => {
+    setPolygonPoints(prev => prev.slice(0, -1));
   }, []);
 
   // Toggle drawing mode
@@ -446,6 +451,16 @@ const MapSection = ({
               </>
             )}
           </Button>
+          {isDrawingMode && polygonPoints.length > 0 && (
+            <Button
+              onClick={undoLastPoint}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Undo2 className="w-4 h-4" />
+              Undo
+            </Button>
+          )}
           {(polygonPoints.length > 0 || calculatedArea !== null) && (
             <Button
               onClick={clearPolygon}
