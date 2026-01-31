@@ -148,6 +148,9 @@ const Index = () => {
             isVisible={showResults}
             locationName={locationName}
             shareableParams={getShareableParams()}
+            monthlyConsumption={effectiveMonthlyConsumption}
+            pvType={pvType}
+            buildingType={buildingType}
           />
         </div>
       </main>

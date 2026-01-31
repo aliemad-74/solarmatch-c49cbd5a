@@ -174,5 +174,16 @@
     "month": "month",
     "year": "year",
     "tons": "tons"
+  },
+  "ai": {
+    "title": "AI Solar Advisor",
+    "description": "Get personalized recommendations based on your solar system data",
+    "getAdvice": "Get AI Advice",
+    "loading": "Analyzing...",
+    "analyzing": "Analyzing your solar system...",
+    "refresh": "Refresh Advice",
+    "error": "Failed to get advice. Please try again.",
+    "rateLimitError": "Rate limit exceeded. Please try again later.",
+    "paymentError": "Please add credits to get AI advice."
   }
 }
