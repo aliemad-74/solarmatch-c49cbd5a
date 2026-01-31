@@ -8,16 +8,14 @@ export const panelTypes = {
   modern: { 
     label: "High-Power Mono", 
     description: "540-700W monocrystalline, 20% efficiency",
-    sqmPerKW: 6,           // m² per kW
     panelWatt: 550,        // Watts per panel
-    panelArea: 2.2,        // m² per panel
+    panelArea: 2.4,        // m² per panel (physical size + spacing)
     panelPrice: 4500,      // EGP per panel
     degradation: 0.005,
   },
   standard: { 
     label: "Standard Mono", 
     description: "360-450W monocrystalline, 18% efficiency",
-    sqmPerKW: 7,           // m² per kW
     panelWatt: 400,        // Watts per panel
     panelArea: 2.0,        // m² per panel
     panelPrice: 3000,      // EGP per panel
@@ -26,7 +24,6 @@ export const panelTypes = {
   economy: { 
     label: "Economy Poly", 
     description: "Polycrystalline, 16% efficiency, needs more space",
-    sqmPerKW: 8.5,         // m² per kW
     panelWatt: 330,        // Watts per panel
     panelArea: 2.1,        // m² per panel
     panelPrice: 2200,      // EGP per panel
@@ -37,28 +34,33 @@ export const panelTypes = {
 export type PanelType = keyof typeof panelTypes;
 
 // ================================================
-// COST PACKAGES (EGP per kW - Full System)
+// BUILDING TYPES & USABLE FRACTIONS
 // ================================================
 
-export const costScenarios = {
-  low: { value: 12000, label: "Economy", description: "Basic equipment, local installation" },
-  medium: { value: 18000, label: "Standard", description: "Quality equipment, professional installation" },
-  high: { value: 30000, label: "Premium", description: "Top-tier equipment, extended warranty" },
+export const buildingTypes = {
+  residential: { label: "Residential House", usableFraction: 0.50, description: "Typical house with obstacles (40-50%)" },
+  apartment: { label: "Apartment Building", usableFraction: 0.60, description: "Moderate usable space (55-65%)" },
+  commercial: { label: "Commercial", usableFraction: 0.70, description: "Good usable area (65-75%)" },
+  industrial: { label: "Industrial", usableFraction: 0.75, description: "Optimal flat roof (70-80%)" },
 };
 
-// Other costs for panel-based pricing (inverter + mounting + wiring + installation)
+export type BuildingType = keyof typeof buildingTypes;
+
+// ================================================
+// OTHER COSTS (inverter + mounting + wiring + installation)
+// ================================================
+
 export const OTHER_COSTS_PER_KW = 8000; // EGP per kW
 
 // ================================================
 // SYSTEM CONSTANTS
 // ================================================
 
-export const DEFAULT_USABLE_FRACTION = 0.60;
-export const INSTALLATION_FACTOR = 0.95;     // 95% of max capacity installable in practice
 export const ENERGY_YIELD_PER_KW = 1800;     // kWh per kW per year (Egypt average)
 export const CO2_FACTOR = 0.55;              // kg CO2 saved per kWh
 export const SYSTEM_LIFETIME_YEARS = 25;
 export const CONSISTENCY_THRESHOLD = 1.3;    // 30% tolerance for cost check
+export const BASELINE_COST_PER_KW = 18000;   // Medium scenario for consistency check
 
 export const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 export const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -77,25 +79,20 @@ export const defaultClimateData: ClimateData = {
 // CALCULATION RESULT INTERFACE
 // ================================================
 
-export type PricingMode = "per_kw" | "per_panel";
-
 export interface SolarCalculation {
-  // Area calculations
+  // Area
   usableArea: number;
   
-  // Capacity calculations
-  kWMax: number;
-  kWInstalled: number;
-  
-  // Panel details (for per_panel mode)
+  // Panels
   panelsCount: number;
   totalWatts: number;
+  kWInstalled: number;
   
-  // Cost breakdown
-  systemCost: number;
-  panelCost: number;
-  otherCosts: number;
-  costPerKWReal: number;
+  // Cost breakdown (PER PANEL METHOD)
+  panelCost: number;           // panels_count × panel_price
+  otherCosts: number;          // kW_installed × 8,000
+  systemCost: number;          // panel_cost + other_costs
+  costPerKWReal: number;       // system_cost / kW_installed
   
   // Production & savings
   monthlyProduction: number[];
@@ -109,7 +106,7 @@ export interface SolarCalculation {
   
   // Metadata
   panelType: PanelType;
-  pricingMode: PricingMode;
+  buildingType: BuildingType;
   climateData?: ClimateData;
   
   // Consistency check
@@ -118,142 +115,71 @@ export interface SolarCalculation {
 }
 
 // ================================================
-// METHOD 1: COST PER kW (RECOMMENDED)
-// ================================================
-
-function calculatePerKW(
-  usableArea: number,
-  panel: typeof panelTypes[PanelType],
-  costScenario: "low" | "medium" | "high"
-): { kWMax: number; kWInstalled: number; systemCost: number; panelsCount: number } {
-  // kW_max = usable_area / area_per_kW
-  const kWMax = usableArea / panel.sqmPerKW;
-  
-  // kW_installed = floor(kW_max × 0.95) - practical installation limit
-  const kWInstalled = Math.floor(kWMax * INSTALLATION_FACTOR * 10) / 10; // Round to 1 decimal
-  
-  // Total_System_Cost = kW_installed × Cost_per_kW
-  const systemCost = kWInstalled * costScenarios[costScenario].value;
-  
-  // Estimate panels count for display
-  const panelsCount = Math.floor((kWInstalled * 1000) / panel.panelWatt);
-  
-  return { kWMax, kWInstalled, systemCost, panelsCount };
-}
-
-// ================================================
-// METHOD 2: COST PER PANEL (OPTIONAL)
-// ================================================
-
-function calculatePerPanel(
-  usableArea: number,
-  panel: typeof panelTypes[PanelType]
-): { kWMax: number; kWInstalled: number; systemCost: number; panelsCount: number; panelCost: number; otherCosts: number; totalWatts: number } {
-  // Panels_count = floor(usable_area / panel_area)
-  const panelsCount = Math.floor(usableArea / panel.panelArea);
-  
-  // Total_Watts = Panels_count × panel_watt
-  const totalWatts = panelsCount * panel.panelWatt;
-  
-  // kW_installed = Total_Watts / 1000 (CRITICAL: Convert W → kW)
-  const kWInstalled = totalWatts / 1000;
-  const kWMax = kWInstalled / INSTALLATION_FACTOR; // Reverse calculate max
-  
-  // Panel_Cost = Panels_count × panel_price
-  const panelCost = panelsCount * panel.panelPrice;
-  
-  // Other_costs = kW_installed × 8,000 EGP
-  const otherCosts = kWInstalled * OTHER_COSTS_PER_KW;
-  
-  // Total_System_Cost = Panel_Cost + Other_costs
-  const systemCost = panelCost + otherCosts;
-  
-  return { kWMax, kWInstalled, systemCost, panelsCount, panelCost, otherCosts, totalWatts };
-}
-
-// ================================================
-// CONSISTENCY CHECK (MANDATORY)
-// ================================================
-
-function checkConsistency(
-  systemCost: number,
-  kWInstalled: number
-): { expectedCost: number; warning?: string } {
-  // expected_cost = kW_installed × 18,000 (medium scenario baseline)
-  const expectedCost = kWInstalled * costScenarios.medium.value;
-  
-  // If Total_System_Cost > expected_cost × 1.3: Show warning
-  if (systemCost > expectedCost * CONSISTENCY_THRESHOLD) {
-    return {
-      expectedCost,
-      warning: `⚠️ Cost inconsistent with roof area. Expected ~${formatCurrency(expectedCost)} for ${formatNumber(kWInstalled)} kW. Possible unit error or premium equipment.`,
-    };
-  }
-  
-  // Also warn if cost is suspiciously low
-  if (systemCost < expectedCost * 0.5) {
-    return {
-      expectedCost,
-      warning: `⚠️ Cost seems too low. Expected ~${formatCurrency(expectedCost)} for ${formatNumber(kWInstalled)} kW. Verify pricing inputs.`,
-    };
-  }
-  
-  return { expectedCost };
-}
-
-// ================================================
-// MAIN CALCULATION FUNCTION
+// MAIN CALCULATION - PER PANEL METHOD
 // ================================================
 
 export function calculateSolarFeasibility(
   rooftopArea: number,
   climateData: ClimateData | null,
-  costScenario: "low" | "medium" | "high",
   electricityPrice: number,
-  usableFraction: number = DEFAULT_USABLE_FRACTION,
-  panelType: PanelType = "standard",
-  pricingMode: PricingMode = "per_kw"
+  panelType: PanelType,
+  buildingType: BuildingType
 ): SolarCalculation {
   const climate = climateData || defaultClimateData;
   const panel = panelTypes[panelType];
+  const building = buildingTypes[buildingType];
 
-  // Step 1: Calculate usable area
-  const usableArea = rooftopArea * usableFraction;
+  // ============================================
+  // STEP 1: Calculate usable area
+  // ============================================
+  const usableArea = rooftopArea * building.usableFraction;
 
-  // Step 2: Calculate capacity and cost based on pricing mode
-  let kWMax: number;
-  let kWInstalled: number;
-  let systemCost: number;
-  let panelsCount: number;
-  let panelCost = 0;
-  let otherCosts = 0;
-  let totalWatts = 0;
+  // ============================================
+  // STEP 2: Calculate panels count
+  // panels_count = floor(usable_area / panel_area)
+  // ============================================
+  const panelsCount = Math.floor(usableArea / panel.panelArea);
 
-  if (pricingMode === "per_panel") {
-    const result = calculatePerPanel(usableArea, panel);
-    kWMax = result.kWMax;
-    kWInstalled = result.kWInstalled;
-    systemCost = result.systemCost;
-    panelsCount = result.panelsCount;
-    panelCost = result.panelCost;
-    otherCosts = result.otherCosts;
-    totalWatts = result.totalWatts;
-  } else {
-    const result = calculatePerKW(usableArea, panel, costScenario);
-    kWMax = result.kWMax;
-    kWInstalled = result.kWInstalled;
-    systemCost = result.systemCost;
-    panelsCount = result.panelsCount;
-    totalWatts = kWInstalled * 1000;
-  }
+  // ============================================
+  // STEP 3: Calculate total watts and kW
+  // total_watts = panels_count × panel_watt
+  // kW_installed = total_watts / 1000
+  // ============================================
+  const totalWatts = panelsCount * panel.panelWatt;
+  const kWInstalled = totalWatts / 1000;
 
-  // Step 3: Consistency check (MANDATORY)
-  const consistency = checkConsistency(systemCost, kWInstalled);
+  // ============================================
+  // STEP 4: Calculate costs (PER PANEL METHOD)
+  // panel_cost = panels_count × panel_price
+  // other_costs = kW_installed × 8,000
+  // system_cost = panel_cost + other_costs
+  // ============================================
+  const panelCost = panelsCount * panel.panelPrice;
+  const otherCosts = kWInstalled * OTHER_COSTS_PER_KW;
+  const systemCost = panelCost + otherCosts;
 
-  // Step 4: Calculate real cost per kW
+  // ============================================
+  // STEP 5: Real cost per kW
+  // ============================================
   const costPerKWReal = kWInstalled > 0 ? systemCost / kWInstalled : 0;
 
-  // Step 5: Energy production calculations
+  // ============================================
+  // STEP 6: Consistency check
+  // expected_cost = kW_installed × 18,000
+  // ============================================
+  const expectedCost = kWInstalled * BASELINE_COST_PER_KW;
+  let costWarning: string | undefined;
+  
+  if (systemCost > expectedCost * CONSISTENCY_THRESHOLD) {
+    costWarning = `⚠️ Cost higher than expected. Calculated: ${formatCurrency(systemCost)}, Expected: ~${formatCurrency(expectedCost)}`;
+  } else if (systemCost < expectedCost * 0.5 && kWInstalled > 0) {
+    costWarning = `⚠️ Cost lower than expected. Calculated: ${formatCurrency(systemCost)}, Expected: ~${formatCurrency(expectedCost)}`;
+  }
+
+  // ============================================
+  // STEP 7: Energy production
+  // yearly = kW_installed × 1800
+  // ============================================
   const yearlyProduction = kWInstalled * ENERGY_YIELD_PER_KW;
   
   const totalIrradiance = climate.monthlyIrradiance.reduce((sum, v) => sum + v, 0);
@@ -262,25 +188,32 @@ export function calculateSolarFeasibility(
     return yearlyProduction * monthFraction;
   });
 
-  // Step 6: Savings calculations
+  // ============================================
+  // STEP 8: Savings
+  // yearly_savings = yearly_production × electricity_price
+  // ============================================
   const yearlySavings = yearlyProduction * electricityPrice;
   const monthlySavings = yearlySavings / 12;
 
-  // Step 7: Payback period
+  // ============================================
+  // STEP 9: Payback
+  // payback_years = system_cost / yearly_savings
+  // ============================================
   const paybackYears = yearlySavings > 0 ? systemCost / yearlySavings : 0;
 
-  // Step 8: Environmental impact (tons CO2 per year)
+  // ============================================
+  // STEP 10: CO2 reduction (tons/year)
+  // ============================================
   const co2Reduction = (yearlyProduction * CO2_FACTOR) / 1000;
 
   return {
     usableArea,
-    kWMax,
-    kWInstalled,
     panelsCount,
     totalWatts,
-    systemCost,
+    kWInstalled,
     panelCost,
     otherCosts,
+    systemCost,
     costPerKWReal,
     monthlyProduction,
     yearlyProduction,
@@ -289,10 +222,10 @@ export function calculateSolarFeasibility(
     paybackYears,
     co2Reduction,
     panelType,
-    pricingMode,
+    buildingType,
     climateData: climate,
-    expectedCost: consistency.expectedCost,
-    costWarning: consistency.warning,
+    expectedCost,
+    costWarning,
   };
 }
 
