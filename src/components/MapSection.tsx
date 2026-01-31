@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Building2 } from "lucide-react";
+import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Building2, Navigation } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as turf from "@turf/turf";
@@ -19,8 +19,6 @@ L.Icon.Default.mergeOptions({
 });
 
 interface MapSectionProps {
-  selectedCity: string;
-  onCityChange: (city: string) => void;
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
@@ -32,12 +30,8 @@ interface DetectedBuilding {
   area?: number;
 }
 
-// Preset cities for quick selection
-const presetCities = {
-  zagazig: { name: "Zagazig", lat: 30.5877, lng: 31.502 },
-  cairo: { name: "Cairo", lat: 30.0444, lng: 31.2357 },
-  alexandria: { name: "Alexandria", lat: 31.2001, lng: 29.9187 },
-};
+// Default location (Cairo)
+const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 
 const MIN_POLYGON_POINTS = 4;
 
@@ -45,8 +39,6 @@ type MapSize = "normal" | "large";
 type SelectionMode = "quickSelect" | "manualDraw";
 
 const MapSection = ({ 
-  selectedCity, 
-  onCityChange, 
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
@@ -57,12 +49,8 @@ const MapSection = ({
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [polygonPoints, setPolygonPoints] = useState<L.LatLng[]>([]);
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; name: string }>(() => {
-    const city = presetCities[selectedCity as keyof typeof presetCities];
-    return city 
-      ? { lat: city.lat, lng: city.lng, name: city.name }
-      : { lat: 30.0444, lng: 31.2357, name: "Cairo" };
-  });
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; name: string }>(DEFAULT_LOCATION);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
@@ -444,13 +432,33 @@ const MapSection = ({
     fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
   }, []);
 
-  // Handle city preset change
-  useEffect(() => {
-    const city = presetCities[selectedCity as keyof typeof presetCities];
-    if (city) {
-      updateLocation(city.lat, city.lng, city.name);
+  // Detect location using GPS
+  const detectLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      toast.error(t('map.gpsNotSupported'));
+      return;
     }
-  }, [selectedCity, updateLocation]);
+
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        await updateLocation(lat, lng);
+        toast.success(t('map.locationDetected'));
+        setIsDetectingLocation(false);
+      },
+      (error) => {
+        console.error('GPS error:', error);
+        toast.error(t('map.locationError'));
+        setIsDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  }, [t, updateLocation]);
 
   // Clear polygon
   const clearPolygon = useCallback(() => {
@@ -582,22 +590,26 @@ const MapSection = ({
           )}
         </div>
 
-        {/* City Quick Select */}
+        {/* GPS Location Button */}
         <div className="flex justify-center gap-3 mb-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          {Object.entries(presetCities).map(([key, data]) => (
-            <button
-              key={key}
-              onClick={() => onCityChange(key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedCity === key
-                  ? "bg-primary text-primary-foreground shadow-glow"
-                  : "bg-card text-foreground border border-border hover:border-primary/50"
-              }`}
-            >
-              <MapPin className="w-4 h-4" />
-              {isArabic ? (key === 'zagazig' ? 'الزقازيق' : key === 'cairo' ? 'القاهرة' : 'الإسكندرية') : data.name}
-            </button>
-          ))}
+          <Button
+            onClick={detectLocation}
+            disabled={isDetectingLocation}
+            variant="outline"
+            className="flex items-center gap-2 bg-card border-border hover:border-primary/50"
+          >
+            {isDetectingLocation ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t('map.detectingLocation')}
+              </>
+            ) : (
+              <>
+                <Navigation className="w-4 h-4" />
+                {t('map.detectLocation')}
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Selection Mode Toggle */}

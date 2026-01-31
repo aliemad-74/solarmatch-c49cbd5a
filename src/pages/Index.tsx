@@ -26,7 +26,6 @@ const Index = () => {
   const [avgUnitConsumption, setAvgUnitConsumption] = useState<number>(300);
   
   // Map/location state
-  const [selectedCity, setSelectedCity] = useState<string>("zagazig");
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [locationName, setLocationName] = useState<string>("");
   
@@ -111,8 +110,6 @@ const Index = () => {
       
       <main>
         <MapSection 
-          selectedCity={selectedCity}
-          onCityChange={setSelectedCity}
           onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
           onClimateDataFetched={setClimateData}
           onLocationChange={setLocationName}
