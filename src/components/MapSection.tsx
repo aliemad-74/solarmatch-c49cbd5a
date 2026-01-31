@@ -323,24 +323,44 @@ const MapSection = ({
     }
   }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
-  // Search for location
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    
-    setIsSearching(true);
-    try {
-      const results = await searchLocation(searchQuery);
-      setSearchResults(results);
-      
-      if (results.length > 0) {
-        const first = results[0];
-        updateLocation(first.lat, first.lng, first.name.split(",")[0]);
-      }
-    } catch (error) {
-      console.error("Search failed:", error);
-    } finally {
-      setIsSearching(false);
+  // Debounced search ref
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-search as user types with debounce
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
+
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await searchLocation(searchQuery);
+        setSearchResults(results);
+      } catch (error) {
+        console.error("Search failed:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Select a search result
+  const selectSearchResult = (result: { lat: number; lng: number; name: string }) => {
+    updateLocation(result.lat, result.lng, result.name.split(",")[0]);
+    setSearchResults([]);
+    setSearchQuery("");
   };
 
   return (
@@ -358,42 +378,31 @@ const MapSection = ({
         </div>
 
         {/* Search Bar */}
-        <div className="max-w-lg mx-auto mb-6 animate-slide-up">
-          <div className="relative flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search any location in Egypt..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-10 h-12 bg-card border-border/50 shadow-card focus:shadow-glow transition-shadow"
-              />
-            </div>
-            <Button 
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="h-12 px-6 gradient-solar text-primary-foreground shadow-glow hover:opacity-90 transition-opacity"
-            >
-              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
-            </Button>
+        <div className="max-w-lg mx-auto mb-6 animate-slide-up relative z-50">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+            <Input
+              type="text"
+              placeholder="Search any location in Egypt..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-10 h-12 bg-card border-border/50 shadow-card focus:shadow-glow transition-shadow"
+            />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
+            )}
           </div>
           
           {/* Search Results Dropdown */}
-          {searchResults.length > 1 && (
-            <div className="absolute z-50 mt-2 w-full max-w-lg bg-card border border-border rounded-lg shadow-lg">
+          {searchResults.length > 0 && (
+            <div className="absolute left-0 right-0 z-[100] mt-2 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
               {searchResults.map((result, index) => (
                 <button
                   key={index}
-                  onClick={() => {
-                    updateLocation(result.lat, result.lng, result.name.split(",")[0]);
-                    setSearchResults([]);
-                    setSearchQuery("");
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-muted text-sm truncate first:rounded-t-lg last:rounded-b-lg"
+                  onClick={() => selectSearchResult(result)}
+                  className="w-full px-4 py-3 text-left hover:bg-primary/10 text-sm truncate border-b border-border/50 last:border-b-0 transition-colors"
                 >
-                  {result.name}
+                  <span className="text-foreground">{result.name}</span>
                 </button>
               ))}
             </div>
