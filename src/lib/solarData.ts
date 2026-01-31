@@ -39,8 +39,8 @@ export const systemPackages: Record<string, SystemPackage> = {
     pvType: "standard_mono",
     efficiency: "18%",
     areaPerKW: 7,
-    costPerKW: 21000,
-    costRange: "21,000",
+    costPerKW: 19000,
+    costRange: "19,000",
     justification: "Balanced choice with standard monocrystalline modules for optimal price-performance.",
   },
   premium: {
@@ -48,8 +48,8 @@ export const systemPackages: Record<string, SystemPackage> = {
     pvType: "high_power_mono",
     efficiency: "20%+",
     areaPerKW: 6,
-    costPerKW: 30000,
-    costRange: "30,000",
+    costPerKW: 26000,
+    costRange: "26,000",
     justification: "Highest performance per m² using premium high-power monocrystalline modules.",
   },
 };
