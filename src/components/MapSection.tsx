@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2 } from "lucide-react";
+import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Square } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as turf from "@turf/turf";
@@ -30,8 +30,10 @@ const presetCities = {
   alexandria: { name: "Alexandria", lat: 31.2001, lng: 29.9187 },
 };
 
-const MAX_POLYGON_POINTS = 7;
+const MAX_POLYGON_POINTS = 12;
 const MIN_POLYGON_POINTS = 4;
+
+type MapSize = "normal" | "semi" | "full";
 
 const MapSection = ({ 
   selectedCity, 
@@ -54,6 +56,7 @@ const MapSection = ({
   });
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
+  const [mapSize, setMapSize] = useState<MapSize>("normal");
   
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -84,6 +87,15 @@ const MapSection = ({
       }
     };
   }, []);
+
+  // Invalidate map size when container size changes
+  useEffect(() => {
+    if (mapRef.current) {
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 300);
+    }
+  }, [mapSize]);
 
   // Reference to track if we should complete polygon
   const shouldCompleteRef = useRef<L.LatLng[] | null>(null);
@@ -496,9 +508,64 @@ const MapSection = ({
           </div>
         )}
 
+        {/* Map Size Toggle */}
+        <div className="flex justify-center gap-2 mb-4">
+          <Button
+            onClick={() => setMapSize("normal")}
+            variant={mapSize === "normal" ? "default" : "outline"}
+            size="sm"
+            className="flex items-center gap-1"
+          >
+            <Minimize2 className="w-4 h-4" />
+            Normal
+          </Button>
+          <Button
+            onClick={() => setMapSize("semi")}
+            variant={mapSize === "semi" ? "default" : "outline"}
+            size="sm"
+            className="flex items-center gap-1"
+          >
+            <Square className="w-4 h-4" />
+            Large
+          </Button>
+          <Button
+            onClick={() => setMapSize("full")}
+            variant={mapSize === "full" ? "default" : "outline"}
+            size="sm"
+            className="flex items-center gap-1"
+          >
+            <Maximize2 className="w-4 h-4" />
+            Full Screen
+          </Button>
+        </div>
+
         {/* Map Container */}
-        <div className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in" style={{ animationDelay: "0.2s" }}>
-          <div className="aspect-[16/9] md:aspect-[21/9] bg-muted relative">
+        <div 
+          className={`relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in transition-all duration-300 ${
+            mapSize === "full" ? "fixed inset-4 z-[200]" : ""
+          }`} 
+          style={{ animationDelay: "0.2s" }}
+        >
+          {mapSize === "full" && (
+            <Button
+              onClick={() => setMapSize("normal")}
+              variant="secondary"
+              size="sm"
+              className="absolute top-4 right-4 z-[1001] shadow-lg"
+            >
+              <Minimize2 className="w-4 h-4 mr-1" />
+              Exit Full Screen
+            </Button>
+          )}
+          <div 
+            className={`bg-muted relative ${
+              mapSize === "normal" 
+                ? "aspect-[16/9] md:aspect-[21/9]" 
+                : mapSize === "semi" 
+                  ? "aspect-square md:aspect-[16/9] min-h-[500px]" 
+                  : "h-full"
+            }`}
+          >
             <div 
               ref={mapContainerRef} 
               className="w-full h-full z-0"
