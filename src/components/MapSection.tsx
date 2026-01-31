@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Building2, Navigation } from "lucide-react";
+import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as turf from "@turf/turf";
@@ -36,7 +36,6 @@ const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
 
 type MapSize = "normal" | "large";
-type SelectionMode = "quickSelect" | "manualDraw";
 
 const MapSection = ({ 
   onAreaCalculated,
@@ -55,8 +54,7 @@ const MapSection = ({
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
   
-  // Quick Select mode states
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>("quickSelect");
+  // Building detection states
   const [isSearchingBuildings, setIsSearchingBuildings] = useState(false);
   const [detectedBuildings, setDetectedBuildings] = useState<DetectedBuilding[]>([]);
   const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
@@ -130,7 +128,8 @@ const MapSection = ({
       
       if (!buildings || buildings.length === 0) {
         toast.info(t('map.noBuildingsFound'));
-        setSelectionMode("manualDraw");
+        // Switch to manual draw mode
+        setIsDrawingMode(true);
         return;
       }
 
@@ -246,15 +245,12 @@ const MapSection = ({
     }
   });
 
-  // Update click handler when drawing mode or selection mode changes
+  // Update click handler when drawing mode changes
   useEffect(() => {
     if (mapRef.current) {
       mapRef.current.off("click");
       mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
-        if (selectionMode === "quickSelect" && !isDrawingMode) {
-          // Quick select mode - fetch buildings at clicked location
-          fetchBuildingsAtLocation(e.latlng.lat, e.latlng.lng);
-        } else if (isDrawingMode) {
+        if (isDrawingMode) {
           setPolygonPoints(prev => {
             // Check if clicking near the first point to close polygon
             if (prev.length >= MIN_POLYGON_POINTS) {
@@ -267,10 +263,13 @@ const MapSection = ({
             }
             return [...prev, e.latlng];
           });
+        } else {
+          // Detect buildings at clicked location
+          fetchBuildingsAtLocation(e.latlng.lat, e.latlng.lng);
         }
       });
     }
-  }, [isDrawingMode, selectionMode, fetchBuildingsAtLocation]);
+  }, [isDrawingMode, fetchBuildingsAtLocation]);
 
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
@@ -285,20 +284,20 @@ const MapSection = ({
     return Math.round(areaInSqMeters * 100) / 100;
   }, []);
 
-  // Recalculate area whenever points change (for dragging updates)
+  // Recalculate area whenever points change (for dragging updates in manual draw mode)
   useEffect(() => {
-    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS && selectionMode === "manualDraw") {
+    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS && detectedBuildings.length === 0) {
       const area = calculatePolygonArea(polygonPoints);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) {
         onAreaCalculated(area);
       }
     }
-  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated, selectionMode]);
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated, detectedBuildings.length]);
 
-  // Update polygon visualization
+  // Update polygon visualization for manual drawing
   useEffect(() => {
-    if (!mapRef.current || selectionMode === "quickSelect") return;
+    if (!mapRef.current || detectedBuildings.length > 0) return;
 
     // Clear existing polygon and markers
     if (polygonLayerRef.current) {
@@ -354,7 +353,7 @@ const MapSection = ({
 
       pointMarkersRef.current.push(marker as any);
     });
-  }, [polygonPoints, isDrawingMode, selectionMode]);
+  }, [polygonPoints, isDrawingMode, detectedBuildings.length]);
 
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
@@ -493,15 +492,10 @@ const MapSection = ({
     }
   }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
-  // Switch selection mode
-  const switchSelectionMode = useCallback((mode: SelectionMode) => {
-    setSelectionMode(mode);
+  // Start manual drawing mode
+  const startManualDraw = useCallback(() => {
     clearPolygon();
-    if (mode === "manualDraw") {
-      setIsDrawingMode(true);
-    } else {
-      setIsDrawingMode(false);
-    }
+    setIsDrawingMode(true);
   }, [clearPolygon]);
 
   // Debounced search ref
@@ -612,24 +606,40 @@ const MapSection = ({
           </Button>
         </div>
 
-        {/* Selection Mode Toggle */}
+        {/* Drawing Controls - only show when in drawing mode or when we have a polygon */}
         <div className="flex justify-center gap-3 mb-4 animate-slide-up" style={{ animationDelay: "0.15s" }}>
-          <Button
-            onClick={() => switchSelectionMode("quickSelect")}
-            variant={selectionMode === "quickSelect" ? "default" : "outline"}
-            className={`flex items-center gap-2 ${selectionMode === "quickSelect" ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
-          >
-            <Building2 className="w-4 h-4" />
-            {t('map.quickSelect')}
-          </Button>
-          <Button
-            onClick={() => switchSelectionMode("manualDraw")}
-            variant={selectionMode === "manualDraw" ? "default" : "outline"}
-            className={`flex items-center gap-2 ${selectionMode === "manualDraw" ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
-          >
-            <PenTool className="w-4 h-4" />
-            {t('map.manualDraw')}
-          </Button>
+          {!isDrawingMode && !calculatedArea && (
+            <Button
+              onClick={startManualDraw}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <PenTool className="w-4 h-4" />
+              {t('map.manualDraw')}
+            </Button>
+          )}
+          {isDrawingMode && (
+            <>
+              <Button
+                onClick={toggleDrawingMode}
+                variant="default"
+                className="flex items-center gap-2 gradient-solar text-primary-foreground shadow-glow"
+              >
+                <MousePointer className="w-4 h-4" />
+                {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
+              </Button>
+              {polygonPoints.length > 0 && (
+                <Button
+                  onClick={undoLastPoint}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Undo2 className="w-4 h-4" />
+                  {isArabic ? 'تراجع' : 'Undo'}
+                </Button>
+              )}
+            </>
+          )}
           {(polygonPoints.length > 0 || calculatedArea !== null) && (
             <Button
               onClick={clearPolygon}
@@ -642,39 +652,6 @@ const MapSection = ({
           )}
         </div>
 
-        {/* Manual Draw Controls */}
-        {selectionMode === "manualDraw" && (
-          <div className="flex justify-center gap-3 mb-4 animate-fade-in">
-            <Button
-              onClick={toggleDrawingMode}
-              variant={isDrawingMode ? "default" : "outline"}
-              className={`flex items-center gap-2 ${isDrawingMode ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
-            >
-              {isDrawingMode ? (
-                <>
-                  <MousePointer className="w-4 h-4" />
-                  {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
-                </>
-              ) : (
-                <>
-                  <PenTool className="w-4 h-4" />
-                  {isArabic ? 'ارسم السطح' : 'Draw Rooftop'}
-                </>
-              )}
-            </Button>
-            {isDrawingMode && polygonPoints.length > 0 && (
-              <Button
-                onClick={undoLastPoint}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Undo2 className="w-4 h-4" />
-                {isArabic ? 'تراجع' : 'Undo'}
-              </Button>
-            )}
-          </div>
-        )}
-
         {/* Instructions */}
         <div className="text-center mb-4 animate-fade-in">
           {isSearchingBuildings ? (
@@ -682,10 +659,6 @@ const MapSection = ({
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm font-medium">{t('map.searchingBuildings')}</span>
             </div>
-          ) : selectionMode === "quickSelect" && detectedBuildings.length === 0 && !calculatedArea ? (
-            <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
-              {t('map.clickToDetect')}
-            </p>
           ) : isDrawingMode ? (
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
               {polygonPoints.length < MIN_POLYGON_POINTS 
@@ -695,6 +668,10 @@ const MapSection = ({
                 : (isArabic
                     ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو 'إنهاء الرسم'`
                     : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`)}
+            </p>
+          ) : !calculatedArea ? (
+            <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
+              {t('map.clickToDetect')}
             </p>
           ) : null}
         </div>
@@ -746,7 +723,7 @@ const MapSection = ({
             <div 
               ref={mapContainerRef} 
               className="w-full h-full z-0"
-              style={{ cursor: isDrawingMode ? "crosshair" : selectionMode === "quickSelect" ? "pointer" : "grab" }}
+              style={{ cursor: isDrawingMode ? "crosshair" : "pointer" }}
             />
           </div>
           
