@@ -1,5 +1,5 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug } from "lucide-react";
-import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios } from "@/lib/solarData";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package } from "lucide-react";
+import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import ResultCard from "./ResultCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
@@ -97,8 +97,96 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
           </div>
         )}
 
+        {/* System Package Options */}
+        {results.packageOptions && results.packageOptions.length > 0 && (
+          <div className="mb-10 animate-fade-in" style={{ animationDelay: "100ms" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="w-5 h-5 text-primary" />
+              <h4 className="font-display text-lg font-semibold text-foreground">System Package Options</h4>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              {results.packageOptions.map((option, index) => {
+                const isSelected = option.packageKey === results.selectedPackage;
+                const bgColors = {
+                  economy: "from-solar-green/5 to-solar-green/10",
+                  standard: "from-primary/5 to-primary/10", 
+                  premium: "from-solar-gold/5 to-solar-gold/10",
+                };
+                const borderColors = {
+                  economy: isSelected ? "border-solar-green" : "border-solar-green/30",
+                  standard: isSelected ? "border-primary" : "border-primary/30",
+                  premium: isSelected ? "border-solar-gold" : "border-solar-gold/30",
+                };
+                const accentColors = {
+                  economy: "text-solar-green",
+                  standard: "text-primary",
+                  premium: "text-solar-gold",
+                };
+                
+                return (
+                  <div 
+                    key={option.packageKey}
+                    className={`relative p-5 rounded-xl border-2 bg-gradient-to-br ${bgColors[option.packageKey as keyof typeof bgColors]} ${borderColors[option.packageKey as keyof typeof borderColors]} transition-all ${isSelected ? "shadow-lg scale-[1.02]" : "hover:scale-[1.01]"}`}
+                  >
+                    {isSelected && (
+                      <div className={`absolute -top-3 left-4 px-2 py-0.5 text-xs font-semibold rounded-full bg-card border ${borderColors[option.packageKey as keyof typeof borderColors]} ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
+                        Selected
+                      </div>
+                    )}
+                    
+                    <div className="mb-3">
+                      <h5 className={`font-display text-lg font-bold ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
+                        {option.package.name}
+                      </h5>
+                      <p className="text-xs text-muted-foreground">
+                        {option.package.efficiency} efficiency • {option.package.areaPerKW} m²/kW
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Cost per kW</span>
+                        <span className="font-mono font-semibold text-foreground">
+                          {option.package.costPerKW.toLocaleString()} EGP
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Installed</span>
+                        <span className="font-mono font-semibold text-foreground">
+                          {option.kWInstalled} kW
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-border/50">
+                        <span className="text-sm font-medium text-foreground">Total Cost</span>
+                        <span className={`font-mono text-lg font-bold ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
+                          {formatCurrency(option.totalCost)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
+                      {option.package.justification}
+                    </div>
+                    
+                    <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-2 gap-2 text-center text-xs">
+                      <div>
+                        <p className="font-semibold text-foreground">{formatNumber(option.energyYear, 0)} kWh</p>
+                        <p className="text-muted-foreground">Yearly</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{formatNumber(option.paybackYears, 1)} yrs</p>
+                        <p className="text-muted-foreground">Payback</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
           <ResultCard
             icon={<Sun className="w-6 h-6" />}
             title="Installed Capacity"
@@ -108,18 +196,11 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
             delay={0}
           />
           <ResultCard
-            icon={<DollarSign className="w-6 h-6" />}
-            title="System Cost"
-            value={formatCurrency(results.totalCost)}
-            subtitle={`${scenario.label} scenario`}
-            delay={100}
-          />
-          <ResultCard
             icon={<Zap className="w-6 h-6" />}
             title="Yearly Production"
             value={`${formatNumber(results.energyYear, 0)} kWh`}
             subtitle={`${formatNumber(results.energyMonth, 0)} kWh/month`}
-            delay={200}
+            delay={100}
           />
           <ResultCard
             icon={<TrendingUp className="w-6 h-6" />}
@@ -127,14 +208,14 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
             value={formatCurrency(results.savingsYear)}
             subtitle={`${formatCurrency(results.savingsMonth)}/month`}
             highlight
-            delay={300}
+            delay={200}
           />
           <ResultCard
             icon={<Calendar className="w-6 h-6" />}
             title="Payback Period"
             value={`${formatNumber(results.paybackYears)} years`}
             subtitle="Return on investment"
-            delay={400}
+            delay={300}
           />
           <ResultCard
             icon={<Leaf className="w-6 h-6" />}
@@ -142,7 +223,7 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
             value={`${formatNumber(results.co2Saved)} tons`}
             subtitle="Per year saved"
             highlight
-            delay={500}
+            delay={400}
           />
         </div>
 

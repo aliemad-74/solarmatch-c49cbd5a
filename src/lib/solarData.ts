@@ -11,33 +11,73 @@ export const CO2_FACTOR = 0.55;               // kg CO2 per kWh
 export const SYSTEM_LIFETIME_YEARS = 25;
 
 // ================================================
-// PV TYPES - Area per kW
+// SYSTEM PACKAGES (combines PV type + cost)
 // ================================================
 
+export interface SystemPackage {
+  name: string;
+  pvType: "polycrystalline" | "standard_mono" | "high_power_mono";
+  efficiency: string;
+  areaPerKW: number;
+  costPerKW: number;
+  costRange: string;
+  justification: string;
+}
+
+export const systemPackages: Record<string, SystemPackage> = {
+  economy: {
+    name: "Economy Value",
+    pvType: "polycrystalline",
+    efficiency: "16%",
+    areaPerKW: 8.5,
+    costPerKW: 16000, // Mid-range: 15,000–17,000
+    costRange: "15,000 – 17,000",
+    justification: "Uses less expensive polycrystalline panels with good value for larger installations.",
+  },
+  standard: {
+    name: "Standard Balanced",
+    pvType: "standard_mono",
+    efficiency: "18%",
+    areaPerKW: 7,
+    costPerKW: 18250, // Mid-range: 17,000–19,500
+    costRange: "17,000 – 19,500",
+    justification: "Balanced choice with standard monocrystalline modules for optimal price-performance.",
+  },
+  premium: {
+    name: "Premium High-Density",
+    pvType: "high_power_mono",
+    efficiency: "20%+",
+    areaPerKW: 6,
+    costPerKW: 21500, // Mid-range: 20,000–23,000
+    costRange: "20,000 – 23,000",
+    justification: "Highest performance per m² using premium high-power monocrystalline modules.",
+  },
+};
+
+export type PackageType = keyof typeof systemPackages;
+
+// Legacy PV types (for backward compatibility)
 export const pvTypes = {
   A_high_power_mono: { 
     label: "High-Power Mono", 
     description: "540-700W monocrystalline, highest efficiency",
-    areaPerKW: 6,  // m² needed per kW
+    areaPerKW: 6,
   },
   B_standard_mono: { 
     label: "Standard Mono", 
     description: "360-450W monocrystalline, balanced choice",
-    areaPerKW: 7,  // m² needed per kW
+    areaPerKW: 7,
   },
   C_poly_economy: { 
     label: "Economy Poly", 
     description: "Polycrystalline, budget-friendly, needs more space",
-    areaPerKW: 8.5, // m² needed per kW
+    areaPerKW: 8.5,
   },
 };
 
 export type PVType = keyof typeof pvTypes;
 
-// ================================================
-// COST SCENARIOS (per kW)
-// ================================================
-
+// Legacy cost scenarios (for backward compatibility)
 export const costScenarios = {
   low: { 
     label: "Budget", 
@@ -126,11 +166,22 @@ export function getConnectionRecommendation(coverageRatio: number): ConnectionRe
 // CALCULATION RESULT INTERFACE
 // ================================================
 
+export interface PackageCalculation {
+  packageKey: PackageType;
+  package: SystemPackage;
+  kWInstalled: number;
+  totalCost: number;
+  energyYear: number;
+  savingsYear: number;
+  paybackYears: number;
+  coverageRatio: number;
+}
+
 export interface SolarCalculation {
   // Step 1: Usable area
   usableArea: number;
   
-  // Step 2: Max installable power
+  // Step 2: Max installable power (based on selected package)
   kWMax: number;
   
   // Step 3: Practical installed power
@@ -145,7 +196,7 @@ export interface SolarCalculation {
   savingsYear: number;
   savingsMonth: number;
   
-  // Step 8: System cost
+  // Step 8: System cost (for selected package)
   totalCost: number;
   costPerKW: number;
   
@@ -160,6 +211,10 @@ export interface SolarCalculation {
   
   // Connection recommendation
   connectionRecommendation: ConnectionRecommendation;
+  
+  // Package options (all three calculated)
+  packageOptions: PackageCalculation[];
+  selectedPackage: PackageType;
   
   // Building Mode data
   buildingMode: boolean;
@@ -196,26 +251,71 @@ export function calculateSolarFeasibility(
   avgUnitConsumption: number = 300
 ): SolarCalculation {
   const climate = climateData || defaultClimateData;
-  const pv = pvTypes[pvType];
   const building = buildingTypes[buildingType];
-  const scenario = costScenarios[costScenario];
   const warnings: string[] = [];
 
   // ============================================
+  // CALCULATE ALL THREE PACKAGE OPTIONS
+  // ============================================
+  const packageOptions: PackageCalculation[] = (Object.entries(systemPackages) as [PackageType, SystemPackage][]).map(([key, pkg]) => {
+    // Step 1: Usable area
+    const usableArea = rooftopArea * building.usableFraction;
+    
+    // Step 2: Max kW for this package's panel type
+    const kWMax = usableArea / pkg.areaPerKW;
+    
+    // Step 3: Practical installed
+    const kWInstalled = Math.floor(kWMax * 0.95);
+    
+    // Step 4: Energy production
+    const energyYear = kWInstalled * SPECIFIC_YIELD;
+    
+    // Step 6: Savings
+    const savingsYear = energyYear * electricityPrice;
+    
+    // Step 8: Cost
+    const totalCost = kWInstalled * pkg.costPerKW;
+    
+    // Step 9: Payback
+    const paybackYears = savingsYear > 0 ? totalCost / savingsYear : 0;
+    
+    // Step 10: Coverage
+    const annualConsumption = effectiveMonthlyConsumption * 12;
+    const coverageRatio = annualConsumption > 0 ? energyYear / annualConsumption : 0;
+    
+    return {
+      packageKey: key,
+      package: pkg,
+      kWInstalled,
+      totalCost,
+      energyYear,
+      savingsYear,
+      paybackYears,
+      coverageRatio,
+    };
+  });
+
+  // Use selected PV type to determine which package to show as "selected"
+  const selectedPackage: PackageType = 
+    pvType === "A_high_power_mono" ? "premium" :
+    pvType === "C_poly_economy" ? "economy" : "standard";
+  
+  const selectedPkg = systemPackages[selectedPackage];
+  const pv = pvTypes[pvType];
+  const scenario = costScenarios[costScenario];
+
+  // ============================================
   // STEP 1: Compute usable area
-  // usable_area = roof_area_m2 × usable_fraction
   // ============================================
   const usableArea = rooftopArea * building.usableFraction;
 
   // ============================================
   // STEP 2: Compute max installable power
-  // kW_max = usable_area / area_per_kW[pv_type]
   // ============================================
   const kWMax = usableArea / pv.areaPerKW;
 
   // ============================================
-  // STEP 3: Practical installable power
-  // kW_installed = floor(kW_max × 0.95)
+  // STEP 3: Practical installed power
   // ============================================
   const kWInstalled = Math.floor(kWMax * 0.95);
 
@@ -226,7 +326,6 @@ export function calculateSolarFeasibility(
 
   // ============================================
   // STEP 4: Annual energy production
-  // Energy_year = kW_installed × specific_yield
   // ============================================
   const energyYear = kWInstalled * SPECIFIC_YIELD;
 
@@ -286,8 +385,6 @@ export function calculateSolarFeasibility(
 
   // ============================================
   // STEP 10: Coverage ratio & Building Mode
-  // Coverage = Energy_year / Annual_consumption
-  // units_covered = Energy_year / (avg_unit_consumption × 12)
   // ============================================
   const annualConsumption = effectiveMonthlyConsumption * 12;
   const coverageRatio = annualConsumption > 0 ? energyYear / annualConsumption : 0;
@@ -298,7 +395,6 @@ export function calculateSolarFeasibility(
 
   // ============================================
   // STEP 11: CO2 impact (tons/year)
-  // CO2_saved = Energy_year × CO2_factor
   // ============================================
   const co2Saved = (energyYear * CO2_FACTOR) / 1000; // Convert to tons
 
@@ -325,6 +421,8 @@ export function calculateSolarFeasibility(
     coverageRatio,
     co2Saved,
     connectionRecommendation,
+    packageOptions,
+    selectedPackage,
     buildingMode,
     numberOfUnits,
     avgUnitConsumption,

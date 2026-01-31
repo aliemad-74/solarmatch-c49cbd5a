@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD } from "@/lib/solarData";
+import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD, systemPackages } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
@@ -63,6 +63,13 @@ const InputPanel = ({
   const building = buildingTypes[buildingType];
   const scenario = costScenarios[costScenario];
   
+  // Get selected package based on PV type
+  const selectedPackage = pvType === "A_high_power_mono" 
+    ? systemPackages.premium 
+    : pvType === "C_poly_economy" 
+      ? systemPackages.economy 
+      : systemPackages.standard;
+  
   // Calculate effective consumption
   const effectiveMonthlyConsumption = buildingMode 
     ? numberOfUnits * avgUnitConsumption 
@@ -72,7 +79,7 @@ const InputPanel = ({
   const usableArea = rooftopArea * building.usableFraction;
   const kWMax = usableArea / pv.areaPerKW;
   const kWInstalled = Math.floor(kWMax * 0.95);
-  const totalCost = kWInstalled * scenario.costPerKW;
+  const totalCost = kWInstalled * selectedPackage.costPerKW;
   const energyYear = kWInstalled * SPECIFIC_YIELD;
 
   const climate = climateData ?? defaultClimateData;
@@ -170,54 +177,43 @@ const InputPanel = ({
             <p className="text-xs text-muted-foreground">{building.description}</p>
           </div>
 
-          {/* PV Type Selection */}
+          {/* PV Type / Package Selection */}
           <div className="space-y-3 mb-6">
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Cpu className="w-4 h-4 text-muted-foreground" />
-              PV Type (determines area per kW)
+              System Package (Panel Type + Cost)
             </Label>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.entries(pvTypes) as [PVType, typeof pvTypes[PVType]][]).map(([key, data]) => (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { key: "C_poly_economy" as PVType, pkg: systemPackages.economy },
+                { key: "B_standard_mono" as PVType, pkg: systemPackages.standard },
+                { key: "A_high_power_mono" as PVType, pkg: systemPackages.premium },
+              ].map(({ key, pkg }) => (
                 <button
                   key={key}
                   onClick={() => setPvType(key)}
-                  className={`p-3 rounded-xl border text-left transition-all ${
+                  className={`p-4 rounded-xl border text-left transition-all ${
                     pvType === key 
-                      ? "bg-primary/10 border-primary text-primary" 
+                      ? "bg-primary/10 border-primary text-primary shadow-md" 
                       : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/50"
                   }`}
                 >
-                  <p className="font-medium text-sm">{data.label}</p>
-                  <p className="text-xs opacity-70">{data.areaPerKW} m²/kW</p>
+                  <p className="font-semibold text-sm">{pkg.name}</p>
+                  <p className="text-xs opacity-70 mt-1">{pkg.efficiency} efficiency</p>
+                  <p className="text-xs opacity-70">{pkg.areaPerKW} m²/kW</p>
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    <p className="text-xs font-medium">{pkg.costRange} EGP/kW</p>
+                  </div>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">{pv.description}</p>
-          </div>
-
-          {/* Cost Scenario Selection */}
-          <div className="space-y-3 mb-6">
-            <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
-              Cost Scenario (EGP per kW)
-            </Label>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.entries(costScenarios) as [CostScenario, typeof costScenarios[CostScenario]][]).map(([key, data]) => (
-                <button
-                  key={key}
-                  onClick={() => setCostScenario(key)}
-                  className={`p-3 rounded-xl border text-left transition-all ${
-                    costScenario === key 
-                      ? "bg-primary/10 border-primary text-primary" 
-                      : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  <p className="font-medium text-sm">{data.label}</p>
-                  <p className="text-xs opacity-70">{data.costPerKW.toLocaleString()} EGP/kW</p>
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">{scenario.description}</p>
+            <p className="text-xs text-muted-foreground">
+              {pvType === "A_high_power_mono" 
+                ? systemPackages.premium.justification
+                : pvType === "C_poly_economy"
+                  ? systemPackages.economy.justification
+                  : systemPackages.standard.justification}
+            </p>
           </div>
 
           {/* Electricity Price Slider */}
@@ -354,7 +350,10 @@ const InputPanel = ({
             </div>
             <div className="mt-3 pt-3 border-t border-border text-center">
               <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{kWInstalled} kW</span> × <span className="font-medium text-foreground">{scenario.costPerKW.toLocaleString()} EGP/kW</span> = <span className="font-bold text-primary">{totalCost.toLocaleString()} EGP</span>
+                <span className="font-medium text-foreground">{kWInstalled} kW</span> × <span className="font-medium text-foreground">{selectedPackage.costPerKW.toLocaleString()} EGP/kW</span> = <span className="font-bold text-primary">{totalCost.toLocaleString()} EGP</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedPackage.name} Package
               </p>
               {buildingMode && (
                 <p className="text-sm text-muted-foreground mt-1">
