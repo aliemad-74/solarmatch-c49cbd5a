@@ -2,3 +2,6 @@ project_id = "hgskuophhidgbuluxiel"
 
 [functions.solar-advisor]
 verify_jwt = false
+
+[functions.building-footprints]
+verify_jwt = false
