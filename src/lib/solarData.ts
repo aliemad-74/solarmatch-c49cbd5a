@@ -30,8 +30,8 @@ export const systemPackages: Record<string, SystemPackage> = {
     pvType: "polycrystalline",
     efficiency: "16%",
     areaPerKW: 8.5,
-    costPerKW: 16000, // Mid-range: 15,000–17,000
-    costRange: "15,000 – 17,000",
+    costPerKW: 15000,
+    costRange: "15,000",
     justification: "Uses less expensive polycrystalline panels with good value for larger installations.",
   },
   standard: {
@@ -39,8 +39,8 @@ export const systemPackages: Record<string, SystemPackage> = {
     pvType: "standard_mono",
     efficiency: "18%",
     areaPerKW: 7,
-    costPerKW: 18250, // Mid-range: 17,000–19,500
-    costRange: "17,000 – 19,500",
+    costPerKW: 21000,
+    costRange: "21,000",
     justification: "Balanced choice with standard monocrystalline modules for optimal price-performance.",
   },
   premium: {
@@ -48,8 +48,8 @@ export const systemPackages: Record<string, SystemPackage> = {
     pvType: "high_power_mono",
     efficiency: "20%+",
     areaPerKW: 6,
-    costPerKW: 21500, // Mid-range: 20,000–23,000
-    costRange: "20,000 – 23,000",
+    costPerKW: 30000,
+    costRange: "30,000",
     justification: "Highest performance per m² using premium high-power monocrystalline modules.",
   },
 };
