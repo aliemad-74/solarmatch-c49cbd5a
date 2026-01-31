@@ -85,9 +85,11 @@ const InputPanel = ({
   const totalCost = kWInstalled * selectedPackage.costPerKW;
   const energyYear = kWInstalled * SPECIFIC_YIELD;
 
+  // Only use real climate data if available (not default fallback)
+  const hasRealClimateData = climateData !== null && climateData !== undefined;
   const climate = climateData ?? defaultClimateData;
   
-  // Find peak months
+  // Find peak months (only relevant when we have real data)
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const MONTHS_AR = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
   const monthNames = isArabic ? MONTHS_AR : MONTHS;
@@ -377,56 +379,61 @@ const InputPanel = ({
           </Button>
         </div>
 
-        {/* ==================== AUTO INSIGHTS (COLLAPSIBLE) ==================== */}
-        <Collapsible open={showInsights} onOpenChange={setShowInsights}>
-          <div className="bg-card rounded-2xl border border-border/50 shadow-card overflow-hidden">
-            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-solar-green" />
-                <span className="font-medium text-foreground">{t('insights.title')}</span>
-              </div>
-              <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showInsights ? "rotate-180" : ""}`} />
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent>
-              <div className="p-4 pt-0 grid md:grid-cols-3 gap-4">
-                {/* Solar Irradiance */}
-                <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sun className="w-5 h-5 text-solar-gold" />
-                    <span className="font-medium text-sm">{t('insights.solarIrradiance')}</span>
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">{climate.annualAvgIrradiance.toFixed(1)} kWh/m²/day</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t('insights.peakMonths')}: {peakMonths.join(", ")}</p>
+        {/* ==================== AUTO INSIGHTS (COLLAPSIBLE) - Only show when location is detected ==================== */}
+        {hasRealClimateData && (
+          <Collapsible open={showInsights} onOpenChange={setShowInsights}>
+            <div className="bg-card rounded-2xl border border-border/50 shadow-card overflow-hidden">
+              <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-solar-green" />
+                  <span className="font-medium text-foreground">{t('insights.title')}</span>
+                  {locationName && (
+                    <span className="text-xs text-muted-foreground">({locationName})</span>
+                  )}
                 </div>
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showInsights ? "rotate-180" : ""}`} />
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <div className="p-4 pt-0 grid md:grid-cols-3 gap-4">
+                  {/* Solar Irradiance */}
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sun className="w-5 h-5 text-solar-gold" />
+                      <span className="font-medium text-sm">{t('insights.solarIrradiance')}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">{climate.annualAvgIrradiance.toFixed(1)} kWh/m²/day</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('insights.peakMonths')}: {peakMonths.join(", ")}</p>
+                  </div>
 
-                {/* Temperature */}
-                <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Thermometer className="w-5 h-5 text-orange-500" />
-                    <span className="font-medium text-sm">{t('insights.temperature')}</span>
+                  {/* Temperature */}
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Thermometer className="w-5 h-5 text-orange-500" />
+                      <span className="font-medium text-sm">{t('insights.temperature')}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">{avgTemp.toFixed(0)}°C {t('insights.avgAnnual')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {avgTemp > 28 
+                        ? (isArabic ? "درجات الحرارة المرتفعة قد تقلل الكفاءة 5-10%" : "High temps may reduce efficiency 5-10%") 
+                        : (isArabic ? "مناسب لكفاءة الألواح" : "Favorable for panel efficiency")}
+                    </p>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">{avgTemp.toFixed(0)}°C {t('insights.avgAnnual')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {avgTemp > 28 
-                      ? (isArabic ? "درجات الحرارة المرتفعة قد تقلل الكفاءة 5-10%" : "High temps may reduce efficiency 5-10%") 
-                      : (isArabic ? "مناسب لكفاءة الألواح" : "Favorable for panel efficiency")}
-                  </p>
-                </div>
 
-                {/* Expected Yield */}
-                <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-5 h-5 text-primary" />
-                    <span className="font-medium text-sm">{t('insights.yearlyPotential')}</span>
+                  {/* Expected Yield */}
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="w-5 h-5 text-primary" />
+                      <span className="font-medium text-sm">{t('insights.yearlyPotential')}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">1,800 kWh/kW/{isArabic ? 'سنة' : 'yr'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'المتوسط الوطني لمصر' : 'Egypt national average'}</p>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">1,800 kWh/kW/{isArabic ? 'سنة' : 'yr'}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'المتوسط الوطني لمصر' : 'Egypt national average'}</p>
                 </div>
-              </div>
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+        )}
 
       </div>
     </section>
