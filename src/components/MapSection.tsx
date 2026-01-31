@@ -30,7 +30,6 @@ const presetCities = {
   alexandria: { name: "Alexandria", lat: 31.2001, lng: 29.9187 },
 };
 
-const MAX_POLYGON_POINTS = 12;
 const MIN_POLYGON_POINTS = 4;
 
 type MapSize = "normal" | "large";
@@ -116,11 +115,6 @@ const MapSection = ({
       mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
         if (isDrawingMode) {
           setPolygonPoints(prev => {
-            // Don't add more points if we've reached the maximum
-            if (prev.length >= MAX_POLYGON_POINTS) {
-              return prev;
-            }
-            
             // Check if clicking near the first point to close polygon (only if we have minimum points)
             if (prev.length >= MIN_POLYGON_POINTS) {
               const firstPoint = prev[0];
@@ -132,15 +126,7 @@ const MapSection = ({
               }
             }
             
-            const newPoints = [...prev, e.latlng];
-            
-            // Auto-complete if we've reached max points
-            if (newPoints.length >= MAX_POLYGON_POINTS) {
-              shouldCompleteRef.current = newPoints;
-              return newPoints;
-            }
-            
-            return newPoints;
+            return [...prev, e.latlng];
           });
         }
       });
@@ -490,10 +476,8 @@ const MapSection = ({
           <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
               {polygonPoints.length < MIN_POLYGON_POINTS 
-                ? `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum, ${MAX_POLYGON_POINTS} max)`
-                : polygonPoints.length >= MAX_POLYGON_POINTS
-                  ? "Maximum points reached - polygon will auto-complete"
-                  : `${polygonPoints.length}/${MAX_POLYGON_POINTS} points - Click near first point or 'Finish Drawing'`}
+                ? `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
+                : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`}
             </p>
           </div>
         )}
