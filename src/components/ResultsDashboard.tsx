@@ -1,6 +1,11 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2 } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
+import { ShareableParams } from "@/lib/shareUtils";
 import ResultCard from "./ResultCard";
+import ROITimeline from "./ROITimeline";
+import ShareDialog from "./ShareDialog";
+import ContactExpertDialog from "./ContactExpertDialog";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { generateSolarReport } from "@/lib/pdfReport";
 import { useState } from "react";
@@ -9,9 +14,11 @@ interface ResultsDashboardProps {
   results: SolarCalculation | null;
   isVisible: boolean;
   locationName?: string;
+  shareableParams?: ShareableParams;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams }: ResultsDashboardProps) => {
+  const { t } = useTranslation();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   if (!results || !isVisible) return null;
@@ -27,6 +34,10 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
     } finally {
       setIsGeneratingPdf(false);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   // Prepare chart data
@@ -53,24 +64,24 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
   const scenario = costScenarios[results.costScenario];
 
   return (
-    <section className="container mx-auto px-4 py-12">
+    <section className="container mx-auto px-4 py-12 print:py-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10 animate-fade-in">
+        <div className="text-center mb-10 animate-fade-in print:mb-4">
           <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Your Solar <span className="text-gradient-solar">Feasibility Report</span>
+            {t('results.title')} <span className="text-gradient-solar">{t('results.titleHighlight')}</span>
           </h3>
           <p className="text-muted-foreground">
-            Based on your inputs and local climate data
+            {t('results.subtitle')}
           </p>
         </div>
 
         {/* Warnings */}
         {results.warnings.length > 0 && (
-          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-xl animate-fade-in">
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-xl animate-fade-in print:hidden">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
               <div>
-                <p className="font-medium text-destructive">Calculation Warnings</p>
+                <p className="font-medium text-destructive">{t('results.warnings')}</p>
                 <ul className="mt-1 space-y-1">
                   {results.warnings.map((warning, i) => (
                     <li key={i} className="text-sm text-destructive/80">{warning}</li>
@@ -86,41 +97,41 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
           <div className="mb-6 p-5 bg-gradient-to-r from-primary/5 to-solar-green/5 border border-primary/20 rounded-xl animate-fade-in">
             <div className="flex items-center gap-2 mb-4">
               <Building className="w-5 h-5 text-primary" />
-              <h4 className="font-semibold text-foreground">Building Mode Analysis</h4>
+              <h4 className="font-semibold text-foreground">{t('results.buildingModeAnalysis')}</h4>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div className="p-3 bg-card rounded-lg border border-border/50">
                 <p className="text-2xl font-bold text-foreground">{results.numberOfUnits}</p>
-                <p className="text-xs text-muted-foreground">Total Units</p>
+                <p className="text-xs text-muted-foreground">{t('results.totalUnits')}</p>
               </div>
               <div className="p-3 bg-card rounded-lg border border-border/50">
                 <p className="text-2xl font-bold text-foreground">{results.avgUnitConsumption}</p>
-                <p className="text-xs text-muted-foreground">kWh/Unit/Month</p>
+                <p className="text-xs text-muted-foreground">{t('results.kWhUnitMonth')}</p>
               </div>
               <div className="p-3 bg-card rounded-lg border border-border/50">
                 <p className="text-2xl font-bold text-primary">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Total kWh/Month</p>
+                <p className="text-xs text-muted-foreground">{t('results.totalKWhMonth')}</p>
               </div>
               <div className="p-3 bg-card rounded-lg border border-border/50">
                 <div className="flex items-center justify-center gap-1">
                   <Users className="w-4 h-4 text-solar-green" />
                   <p className="text-2xl font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Units Covered</p>
+                <p className="text-xs text-muted-foreground">{t('results.unitsCovered')}</p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-3 text-center">
-              Your solar system can cover the consumption of <span className="font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</span> out of <span className="font-bold text-foreground">{results.numberOfUnits}</span> apartment units
+              {t('results.unitsMessage', { covered: formatNumber(results.unitsCovered, 1), total: results.numberOfUnits })}
             </p>
           </div>
         )}
 
         {/* System Package Options */}
         {results.packageOptions && results.packageOptions.length > 0 && (
-          <div className="mb-10 animate-fade-in" style={{ animationDelay: "100ms" }}>
+          <div className="mb-10 animate-fade-in print:mb-4" style={{ animationDelay: "100ms" }}>
             <div className="flex items-center gap-2 mb-4">
               <Package className="w-5 h-5 text-primary" />
-              <h4 className="font-display text-lg font-semibold text-foreground">System Package Options</h4>
+              <h4 className="font-display text-lg font-semibold text-foreground">{t('results.packageOptions')}</h4>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               {results.packageOptions.map((option, index) => {
@@ -148,7 +159,7 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
                   >
                     {isSelected && (
                       <div className={`absolute -top-3 left-4 px-2 py-0.5 text-xs font-semibold rounded-full bg-card border ${borderColors[option.packageKey as keyof typeof borderColors]} ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
-                        Selected
+                        {t('results.selected')}
                       </div>
                     )}
                     
@@ -163,19 +174,19 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
                     
                     <div className="space-y-2 mb-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Cost per kW</span>
+                        <span className="text-sm text-muted-foreground">{t('results.costPerKW')}</span>
                         <span className="font-mono font-semibold text-foreground">
                           {option.package.costPerKW.toLocaleString()} EGP
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Installed</span>
+                        <span className="text-sm text-muted-foreground">{t('results.installed')}</span>
                         <span className="font-mono font-semibold text-foreground">
                           {option.kWInstalled} kW
                         </span>
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-border/50">
-                        <span className="text-sm font-medium text-foreground">Total Cost</span>
+                        <span className="text-sm font-medium text-foreground">{t('results.totalCost')}</span>
                         <span className={`font-mono text-lg font-bold ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
                           {formatCurrency(option.totalCost)}
                         </span>
@@ -189,11 +200,11 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
                     <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-2 gap-2 text-center text-xs">
                       <div>
                         <p className="font-semibold text-foreground">{formatNumber(option.energyYear, 0)} kWh</p>
-                        <p className="text-muted-foreground">Yearly</p>
+                        <p className="text-muted-foreground">{t('results.yearly')}</p>
                       </div>
                       <div>
                         <p className="font-semibold text-foreground">{formatNumber(option.paybackYears, 1)} yrs</p>
-                        <p className="text-muted-foreground">Payback</p>
+                        <p className="text-muted-foreground">{t('results.payback')}</p>
                       </div>
                     </div>
                   </div>
@@ -204,10 +215,10 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
         )}
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10 print:mb-4">
           <ResultCard
             icon={<Sun className="w-6 h-6" />}
-            title="Installed Capacity"
+            title={t('results.installedCapacity')}
             value={`${results.kWInstalled} kW`}
             subtitle={`Max: ${formatNumber(results.kWMax)} kW`}
             highlight
@@ -215,14 +226,14 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
           />
           <ResultCard
             icon={<Zap className="w-6 h-6" />}
-            title="Yearly Production"
+            title={t('results.yearlyProduction')}
             value={`${formatNumber(results.energyYear, 0)} kWh`}
             subtitle={`${formatNumber(results.energyMonth, 0)} kWh/month`}
             delay={100}
           />
           <ResultCard
             icon={<TrendingUp className="w-6 h-6" />}
-            title="Yearly Savings"
+            title={t('results.yearlySavings')}
             value={formatCurrency(results.savingsYear)}
             subtitle={`${formatCurrency(results.savingsMonth)}/month`}
             highlight
@@ -230,16 +241,16 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
           />
           <ResultCard
             icon={<Calendar className="w-6 h-6" />}
-            title="Payback Period"
+            title={t('results.paybackPeriod')}
             value={`${formatNumber(results.paybackYears)} years`}
-            subtitle="Return on investment"
+            subtitle={t('results.returnOnInvestment')}
             delay={300}
           />
           <ResultCard
             icon={<Leaf className="w-6 h-6" />}
-            title="CO₂ Reduction"
+            title={t('results.co2Reduction')}
             value={`${formatNumber(results.co2Saved)} tons`}
-            subtitle="Per year saved"
+            subtitle={t('results.perYearSaved')}
             highlight
             delay={400}
           />
@@ -247,7 +258,7 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
 
         {/* Connection Recommendation */}
         {results.connectionRecommendation && (
-          <div className="mb-6 animate-fade-in" style={{ animationDelay: "125ms" }}>
+          <div className="mb-6 animate-fade-in print:hidden" style={{ animationDelay: "125ms" }}>
             <div className={`p-5 rounded-xl border ${
               results.connectionRecommendation.icon === "offgrid" 
                 ? "bg-solar-green/10 border-solar-green/30" 
@@ -274,7 +285,7 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-display text-lg font-semibold text-foreground">
-                      Recommended: {results.connectionRecommendation.systemType}
+                      {t('results.recommended')}: {results.connectionRecommendation.systemType}
                     </h4>
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                       results.connectionRecommendation.icon === "offgrid"
@@ -283,7 +294,7 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
                           ? "bg-solar-gold/20 text-solar-gold"
                           : "bg-primary/20 text-primary"
                     }`}>
-                      {formatNumber(results.coverageRatio * 100, 0)}% Coverage
+                      {formatNumber(results.coverageRatio * 100, 0)}% {t('results.coverage')}
                     </span>
                   </div>
                   <p className="text-muted-foreground">{results.connectionRecommendation.reason}</p>
@@ -299,9 +310,9 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
           <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "150ms" }}>
             <h4 className="font-display text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
               <Gauge className="w-5 h-5 text-primary" />
-              Coverage Ratio
+              {t('results.coverageRatio')}
             </h4>
-            <p className="text-sm text-muted-foreground mb-4">Energy production vs consumption</p>
+            <p className="text-sm text-muted-foreground mb-4">{t('results.energyVsConsumption')}</p>
             
             <div className="relative h-4 bg-muted rounded-full overflow-hidden mb-3">
               <div 
@@ -320,20 +331,20 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
               <span className="text-3xl font-bold text-foreground">{formatNumber(results.coverageRatio * 100, 0)}%</span>
               <span className="text-sm text-muted-foreground">
                 {results.coverageRatio >= 1 
-                  ? "✓ Full coverage + surplus" 
+                  ? `✓ ${t('results.fullCoverage')}` 
                   : results.coverageRatio >= 0.7 
-                    ? "Good coverage" 
-                    : "Partial coverage"}
+                    ? t('results.goodCoverage')
+                    : t('results.partialCoverage')}
               </span>
             </div>
           </div>
 
           {/* Calculation Breakdown */}
           <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
-            <h4 className="font-display text-lg font-semibold text-foreground mb-4">Calculation Breakdown</h4>
+            <h4 className="font-display text-lg font-semibold text-foreground mb-4">{t('results.calculationBreakdown')}</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">1. Usable Area</span>
+                <span className="text-muted-foreground">1. {t('results.usableArea')}</span>
                 <span className="font-mono text-foreground">{formatNumber(results.usableArea, 0)} m²</span>
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
@@ -341,7 +352,7 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
                 <span className="font-mono text-foreground">{formatNumber(results.kWMax, 2)} kW</span>
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">3. kW Installed (×0.95)</span>
+                <span className="text-muted-foreground">3. kW {t('results.installed')} (×0.95)</span>
                 <span className="font-mono font-bold text-primary">{results.kWInstalled} kW</span>
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
@@ -349,23 +360,32 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
                 <span className="font-mono text-foreground">{formatNumber(results.energyYear, 0)} kWh</span>
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">8. Total Cost</span>
+                <span className="text-muted-foreground">8. {t('results.totalCost')}</span>
                 <span className="font-mono font-bold text-foreground">{formatCurrency(results.totalCost)}</span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">9. Payback</span>
+                <span className="text-muted-foreground">9. {t('results.payback')}</span>
                 <span className="font-mono text-foreground">{formatNumber(results.paybackYears, 1)} years</span>
               </div>
             </div>
           </div>
         </div>
 
+        {/* 25-Year ROI Timeline */}
+        <div className="mb-6 print:hidden">
+          <ROITimeline
+            initialCost={results.totalCost}
+            yearlyEnergy={results.energyYear}
+            electricityPrice={results.climateData?.location ? (results.savingsYear / results.energyYear) : 1.95}
+          />
+        </div>
+
         {/* Charts Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 print:hidden">
           {/* Monthly Production Chart */}
           <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "250ms" }}>
-            <h4 className="font-display text-lg font-semibold text-foreground mb-1">Monthly Energy Production</h4>
-            <p className="text-sm text-muted-foreground mb-6">kWh generated each month</p>
+            <h4 className="font-display text-lg font-semibold text-foreground mb-1">{t('results.monthlyProduction')}</h4>
+            <p className="text-sm text-muted-foreground mb-6">{t('results.kWhGenerated')}</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
@@ -401,8 +421,8 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
 
           {/* Cumulative Savings Chart */}
           <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
-            <h4 className="font-display text-lg font-semibold text-foreground mb-1">Cumulative Savings</h4>
-            <p className="text-sm text-muted-foreground mb-6">Total savings over first year (EGP)</p>
+            <h4 className="font-display text-lg font-semibold text-foreground mb-1">{t('results.cumulativeSavings')}</h4>
+            <p className="text-sm text-muted-foreground mb-6">{t('results.totalSavingsFirstYear')}</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={cumulativeSavings}>
@@ -446,34 +466,58 @@ const ResultsDashboard = ({ results, isVisible, locationName }: ResultsDashboard
         </div>
 
         {/* Summary Card */}
-        <div className="mt-8 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 animate-slide-up" style={{ animationDelay: "400ms" }}>
+        <div className="mt-8 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 animate-slide-up print:mt-4" style={{ animationDelay: "400ms" }}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h4 className="font-display text-xl font-semibold text-foreground mb-2">
-                Ready to Go Solar?
+                {t('results.readyToGoSolar')}
               </h4>
               <p className="text-muted-foreground max-w-lg">
-                Based on your {results.kWInstalled} kW system, you could save approximately{" "}
-                <span className="font-semibold text-primary">{formatCurrency(results.savingsYear)}</span> annually 
-                and reduce your carbon footprint by <span className="font-semibold text-solar-green">{formatNumber(results.co2Saved)} tons</span> of CO₂ per year.
+                {t('results.readyMessage', {
+                  kw: results.kWInstalled,
+                  savings: formatCurrency(results.savingsYear),
+                  co2: formatNumber(results.co2Saved),
+                })}
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3 print:hidden">
               <button 
                 onClick={handleDownloadReport}
                 disabled={isGeneratingPdf}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isGeneratingPdf ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
-                {isGeneratingPdf ? "Generating..." : "Download Report"}
+                {isGeneratingPdf ? "..." : t('results.downloadReport')}
               </button>
-              <button className="px-6 py-3 rounded-xl gradient-solar text-primary-foreground font-medium shadow-glow hover:opacity-90 transition-opacity">
-                Contact Expert
+              
+              <button 
+                onClick={handlePrint}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors"
+              >
+                <Printer className="w-4 h-4" />
+                {t('results.printReport')}
               </button>
+
+              {shareableParams && (
+                <ShareDialog 
+                  params={shareableParams}
+                  trigger={
+                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors">
+                      <Share2 className="w-4 h-4" />
+                      {t('results.shareResults')}
+                    </button>
+                  }
+                />
+              )}
+              
+              <ContactExpertDialog 
+                results={results}
+                locationName={locationName}
+              />
             </div>
           </div>
         </div>

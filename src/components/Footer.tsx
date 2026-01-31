@@ -1,8 +1,11 @@
-import { Sun } from "lucide-react";
+import { Sun, Heart } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
-    <footer className="border-t border-border/50 bg-muted/30">
+    <footer className="border-t border-border/50 bg-muted/30 print:hidden">
       <div className="container mx-auto px-4 py-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -10,17 +13,17 @@ const Footer = () => {
               <Sun className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <p className="font-display font-semibold text-foreground">SolarMatch</p>
+              <p className="font-display font-semibold text-foreground">{t('header.title')}</p>
               <p className="text-xs text-muted-foreground">Student Innovation Project 2025</p>
             </div>
           </div>
 
           <div className="text-center md:text-right">
-            <p className="text-sm text-muted-foreground mb-1">
-              Demonstrating rooftop solar feasibility analysis for Egypt
+            <p className="text-sm text-muted-foreground mb-1 flex items-center justify-center md:justify-end gap-1">
+              {t('footer.madeWith')} <Heart className="w-4 h-4 text-destructive fill-destructive" /> {t('footer.forEgypt')}
             </p>
             <p className="text-xs text-muted-foreground">
-              Data is simulated for demonstration purposes only
+              {t('footer.dataSource')}
             </p>
           </div>
         </div>
