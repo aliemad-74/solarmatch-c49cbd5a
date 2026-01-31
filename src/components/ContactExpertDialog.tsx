@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { SolarCalculation, formatCurrency } from "@/lib/solarData";
+import { leadSchema } from "@/lib/validation";
 
 interface ContactExpertDialogProps {
   results?: SolarCalculation | null;
@@ -28,8 +29,15 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    preferredContact: "call" | "whatsapp" | "email";
+    bestTime: "morning" | "afternoon" | "evening";
+  }>({
     name: "",
     phone: "",
     email: "",
@@ -41,16 +49,32 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+    setFieldErrors({});
+
+    // Client-side validation with zod
+    const validation = leadSchema.safeParse(formData);
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          errors[err.path[0] as string] = err.message;
+        }
+      });
+      setFieldErrors(errors);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
+      const validatedData = validation.data;
       const { error: insertError } = await supabase
         .from('leads')
         .insert([{
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          preferred_contact: formData.preferredContact,
-          best_time: formData.bestTime,
+          name: validatedData.name,
+          phone: validatedData.phone,
+          email: validatedData.email,
+          preferred_contact: validatedData.preferredContact,
+          best_time: validatedData.bestTime,
           location_name: locationName || null,
           rooftop_area: results?.usableArea || null,
           kw_installed: results?.kWInstalled || null,
@@ -136,7 +160,12 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder={t('contact.namePlaceholder')}
                 required
+                maxLength={200}
+                className={fieldErrors.name ? "border-destructive" : ""}
               />
+              {fieldErrors.name && (
+                <p className="text-xs text-destructive">{fieldErrors.name}</p>
+              )}
             </div>
 
             {/* Phone */}
@@ -152,7 +181,13 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder={t('contact.phonePlaceholder')}
                 required
+                maxLength={20}
+                pattern="[0-9+\-() ]{7,20}"
+                className={fieldErrors.phone ? "border-destructive" : ""}
               />
+              {fieldErrors.phone && (
+                <p className="text-xs text-destructive">{fieldErrors.phone}</p>
+              )}
             </div>
 
             {/* Email */}
@@ -168,7 +203,12 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder={t('contact.emailPlaceholder')}
                 required
+                maxLength={255}
+                className={fieldErrors.email ? "border-destructive" : ""}
               />
+              {fieldErrors.email && (
+                <p className="text-xs text-destructive">{fieldErrors.email}</p>
+              )}
             </div>
 
             {/* Preferred Contact Method */}
@@ -179,7 +219,7 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
               </Label>
               <RadioGroup
                 value={formData.preferredContact}
-                onValueChange={(value) => setFormData({ ...formData, preferredContact: value })}
+                onValueChange={(value: "call" | "whatsapp" | "email") => setFormData({ ...formData, preferredContact: value })}
                 className="flex gap-4"
               >
                 <div className="flex items-center space-x-2">
@@ -205,7 +245,7 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
               </Label>
               <RadioGroup
                 value={formData.bestTime}
-                onValueChange={(value) => setFormData({ ...formData, bestTime: value })}
+                onValueChange={(value: "morning" | "afternoon" | "evening") => setFormData({ ...formData, bestTime: value })}
                 className="flex flex-wrap gap-4"
               >
                 <div className="flex items-center space-x-2">

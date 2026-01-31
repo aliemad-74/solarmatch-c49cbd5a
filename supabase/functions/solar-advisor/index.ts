@@ -5,18 +5,125 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Simple in-memory rate limiter (per instance)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_REQUESTS = 10; // requests per window
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(identifier);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  
+  if (record.count >= RATE_LIMIT_REQUESTS) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}
+
+// Input validation
+function validateSolarData(data: unknown): { valid: boolean; error?: string } {
+  if (!data || typeof data !== 'object') {
+    return { valid: false, error: 'Invalid solar data' };
+  }
+  
+  const solarData = data as Record<string, unknown>;
+  
+  // Required numeric fields
+  const numericFields = ['rooftopArea', 'kWInstalled', 'energyYear', 'monthlyConsumption', 
+    'coverageRatio', 'totalCost', 'savingsYear', 'paybackYears', 'co2Reduction'];
+  
+  for (const field of numericFields) {
+    if (typeof solarData[field] !== 'number' || !isFinite(solarData[field] as number)) {
+      return { valid: false, error: `Invalid ${field}: must be a valid number` };
+    }
+  }
+  
+  // Validate reasonable ranges
+  if ((solarData.rooftopArea as number) <= 0 || (solarData.rooftopArea as number) > 1000000) {
+    return { valid: false, error: 'Rooftop area out of range' };
+  }
+  if ((solarData.kWInstalled as number) <= 0 || (solarData.kWInstalled as number) > 10000) {
+    return { valid: false, error: 'kW installed out of range' };
+  }
+  
+  // String fields
+  if (typeof solarData.pvType !== 'string' || (solarData.pvType as string).length > 100) {
+    return { valid: false, error: 'Invalid pvType' };
+  }
+  if (typeof solarData.buildingType !== 'string' || (solarData.buildingType as string).length > 100) {
+    return { valid: false, error: 'Invalid buildingType' };
+  }
+  if (solarData.locationName !== undefined && solarData.locationName !== null) {
+    if (typeof solarData.locationName !== 'string' || (solarData.locationName as string).length > 500) {
+      return { valid: false, error: 'Invalid locationName' };
+    }
+  }
+  
+  return { valid: true };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Get client identifier for rate limiting (use IP or fallback)
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                     req.headers.get("x-real-ip") || 
+                     "unknown";
+    
+    // Check rate limit
+    if (!checkRateLimit(clientIP)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { solarData, language } = await req.json();
+    // Parse and validate request body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    const { solarData, language } = body as { solarData: unknown; language: unknown };
+    
+    // Validate language
+    if (language !== 'en' && language !== 'ar') {
+      return new Response(JSON.stringify({ error: "Invalid language parameter" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    // Validate solar data
+    const validation = validateSolarData(solarData);
+    if (!validation.valid) {
+      return new Response(JSON.stringify({ error: validation.error }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    const validatedSolarData = solarData as Record<string, unknown>;
 
     const systemPrompt = language === 'ar' 
       ? `أنت مستشار طاقة شمسية خبير في السوق المصري. قم بتحليل بيانات النظام الشمسي المقدمة وقدم توصيات مخصصة.
@@ -48,33 +155,33 @@ Keep your response:
 
     const userPrompt = language === 'ar'
       ? `بيانات النظام الشمسي:
-- الموقع: ${solarData.locationName || 'غير محدد'}
-- مساحة السطح: ${solarData.rooftopArea} م²
-- القدرة المركبة: ${solarData.kWInstalled} كيلوواط
-- الإنتاج السنوي: ${solarData.energyYear} كيلوواط/ساعة
-- الاستهلاك الشهري: ${solarData.monthlyConsumption} كيلوواط/ساعة
-- نسبة التغطية: ${solarData.coverageRatio}%
-- نوع الألواح: ${solarData.pvType}
-- نوع المبنى: ${solarData.buildingType}
-- التكلفة الإجمالية: ${solarData.totalCost} جنيه
-- التوفير السنوي: ${solarData.savingsYear} جنيه
-- فترة الاسترداد: ${solarData.paybackYears} سنة
-- تقليل CO2: ${solarData.co2Reduction} كجم/سنة
+- الموقع: ${validatedSolarData.locationName || 'غير محدد'}
+- مساحة السطح: ${validatedSolarData.rooftopArea} م²
+- القدرة المركبة: ${validatedSolarData.kWInstalled} كيلوواط
+- الإنتاج السنوي: ${validatedSolarData.energyYear} كيلوواط/ساعة
+- الاستهلاك الشهري: ${validatedSolarData.monthlyConsumption} كيلوواط/ساعة
+- نسبة التغطية: ${validatedSolarData.coverageRatio}%
+- نوع الألواح: ${validatedSolarData.pvType}
+- نوع المبنى: ${validatedSolarData.buildingType}
+- التكلفة الإجمالية: ${validatedSolarData.totalCost} جنيه
+- التوفير السنوي: ${validatedSolarData.savingsYear} جنيه
+- فترة الاسترداد: ${validatedSolarData.paybackYears} سنة
+- تقليل CO2: ${validatedSolarData.co2Reduction} كجم/سنة
 
 قدم تحليلاً مختصراً وتوصيات عملية لهذا المستخدم.`
       : `Solar System Data:
-- Location: ${solarData.locationName || 'Not specified'}
-- Rooftop Area: ${solarData.rooftopArea} m²
-- Installed Capacity: ${solarData.kWInstalled} kW
-- Annual Production: ${solarData.energyYear} kWh
-- Monthly Consumption: ${solarData.monthlyConsumption} kWh
-- Coverage Ratio: ${solarData.coverageRatio}%
-- Panel Type: ${solarData.pvType}
-- Building Type: ${solarData.buildingType}
-- Total Cost: ${solarData.totalCost} EGP
-- Annual Savings: ${solarData.savingsYear} EGP
-- Payback Period: ${solarData.paybackYears} years
-- CO2 Reduction: ${solarData.co2Reduction} kg/year
+- Location: ${validatedSolarData.locationName || 'Not specified'}
+- Rooftop Area: ${validatedSolarData.rooftopArea} m²
+- Installed Capacity: ${validatedSolarData.kWInstalled} kW
+- Annual Production: ${validatedSolarData.energyYear} kWh
+- Monthly Consumption: ${validatedSolarData.monthlyConsumption} kWh
+- Coverage Ratio: ${validatedSolarData.coverageRatio}%
+- Panel Type: ${validatedSolarData.pvType}
+- Building Type: ${validatedSolarData.buildingType}
+- Total Cost: ${validatedSolarData.totalCost} EGP
+- Annual Savings: ${validatedSolarData.savingsYear} EGP
+- Payback Period: ${validatedSolarData.paybackYears} years
+- CO2 Reduction: ${validatedSolarData.co2Reduction} kg/year
 
 Provide a brief analysis and practical recommendations for this user.`;
 
