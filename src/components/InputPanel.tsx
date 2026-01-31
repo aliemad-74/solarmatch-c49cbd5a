@@ -1,8 +1,9 @@
-import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge } from "lucide-react";
+import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -22,6 +23,12 @@ interface InputPanelProps {
   setElectricityPrice: (price: number) => void;
   monthlyConsumption: number;
   setMonthlyConsumption: (consumption: number) => void;
+  buildingMode: boolean;
+  setBuildingMode: (mode: boolean) => void;
+  numberOfUnits: number;
+  setNumberOfUnits: (units: number) => void;
+  avgUnitConsumption: number;
+  setAvgUnitConsumption: (consumption: number) => void;
   onCalculate: () => void;
   locationName?: string;
   climateData?: ClimateData | null;
@@ -40,6 +47,12 @@ const InputPanel = ({
   setElectricityPrice,
   monthlyConsumption,
   setMonthlyConsumption,
+  buildingMode,
+  setBuildingMode,
+  numberOfUnits,
+  setNumberOfUnits,
+  avgUnitConsumption,
+  setAvgUnitConsumption,
   onCalculate,
   locationName,
   climateData,
@@ -49,6 +62,11 @@ const InputPanel = ({
   const pv = pvTypes[pvType];
   const building = buildingTypes[buildingType];
   const scenario = costScenarios[costScenario];
+  
+  // Calculate effective consumption
+  const effectiveMonthlyConsumption = buildingMode 
+    ? numberOfUnits * avgUnitConsumption 
+    : monthlyConsumption;
   
   // Live calculations following the exact formula
   const usableArea = rooftopArea * building.usableFraction;
@@ -103,48 +121,27 @@ const InputPanel = ({
               </p>
             </div>
 
-            {/* Monthly Consumption */}
+            {/* Location Info */}
             <div className="space-y-3">
-              <Label htmlFor="monthly-consumption" className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Gauge className="w-4 h-4 text-muted-foreground" />
-                Monthly Consumption (kWh)
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                Location
               </Label>
-              <Input
-                id="monthly-consumption"
-                type="number"
-                value={monthlyConsumption}
-                onChange={(e) => setMonthlyConsumption(Math.max(0, Number(e.target.value)))}
-                min={0}
-                max={50000}
-                className="h-12 text-lg font-medium"
-                placeholder="Enter monthly usage"
-              />
-              <p className="text-xs text-muted-foreground">
-                Check your electricity bill for average usage
-              </p>
-            </div>
-          </div>
-
-          {/* Location Info */}
-          <div className="space-y-3 mb-6">
-            <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-              Location
-            </Label>
-            <div className="h-12 flex items-center px-3 bg-muted/50 rounded-md border border-border">
-              {locationName ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
-                  <p className="text-sm font-medium text-foreground">{locationName}</p>
-                  {climateData?.annualAvgIrradiance && (
-                    <span className="text-xs text-muted-foreground ml-2">
-                      ({climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day)
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">📍 Select location on the map</p>
-              )}
+              <div className="h-12 flex items-center px-3 bg-muted/50 rounded-md border border-border">
+                {locationName ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
+                    <p className="text-sm font-medium text-foreground">{locationName}</p>
+                    {climateData?.annualAvgIrradiance && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        ({climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day)
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">📍 Select location on the map</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -248,6 +245,85 @@ const InputPanel = ({
             </div>
           </div>
 
+          {/* ==================== CONSUMPTION SECTION ==================== */}
+          <div className="border-t border-border pt-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Building className="w-4 h-4 text-muted-foreground" />
+                Building Mode
+              </Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{buildingMode ? "Multi-unit" : "Single consumption"}</span>
+                <Switch
+                  checked={buildingMode}
+                  onCheckedChange={setBuildingMode}
+                />
+              </div>
+            </div>
+
+            {buildingMode ? (
+              /* Building Mode: Multiple Units */
+              <div className="bg-muted/30 rounded-xl p-4 space-y-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <Users className="w-4 h-4" />
+                  <span>Calculate consumption based on number of apartment units</span>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="num-units" className="text-sm">Number of Units (Apartments)</Label>
+                    <Input
+                      id="num-units"
+                      type="number"
+                      value={numberOfUnits}
+                      onChange={(e) => setNumberOfUnits(Math.max(1, Number(e.target.value)))}
+                      min={1}
+                      max={500}
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="avg-consumption" className="text-sm">Avg. Consumption per Unit (kWh/month)</Label>
+                    <Input
+                      id="avg-consumption"
+                      type="number"
+                      value={avgUnitConsumption}
+                      onChange={(e) => setAvgUnitConsumption(Math.max(50, Number(e.target.value)))}
+                      min={50}
+                      max={2000}
+                      className="h-10"
+                    />
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Total Building Consumption: <span className="font-bold text-foreground">{(numberOfUnits * avgUnitConsumption).toLocaleString()} kWh/month</span>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Standard Mode: Single Consumption Input */
+              <div className="space-y-3">
+                <Label htmlFor="monthly-consumption" className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-muted-foreground" />
+                  Monthly Consumption (kWh)
+                </Label>
+                <Input
+                  id="monthly-consumption"
+                  type="number"
+                  value={monthlyConsumption}
+                  onChange={(e) => setMonthlyConsumption(Math.max(0, Number(e.target.value)))}
+                  min={0}
+                  max={50000}
+                  className="h-12 text-lg font-medium"
+                  placeholder="Enter monthly usage"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Check your electricity bill for average usage
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Live Preview - Following exact formula */}
           <div className="bg-muted/30 rounded-xl p-4 mb-6">
             <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -280,6 +356,11 @@ const InputPanel = ({
               <p className="text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{kWInstalled} kW</span> × <span className="font-medium text-foreground">{scenario.costPerKW.toLocaleString()} EGP/kW</span> = <span className="font-bold text-primary">{totalCost.toLocaleString()} EGP</span>
               </p>
+              {buildingMode && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Consumption: <span className="font-medium text-foreground">{numberOfUnits} units</span> × <span className="font-medium text-foreground">{avgUnitConsumption} kWh</span> = <span className="font-bold text-foreground">{effectiveMonthlyConsumption.toLocaleString()} kWh/month</span>
+                </p>
+              )}
             </div>
           </div>
 

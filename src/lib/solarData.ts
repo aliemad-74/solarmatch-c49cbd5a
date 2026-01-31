@@ -124,6 +124,14 @@ export interface SolarCalculation {
   // Step 11: CO2 impact
   co2Saved: number;
   
+  // Building Mode data
+  buildingMode: boolean;
+  numberOfUnits: number;
+  avgUnitConsumption: number;
+  effectiveMonthlyConsumption: number;
+  annualConsumption: number;
+  unitsCovered: number;
+  
   // Metadata
   pvType: PVType;
   buildingType: BuildingType;
@@ -145,7 +153,10 @@ export function calculateSolarFeasibility(
   pvType: PVType,
   buildingType: BuildingType,
   costScenario: CostScenario,
-  monthlyConsumption: number
+  effectiveMonthlyConsumption: number,
+  buildingMode: boolean = false,
+  numberOfUnits: number = 1,
+  avgUnitConsumption: number = 300
 ): SolarCalculation {
   const climate = climateData || defaultClimateData;
   const pv = pvTypes[pvType];
@@ -237,11 +248,16 @@ export function calculateSolarFeasibility(
   const paybackYears = savingsYear > 0 ? totalCost / savingsYear : 0;
 
   // ============================================
-  // STEP 10: Coverage ratio
-  // Coverage = Energy_year / (monthly_consumption × 12)
+  // STEP 10: Coverage ratio & Building Mode
+  // Coverage = Energy_year / Annual_consumption
+  // units_covered = Energy_year / (avg_unit_consumption × 12)
   // ============================================
-  const annualConsumption = monthlyConsumption * 12;
+  const annualConsumption = effectiveMonthlyConsumption * 12;
   const coverageRatio = annualConsumption > 0 ? energyYear / annualConsumption : 0;
+  
+  // Units covered calculation (for Building Mode display)
+  const unitAnnualConsumption = avgUnitConsumption * 12;
+  const unitsCovered = unitAnnualConsumption > 0 ? energyYear / unitAnnualConsumption : 0;
 
   // ============================================
   // STEP 11: CO2 impact (tons/year)
@@ -268,6 +284,12 @@ export function calculateSolarFeasibility(
     paybackYears,
     coverageRatio,
     co2Saved,
+    buildingMode,
+    numberOfUnits,
+    avgUnitConsumption,
+    effectiveMonthlyConsumption,
+    annualConsumption,
+    unitsCovered,
     pvType,
     buildingType,
     costScenario,
