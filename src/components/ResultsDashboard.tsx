@@ -1,5 +1,5 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp } from "lucide-react";
-import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES } from "@/lib/solarData";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge } from "lucide-react";
+import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios } from "@/lib/solarData";
 import ResultCard from "./ResultCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
@@ -19,7 +19,7 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
 
   const cumulativeSavings = results.monthlyProduction.reduce<{ month: string; savings: number; cumulative: number }[]>(
     (acc, production, index) => {
-      const monthSavings = production * (results.yearlySavings / results.yearlyProduction);
+      const monthSavings = production * (results.savingsYear / results.energyYear);
       const prevCumulative = acc.length > 0 ? acc[acc.length - 1].cumulative : 0;
       acc.push({
         month: MONTH_NAMES[index],
@@ -30,6 +30,9 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
     },
     []
   );
+
+  const coveragePercent = Math.min(results.coverageRatio * 100, 200);
+  const scenario = costScenarios[results.costScenario];
 
   return (
     <section className="container mx-auto px-4 py-12">
@@ -43,35 +46,52 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
           </p>
         </div>
 
+        {/* Warnings */}
+        {results.warnings.length > 0 && (
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-xl animate-fade-in">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+              <div>
+                <p className="font-medium text-destructive">Calculation Warnings</p>
+                <ul className="mt-1 space-y-1">
+                  {results.warnings.map((warning, i) => (
+                    <li key={i} className="text-sm text-destructive/80">{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
           <ResultCard
             icon={<Sun className="w-6 h-6" />}
             title="Installed Capacity"
-            value={`${formatNumber(results.kWInstalled)} kW`}
-            subtitle={`${results.panelsCount} panels`}
+            value={`${results.kWInstalled} kW`}
+            subtitle={`Max: ${formatNumber(results.kWMax)} kW`}
             highlight
             delay={0}
           />
           <ResultCard
             icon={<DollarSign className="w-6 h-6" />}
             title="System Cost"
-            value={formatCurrency(results.systemCost)}
-            subtitle="Total investment"
+            value={formatCurrency(results.totalCost)}
+            subtitle={`${scenario.label} scenario`}
             delay={100}
           />
           <ResultCard
             icon={<Zap className="w-6 h-6" />}
             title="Yearly Production"
-            value={`${formatNumber(results.yearlyProduction, 0)} kWh`}
-            subtitle="Annual energy"
+            value={`${formatNumber(results.energyYear, 0)} kWh`}
+            subtitle={`${formatNumber(results.energyMonth, 0)} kWh/month`}
             delay={200}
           />
           <ResultCard
             icon={<TrendingUp className="w-6 h-6" />}
-            title="Monthly Savings"
-            value={formatCurrency(results.monthlySavings)}
-            subtitle="Average per month"
+            title="Yearly Savings"
+            value={formatCurrency(results.savingsYear)}
+            subtitle={`${formatCurrency(results.savingsMonth)}/month`}
             highlight
             delay={300}
           />
@@ -85,17 +105,84 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
           <ResultCard
             icon={<Leaf className="w-6 h-6" />}
             title="CO₂ Reduction"
-            value={`${formatNumber(results.co2Reduction)} tons`}
+            value={`${formatNumber(results.co2Saved)} tons`}
             subtitle="Per year saved"
             highlight
             delay={500}
           />
         </div>
 
+        {/* Coverage Ratio & Calculation Breakdown */}
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* Coverage Ratio */}
+          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "150ms" }}>
+            <h4 className="font-display text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
+              <Gauge className="w-5 h-5 text-primary" />
+              Coverage Ratio
+            </h4>
+            <p className="text-sm text-muted-foreground mb-4">Energy production vs consumption</p>
+            
+            <div className="relative h-4 bg-muted rounded-full overflow-hidden mb-3">
+              <div 
+                className="absolute h-full bg-gradient-to-r from-primary to-solar-green rounded-full transition-all duration-1000"
+                style={{ width: `${Math.min(coveragePercent, 100)}%` }}
+              />
+              {coveragePercent > 100 && (
+                <div 
+                  className="absolute h-full bg-solar-gold/50 rounded-full"
+                  style={{ left: '100%', width: `${Math.min(coveragePercent - 100, 100)}%`, transform: 'translateX(-100%)' }}
+                />
+              )}
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-3xl font-bold text-foreground">{formatNumber(results.coverageRatio * 100, 0)}%</span>
+              <span className="text-sm text-muted-foreground">
+                {results.coverageRatio >= 1 
+                  ? "✓ Full coverage + surplus" 
+                  : results.coverageRatio >= 0.7 
+                    ? "Good coverage" 
+                    : "Partial coverage"}
+              </span>
+            </div>
+          </div>
+
+          {/* Calculation Breakdown */}
+          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
+            <h4 className="font-display text-lg font-semibold text-foreground mb-4">Calculation Breakdown</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">1. Usable Area</span>
+                <span className="font-mono text-foreground">{formatNumber(results.usableArea, 0)} m²</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">2. kW Max</span>
+                <span className="font-mono text-foreground">{formatNumber(results.kWMax, 2)} kW</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">3. kW Installed (×0.95)</span>
+                <span className="font-mono font-bold text-primary">{results.kWInstalled} kW</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">4. Energy/Year</span>
+                <span className="font-mono text-foreground">{formatNumber(results.energyYear, 0)} kWh</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">8. Total Cost</span>
+                <span className="font-mono font-bold text-foreground">{formatCurrency(results.totalCost)}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-muted-foreground">9. Payback</span>
+                <span className="font-mono text-foreground">{formatNumber(results.paybackYears, 1)} years</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Charts Grid */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Monthly Production Chart */}
-          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
+          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "250ms" }}>
             <h4 className="font-display text-lg font-semibold text-foreground mb-1">Monthly Energy Production</h4>
             <p className="text-sm text-muted-foreground mb-6">kWh generated each month</p>
             <div className="h-64">
@@ -185,9 +272,9 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
                 Ready to Go Solar?
               </h4>
               <p className="text-muted-foreground max-w-lg">
-                Based on your {formatNumber(results.kWInstalled)} kW system, you could save approximately{" "}
-                <span className="font-semibold text-primary">{formatCurrency(results.yearlySavings)}</span> annually 
-                and reduce your carbon footprint by <span className="font-semibold text-solar-green">{formatNumber(results.co2Reduction)} tons</span> of CO₂ per year.
+                Based on your {results.kWInstalled} kW system, you could save approximately{" "}
+                <span className="font-semibold text-primary">{formatCurrency(results.savingsYear)}</span> annually 
+                and reduce your carbon footprint by <span className="font-semibold text-solar-green">{formatNumber(results.co2Saved)} tons</span> of CO₂ per year.
               </p>
             </div>
             <div className="flex gap-3">

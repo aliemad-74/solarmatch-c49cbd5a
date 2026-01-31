@@ -1,9 +1,9 @@
-import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp } from "lucide-react";
+import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { panelTypes, PanelType, buildingTypes, BuildingType, defaultClimateData, OTHER_COSTS_PER_KW } from "@/lib/solarData";
+import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
@@ -12,12 +12,16 @@ import { ChevronDown } from "lucide-react";
 interface InputPanelProps {
   rooftopArea: number;
   setRooftopArea: (area: number) => void;
-  panelType: PanelType;
-  setPanelType: (type: PanelType) => void;
+  pvType: PVType;
+  setPvType: (type: PVType) => void;
   buildingType: BuildingType;
   setBuildingType: (type: BuildingType) => void;
+  costScenario: CostScenario;
+  setCostScenario: (scenario: CostScenario) => void;
   electricityPrice: number;
   setElectricityPrice: (price: number) => void;
+  monthlyConsumption: number;
+  setMonthlyConsumption: (consumption: number) => void;
   onCalculate: () => void;
   locationName?: string;
   climateData?: ClimateData | null;
@@ -26,29 +30,32 @@ interface InputPanelProps {
 const InputPanel = ({
   rooftopArea,
   setRooftopArea,
-  panelType,
-  setPanelType,
+  pvType,
+  setPvType,
   buildingType,
   setBuildingType,
+  costScenario,
+  setCostScenario,
   electricityPrice,
   setElectricityPrice,
+  monthlyConsumption,
+  setMonthlyConsumption,
   onCalculate,
   locationName,
   climateData,
 }: InputPanelProps) => {
   const [showInsights, setShowInsights] = useState(false);
   
-  const panel = panelTypes[panelType];
+  const pv = pvTypes[pvType];
   const building = buildingTypes[buildingType];
-  const usableArea = rooftopArea * building.usableFraction;
-  const panelsCount = Math.floor(usableArea / panel.panelArea);
-  const totalWatts = panelsCount * panel.panelWatt;
-  const kWInstalled = totalWatts / 1000;
+  const scenario = costScenarios[costScenario];
   
-  // Live cost preview
-  const panelCost = panelsCount * panel.panelPrice;
-  const otherCosts = kWInstalled * OTHER_COSTS_PER_KW;
-  const estimatedCost = panelCost + otherCosts;
+  // Live calculations following the exact formula
+  const usableArea = rooftopArea * building.usableFraction;
+  const kWMax = usableArea / pv.areaPerKW;
+  const kWInstalled = Math.floor(kWMax * 0.95);
+  const totalCost = kWInstalled * scenario.costPerKW;
+  const energyYear = kWInstalled * SPECIFIC_YIELD;
 
   const climate = climateData ?? defaultClimateData;
   
@@ -96,27 +103,48 @@ const InputPanel = ({
               </p>
             </div>
 
-            {/* Location Info */}
+            {/* Monthly Consumption */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                Location
+              <Label htmlFor="monthly-consumption" className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-muted-foreground" />
+                Monthly Consumption (kWh)
               </Label>
-              <div className="h-12 flex items-center px-3 bg-muted/50 rounded-md border border-border">
-                {locationName ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
-                    <p className="text-sm font-medium text-foreground">{locationName}</p>
-                    {climateData?.annualAvgIrradiance && (
-                      <span className="text-xs text-muted-foreground ml-2">
-                        ({climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day)
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">📍 Select location on the map</p>
-                )}
-              </div>
+              <Input
+                id="monthly-consumption"
+                type="number"
+                value={monthlyConsumption}
+                onChange={(e) => setMonthlyConsumption(Math.max(0, Number(e.target.value)))}
+                min={0}
+                max={50000}
+                className="h-12 text-lg font-medium"
+                placeholder="Enter monthly usage"
+              />
+              <p className="text-xs text-muted-foreground">
+                Check your electricity bill for average usage
+              </p>
+            </div>
+          </div>
+
+          {/* Location Info */}
+          <div className="space-y-3 mb-6">
+            <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              Location
+            </Label>
+            <div className="h-12 flex items-center px-3 bg-muted/50 rounded-md border border-border">
+              {locationName ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
+                  <p className="text-sm font-medium text-foreground">{locationName}</p>
+                  {climateData?.annualAvgIrradiance && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ({climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day)
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">📍 Select location on the map</p>
+              )}
             </div>
           </div>
 
@@ -124,7 +152,7 @@ const InputPanel = ({
           <div className="space-y-3 mb-6">
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Building2 className="w-4 h-4 text-muted-foreground" />
-              Building Type
+              Building Type (determines usable roof %)
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {(Object.entries(buildingTypes) as [BuildingType, typeof buildingTypes[BuildingType]][]).map(([key, data]) => (
@@ -145,29 +173,54 @@ const InputPanel = ({
             <p className="text-xs text-muted-foreground">{building.description}</p>
           </div>
 
-          {/* Panel Type Selection */}
+          {/* PV Type Selection */}
           <div className="space-y-3 mb-6">
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Cpu className="w-4 h-4 text-muted-foreground" />
-              Panel Type
+              PV Type (determines area per kW)
             </Label>
             <div className="grid grid-cols-3 gap-2">
-              {(Object.entries(panelTypes) as [PanelType, typeof panelTypes[PanelType]][]).map(([key, data]) => (
+              {(Object.entries(pvTypes) as [PVType, typeof pvTypes[PVType]][]).map(([key, data]) => (
                 <button
                   key={key}
-                  onClick={() => setPanelType(key)}
+                  onClick={() => setPvType(key)}
                   className={`p-3 rounded-xl border text-left transition-all ${
-                    panelType === key 
+                    pvType === key 
                       ? "bg-primary/10 border-primary text-primary" 
                       : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/50"
                   }`}
                 >
                   <p className="font-medium text-sm">{data.label}</p>
-                  <p className="text-xs opacity-70">{data.panelWatt}W • {data.panelPrice.toLocaleString()} EGP</p>
+                  <p className="text-xs opacity-70">{data.areaPerKW} m²/kW</p>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">{panel.description}</p>
+            <p className="text-xs text-muted-foreground">{pv.description}</p>
+          </div>
+
+          {/* Cost Scenario Selection */}
+          <div className="space-y-3 mb-6">
+            <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-muted-foreground" />
+              Cost Scenario (EGP per kW)
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.entries(costScenarios) as [CostScenario, typeof costScenarios[CostScenario]][]).map(([key, data]) => (
+                <button
+                  key={key}
+                  onClick={() => setCostScenario(key)}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    costScenario === key 
+                      ? "bg-primary/10 border-primary text-primary" 
+                      : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <p className="font-medium text-sm">{data.label}</p>
+                  <p className="text-xs opacity-70">{data.costPerKW.toLocaleString()} EGP/kW</p>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">{scenario.description}</p>
           </div>
 
           {/* Electricity Price Slider */}
@@ -195,53 +248,38 @@ const InputPanel = ({
             </div>
           </div>
 
-          {/* Live Preview */}
+          {/* Live Preview - Following exact formula */}
           <div className="bg-muted/30 rounded-xl p-4 mb-6">
-            <div className="flex flex-wrap gap-6 justify-center text-center">
-              <div>
-                <p className="text-2xl font-bold text-foreground">{rooftopArea} m²</p>
-                <p className="text-xs text-muted-foreground">Total Roof</p>
-              </div>
-              <div className="w-px h-10 bg-border self-center" />
-              <div>
-                <p className="text-2xl font-bold text-solar-green">{usableArea.toFixed(0)} m²</p>
-                <p className="text-xs text-muted-foreground">Usable ({Math.round(building.usableFraction * 100)}%)</p>
-              </div>
-              <div className="w-px h-10 bg-border self-center" />
-              <div>
-                <p className="text-2xl font-bold text-primary">{panelsCount}</p>
-                <p className="text-xs text-muted-foreground">Panels</p>
-              </div>
-              <div className="w-px h-10 bg-border self-center" />
-              <div>
-                <p className="text-2xl font-bold text-solar-gold">{kWInstalled.toFixed(1)} kW</p>
-                <p className="text-xs text-muted-foreground">Capacity</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Cost Breakdown Preview */}
-          <div className="bg-gradient-to-r from-primary/5 to-solar-gold/5 rounded-xl p-4 mb-6 border border-primary/20">
             <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              Cost Breakdown (Per Panel Method)
+              Live Calculation Preview
             </h4>
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
               <div>
-                <p className="text-lg font-bold text-foreground">{panelCost.toLocaleString()} EGP</p>
-                <p className="text-xs text-muted-foreground">{panelsCount} × {panel.panelPrice.toLocaleString()} EGP</p>
-                <p className="text-xs text-muted-foreground">Panel Cost</p>
+                <p className="text-xl font-bold text-foreground">{rooftopArea} m²</p>
+                <p className="text-xs text-muted-foreground">Total Roof</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-foreground">{otherCosts.toLocaleString()} EGP</p>
-                <p className="text-xs text-muted-foreground">{kWInstalled.toFixed(1)} kW × 8,000</p>
-                <p className="text-xs text-muted-foreground">Other Costs</p>
+                <p className="text-xl font-bold text-solar-green">{usableArea.toFixed(0)} m²</p>
+                <p className="text-xs text-muted-foreground">Usable ({Math.round(building.usableFraction * 100)}%)</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-primary">{estimatedCost.toLocaleString()} EGP</p>
-                <p className="text-xs text-muted-foreground">{kWInstalled > 0 ? (estimatedCost / kWInstalled).toLocaleString() : 0} EGP/kW</p>
-                <p className="text-xs text-muted-foreground">Total System</p>
+                <p className="text-xl font-bold text-muted-foreground">{kWMax.toFixed(1)} kW</p>
+                <p className="text-xs text-muted-foreground">kW Max</p>
               </div>
+              <div>
+                <p className="text-xl font-bold text-primary">{kWInstalled} kW</p>
+                <p className="text-xs text-muted-foreground">kW Installed (×0.95)</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-solar-gold">{totalCost.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Total Cost (EGP)</p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-border text-center">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{kWInstalled} kW</span> × <span className="font-medium text-foreground">{scenario.costPerKW.toLocaleString()} EGP/kW</span> = <span className="font-bold text-primary">{totalCost.toLocaleString()} EGP</span>
+              </p>
             </div>
           </div>
 
