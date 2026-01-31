@@ -9,7 +9,6 @@
   "map": {
     "title": "Select Your Location",
     "subtitle": "Select your location and draw your rooftop to calculate solar feasibility with real NASA climate data",
-    "cities": "Quick Select Cities",
     "drawTip": "Use the polygon tool to draw your rooftop for accurate measurements",
     "areaCalculated": "Area calculated: {{area}} m²",
     "quickSelect": "Quick Select",
@@ -19,7 +18,12 @@
     "buildingsFound": "{{count}} building(s) found - click to select",
     "clickToDetect": "Click on the map to detect buildings automatically",
     "selectedBuilding": "Building selected",
-    "rooftopArea": "Rooftop Area"
+    "rooftopArea": "Rooftop Area",
+    "detectLocation": "Detect My Location",
+    "detectingLocation": "Detecting location...",
+    "locationDetected": "Location detected",
+    "locationError": "Could not detect location. Please allow GPS access.",
+    "gpsNotSupported": "GPS is not supported in your browser"
   },
   "input": {
     "title": "System Configuration",
