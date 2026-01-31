@@ -89,6 +89,40 @@ export const defaultClimateData: ClimateData = {
 };
 
 // ================================================
+// CONNECTION RECOMMENDATION
+// ================================================
+
+export interface ConnectionRecommendation {
+  systemType: "Grid-Connected" | "Hybrid (Grid + Battery)" | "Off-grid possible";
+  reason: string;
+  icon: "grid" | "hybrid" | "offgrid";
+}
+
+export function getConnectionRecommendation(coverageRatio: number): ConnectionRecommendation {
+  const coveragePercent = coverageRatio * 100;
+  
+  if (coveragePercent < 100) {
+    return {
+      systemType: "Grid-Connected",
+      reason: "System does not fully cover demand. Off-grid is not viable.",
+      icon: "grid",
+    };
+  } else if (coveragePercent >= 100 && coveragePercent <= 120) {
+    return {
+      systemType: "Hybrid (Grid + Battery)",
+      reason: "System barely covers demand. Grid backup required.",
+      icon: "hybrid",
+    };
+  } else {
+    return {
+      systemType: "Off-grid possible",
+      reason: "System has sufficient surplus for full independence.",
+      icon: "offgrid",
+    };
+  }
+}
+
+// ================================================
 // CALCULATION RESULT INTERFACE
 // ================================================
 
@@ -123,6 +157,9 @@ export interface SolarCalculation {
   
   // Step 11: CO2 impact
   co2Saved: number;
+  
+  // Connection recommendation
+  connectionRecommendation: ConnectionRecommendation;
   
   // Building Mode data
   buildingMode: boolean;
@@ -270,6 +307,9 @@ export function calculateSolarFeasibility(
     warnings.push("⚠️ ERROR: kW exceeds physical limits of roof area.");
   }
 
+  // Get connection recommendation based on coverage
+  const connectionRecommendation = getConnectionRecommendation(coverageRatio);
+
   return {
     usableArea,
     kWMax,
@@ -284,6 +324,7 @@ export function calculateSolarFeasibility(
     paybackYears,
     coverageRatio,
     co2Saved,
+    connectionRecommendation,
     buildingMode,
     numberOfUnits,
     avgUnitConsumption,
