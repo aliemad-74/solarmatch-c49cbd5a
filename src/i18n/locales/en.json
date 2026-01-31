@@ -8,7 +8,7 @@
   },
   "map": {
     "title": "Select Your Location",
-    "subtitle": "Click on the map or draw your rooftop area",
+    "subtitle": "Select your location and draw your rooftop to calculate solar feasibility with real NASA climate data",
     "cities": "Quick Select Cities",
     "drawTip": "Use the polygon tool to draw your rooftop for accurate measurements",
     "areaCalculated": "Area calculated: {{area}} m²"
