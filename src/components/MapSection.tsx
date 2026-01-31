@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -366,6 +367,9 @@ const MapSection = ({
     setSearchQuery("");
   };
 
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
+
   return (
     <section className="relative">
       <div className="absolute inset-0 gradient-hero" />
@@ -373,37 +377,37 @@ const MapSection = ({
       <div className="relative container mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8 animate-fade-in">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
-            Find Your <span className="text-gradient-solar">Solar Potential</span>
+            {isArabic ? 'اكتشف' : 'Find Your'} <span className="text-gradient-solar">{isArabic ? 'إمكاناتك الشمسية' : 'Solar Potential'}</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Select your location and draw your rooftop to calculate solar feasibility with real NASA climate data
+            {t('map.subtitle')}
           </p>
         </div>
 
         {/* Search Bar */}
         <div className="max-w-lg mx-auto mb-6 animate-slide-up relative z-50">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
             <Input
               type="text"
-              placeholder="Search any location in Egypt..."
+              placeholder={isArabic ? "ابحث عن أي موقع في مصر..." : "Search any location in Egypt..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10 h-12 bg-card border-border/50 shadow-card focus:shadow-glow transition-shadow"
+              className="ps-10 pe-10 h-12 bg-card border-border/50 shadow-card focus:shadow-glow transition-shadow"
             />
             {isSearching && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
+              <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
             )}
           </div>
           
           {/* Search Results Dropdown */}
           {searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 z-[100] mt-2 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
+            <div className="absolute start-0 end-0 z-[100] mt-2 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
               {searchResults.map((result, index) => (
                 <button
                   key={index}
                   onClick={() => selectSearchResult(result)}
-                  className="w-full px-4 py-3 text-left hover:bg-primary/10 text-sm truncate border-b border-border/50 last:border-b-0 transition-colors"
+                  className="w-full px-4 py-3 text-start hover:bg-primary/10 text-sm truncate border-b border-border/50 last:border-b-0 transition-colors"
                 >
                   <span className="text-foreground">{result.name}</span>
                 </button>
@@ -425,7 +429,7 @@ const MapSection = ({
               }`}
             >
               <MapPin className="w-4 h-4" />
-              {data.name}
+              {isArabic ? (key === 'zagazig' ? 'الزقازيق' : key === 'cairo' ? 'القاهرة' : 'الإسكندرية') : data.name}
             </button>
           ))}
         </div>
@@ -440,12 +444,12 @@ const MapSection = ({
             {isDrawingMode ? (
               <>
                 <MousePointer className="w-4 h-4" />
-                Finish Drawing
+                {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
               </>
             ) : (
               <>
                 <PenTool className="w-4 h-4" />
-                Draw Rooftop
+                {isArabic ? 'ارسم السطح' : 'Draw Rooftop'}
               </>
             )}
           </Button>
@@ -456,7 +460,7 @@ const MapSection = ({
               className="flex items-center gap-2"
             >
               <Undo2 className="w-4 h-4" />
-              Undo
+              {isArabic ? 'تراجع' : 'Undo'}
             </Button>
           )}
           {(polygonPoints.length > 0 || calculatedArea !== null) && (
@@ -466,7 +470,7 @@ const MapSection = ({
               className="flex items-center gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
             >
               <Trash2 className="w-4 h-4" />
-              Clear
+              {isArabic ? 'مسح' : 'Clear'}
             </Button>
           )}
         </div>
@@ -476,8 +480,12 @@ const MapSection = ({
           <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
               {polygonPoints.length < MIN_POLYGON_POINTS 
-                ? `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
-                : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`}
+                ? (isArabic 
+                    ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
+                    : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`)
+                : (isArabic
+                    ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو 'إنهاء الرسم'`
+                    : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`)}
             </p>
           </div>
         )}
@@ -486,7 +494,7 @@ const MapSection = ({
         {calculatedArea !== null && (
           <div className="text-center mb-4 animate-scale-in">
             <div className="inline-flex items-center gap-2 bg-solar-green/20 text-solar-green px-4 py-2 rounded-lg border border-solar-green/30">
-              <span className="text-sm font-medium">Rooftop Area:</span>
+              <span className="text-sm font-medium">{isArabic ? 'مساحة السطح:' : 'Rooftop Area:'}</span>
               <span className="text-lg font-bold">{calculatedArea.toFixed(1)} m²</span>
             </div>
           </div>
@@ -501,7 +509,7 @@ const MapSection = ({
             className="flex items-center gap-1"
           >
             <Minimize2 className="w-4 h-4" />
-            Normal
+            {isArabic ? 'عادي' : 'Normal'}
           </Button>
           <Button
             onClick={() => setMapSize("large")}
@@ -510,7 +518,7 @@ const MapSection = ({
             className="flex items-center gap-1"
           >
             <Maximize2 className="w-4 h-4" />
-            Large
+            {isArabic ? 'كبير' : 'Large'}
           </Button>
         </div>
 
@@ -534,27 +542,27 @@ const MapSection = ({
           </div>
           
           {/* Map Overlay Info */}
-          <div className="absolute bottom-4 left-4 glass rounded-lg px-4 py-2 shadow-lg z-[1000]">
+          <div className="absolute bottom-4 start-4 glass rounded-lg px-4 py-2 shadow-lg z-[1000]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
-              <span className="text-sm font-medium text-foreground">{currentLocation.name}, Egypt</span>
+              <span className="text-sm font-medium text-foreground">{currentLocation.name}, {isArabic ? 'مصر' : 'Egypt'}</span>
             </div>
             {isLoadingClimate ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                Loading climate data...
+                {isArabic ? 'جاري تحميل بيانات المناخ...' : 'Loading climate data...'}
               </div>
             ) : climateData ? (
               <p className="text-xs text-muted-foreground">
-                Avg. Solar Irradiance: {climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day
+                {isArabic ? 'متوسط الإشعاع الشمسي:' : 'Avg. Solar Irradiance:'} {climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day
               </p>
             ) : null}
           </div>
 
           {/* Data Source Badge */}
-          <div className="absolute bottom-4 right-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
+          <div className="absolute bottom-4 end-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
             <p className="text-xs text-muted-foreground">
-              Data: <span className="text-foreground font-medium">NASA POWER</span>
+              {isArabic ? 'البيانات:' : 'Data:'} <span className="text-foreground font-medium">NASA POWER</span>
             </p>
           </div>
         </div>
