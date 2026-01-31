@@ -147,50 +147,52 @@ const ResultsDashboard = ({ results, isVisible }: ResultsDashboardProps) => {
         </div>
 
         {/* Connection Recommendation */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: "125ms" }}>
-          <div className={`p-5 rounded-xl border ${
-            results.connectionRecommendation.icon === "offgrid" 
-              ? "bg-solar-green/10 border-solar-green/30" 
-              : results.connectionRecommendation.icon === "hybrid"
-                ? "bg-solar-gold/10 border-solar-gold/30"
-                : "bg-primary/10 border-primary/30"
-          }`}>
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-xl ${
-                results.connectionRecommendation.icon === "offgrid"
-                  ? "bg-solar-green/20"
-                  : results.connectionRecommendation.icon === "hybrid"
-                    ? "bg-solar-gold/20"
-                    : "bg-primary/20"
-              }`}>
-                {results.connectionRecommendation.icon === "offgrid" ? (
-                  <Unplug className="w-6 h-6 text-solar-green" />
-                ) : results.connectionRecommendation.icon === "hybrid" ? (
-                  <Battery className="w-6 h-6 text-solar-gold" />
-                ) : (
-                  <PlugZap className="w-6 h-6 text-primary" />
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-display text-lg font-semibold text-foreground">
-                    Recommended: {results.connectionRecommendation.systemType}
-                  </h4>
-                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                    results.connectionRecommendation.icon === "offgrid"
-                      ? "bg-solar-green/20 text-solar-green"
-                      : results.connectionRecommendation.icon === "hybrid"
-                        ? "bg-solar-gold/20 text-solar-gold"
-                        : "bg-primary/20 text-primary"
-                  }`}>
-                    {formatNumber(results.coverageRatio * 100, 0)}% Coverage
-                  </span>
+        {results.connectionRecommendation && (
+          <div className="mb-6 animate-fade-in" style={{ animationDelay: "125ms" }}>
+            <div className={`p-5 rounded-xl border ${
+              results.connectionRecommendation.icon === "offgrid" 
+                ? "bg-solar-green/10 border-solar-green/30" 
+                : results.connectionRecommendation.icon === "hybrid"
+                  ? "bg-solar-gold/10 border-solar-gold/30"
+                  : "bg-primary/10 border-primary/30"
+            }`}>
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-xl ${
+                  results.connectionRecommendation.icon === "offgrid"
+                    ? "bg-solar-green/20"
+                    : results.connectionRecommendation.icon === "hybrid"
+                      ? "bg-solar-gold/20"
+                      : "bg-primary/20"
+                }`}>
+                  {results.connectionRecommendation.icon === "offgrid" ? (
+                    <Unplug className="w-6 h-6 text-solar-green" />
+                  ) : results.connectionRecommendation.icon === "hybrid" ? (
+                    <Battery className="w-6 h-6 text-solar-gold" />
+                  ) : (
+                    <PlugZap className="w-6 h-6 text-primary" />
+                  )}
                 </div>
-                <p className="text-muted-foreground">{results.connectionRecommendation.reason}</p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-display text-lg font-semibold text-foreground">
+                      Recommended: {results.connectionRecommendation.systemType}
+                    </h4>
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                      results.connectionRecommendation.icon === "offgrid"
+                        ? "bg-solar-green/20 text-solar-green"
+                        : results.connectionRecommendation.icon === "hybrid"
+                          ? "bg-solar-gold/20 text-solar-gold"
+                          : "bg-primary/20 text-primary"
+                    }`}>
+                      {formatNumber(results.coverageRatio * 100, 0)}% Coverage
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground">{results.connectionRecommendation.reason}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Coverage Ratio & Calculation Breakdown */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
