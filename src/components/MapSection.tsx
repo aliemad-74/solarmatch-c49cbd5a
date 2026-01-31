@@ -1,13 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation } from "lucide-react";
+import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as turf from "@turf/turf";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { fetchClimateData, searchLocation, getLocationName, ClimateData } from "@/lib/climateApi";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Fix Leaflet default marker icons
@@ -22,12 +21,6 @@ interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
-}
-
-interface DetectedBuilding {
-  id: number;
-  coordinates: [number, number][];
-  area?: number;
 }
 
 // Default location (Cairo)
@@ -54,16 +47,10 @@ const MapSection = ({
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
   
-  // Building detection states
-  const [isSearchingBuildings, setIsSearchingBuildings] = useState(false);
-  const [detectedBuildings, setDetectedBuildings] = useState<DetectedBuilding[]>([]);
-  const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
-  
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const polygonLayerRef = useRef<L.Polygon | null>(null);
   const pointMarkersRef = useRef<L.CircleMarker[]>([]);
-  const buildingLayersRef = useRef<L.Polygon[]>([]);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === 'ar';
@@ -100,139 +87,6 @@ const MapSection = ({
     }
   }, [mapSize]);
 
-  // Clear detected buildings from map
-  const clearDetectedBuildings = useCallback(() => {
-    buildingLayersRef.current.forEach(layer => mapRef.current?.removeLayer(layer));
-    buildingLayersRef.current = [];
-    setDetectedBuildings([]);
-    setSelectedBuildingId(null);
-  }, []);
-
-  // Fetch buildings from Overpass API via edge function
-  const fetchBuildingsAtLocation = useCallback(async (lat: number, lng: number) => {
-    setIsSearchingBuildings(true);
-    clearDetectedBuildings();
-    
-    try {
-      const response = await supabase.functions.invoke('building-footprints', {
-        body: { lat, lng, radius: 50 }
-      });
-
-      if (response.error) {
-        console.error('Error fetching buildings:', response.error);
-        toast.error(t('map.noBuildingsFound'));
-        return;
-      }
-
-      const { buildings } = response.data;
-      
-      if (!buildings || buildings.length === 0) {
-        toast.info(t('map.noBuildingsFound'));
-        // Switch to manual draw mode
-        setIsDrawingMode(true);
-        return;
-      }
-
-      setDetectedBuildings(buildings);
-      toast.success(t('map.buildingsFound', { count: buildings.length }));
-
-      // Draw buildings on map
-      buildings.forEach((building: DetectedBuilding) => {
-        if (!mapRef.current) return;
-        
-        const positions: L.LatLngExpression[] = building.coordinates.map(
-          ([lat, lng]) => [lat, lng]
-        );
-        
-        const polygon = L.polygon(positions, {
-          color: "#f97316", // Orange for detected
-          fillColor: "#f97316",
-          fillOpacity: 0.3,
-          weight: 2,
-          className: 'detected-building',
-        }).addTo(mapRef.current);
-
-        // Click handler for selecting building
-        polygon.on('click', () => {
-          selectBuilding(building);
-        });
-
-        // Hover effects
-        polygon.on('mouseover', () => {
-          if (selectedBuildingId !== building.id) {
-            polygon.setStyle({ fillOpacity: 0.5 });
-          }
-        });
-        
-        polygon.on('mouseout', () => {
-          if (selectedBuildingId !== building.id) {
-            polygon.setStyle({ fillOpacity: 0.3 });
-          }
-        });
-
-        buildingLayersRef.current.push(polygon);
-      });
-
-    } catch (error) {
-      console.error('Failed to fetch buildings:', error);
-      toast.error(t('map.noBuildingsFound'));
-    } finally {
-      setIsSearchingBuildings(false);
-    }
-  }, [t, clearDetectedBuildings]);
-
-  // Select a detected building
-  const selectBuilding = useCallback(async (building: DetectedBuilding) => {
-    setSelectedBuildingId(building.id);
-    
-    // Update polygon styling
-    buildingLayersRef.current.forEach((layer, index) => {
-      if (detectedBuildings[index]?.id === building.id) {
-        layer.setStyle({
-          color: "#14b8a6",
-          fillColor: "#14b8a6",
-          fillOpacity: 0.4,
-        });
-      } else {
-        layer.setStyle({
-          color: "#f97316",
-          fillColor: "#f97316",
-          fillOpacity: 0.3,
-        });
-      }
-    });
-
-    // Convert coordinates to polygon points for further processing
-    const points = building.coordinates.map(([lat, lng]) => L.latLng(lat, lng));
-    setPolygonPoints(points);
-
-    // Calculate area using Turf.js for accuracy
-    const coordinates = building.coordinates.map(([lat, lng]) => [lng, lat]);
-    coordinates.push(coordinates[0]); // Close polygon
-    const polygon = turf.polygon([coordinates]);
-    const areaInSqMeters = turf.area(polygon);
-    const area = Math.round(areaInSqMeters * 100) / 100;
-    
-    setCalculatedArea(area);
-    if (onAreaCalculated && area > 0) {
-      onAreaCalculated(area);
-    }
-
-    // Calculate centroid for location
-    const centroid = turf.centroid(polygon);
-    const [lng, lat] = centroid.geometry.coordinates;
-    
-    // Update location and fetch climate data
-    const locationName = await getLocationName(lat, lng);
-    setCurrentLocation({ lat, lng, name: locationName });
-    if (onLocationChange) {
-      onLocationChange(locationName);
-    }
-    fetchClimateForLocation(lat, lng);
-    
-    toast.success(t('map.selectedBuilding'));
-  }, [detectedBuildings, onAreaCalculated, onLocationChange, t]);
-
   // Reference to track if we should complete polygon
   const shouldCompleteRef = useRef<L.LatLng[] | null>(null);
 
@@ -249,8 +103,8 @@ const MapSection = ({
   useEffect(() => {
     if (mapRef.current) {
       mapRef.current.off("click");
-      mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
-        if (isDrawingMode) {
+      if (isDrawingMode) {
+        mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
           setPolygonPoints(prev => {
             // Check if clicking near the first point to close polygon
             if (prev.length >= MIN_POLYGON_POINTS) {
@@ -263,13 +117,10 @@ const MapSection = ({
             }
             return [...prev, e.latlng];
           });
-        } else {
-          // Detect buildings at clicked location
-          fetchBuildingsAtLocation(e.latlng.lat, e.latlng.lng);
-        }
-      });
+        });
+      }
     }
-  }, [isDrawingMode, fetchBuildingsAtLocation]);
+  }, [isDrawingMode]);
 
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
@@ -284,20 +135,20 @@ const MapSection = ({
     return Math.round(areaInSqMeters * 100) / 100;
   }, []);
 
-  // Recalculate area whenever points change (for dragging updates in manual draw mode)
+  // Recalculate area whenever points change (for dragging updates)
   useEffect(() => {
-    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS && detectedBuildings.length === 0) {
+    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
       const area = calculatePolygonArea(polygonPoints);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) {
         onAreaCalculated(area);
       }
     }
-  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated, detectedBuildings.length]);
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
 
-  // Update polygon visualization for manual drawing
+  // Update polygon visualization
   useEffect(() => {
-    if (!mapRef.current || detectedBuildings.length > 0) return;
+    if (!mapRef.current) return;
 
     // Clear existing polygon and markers
     if (polygonLayerRef.current) {
@@ -353,7 +204,7 @@ const MapSection = ({
 
       pointMarkersRef.current.push(marker as any);
     });
-  }, [polygonPoints, isDrawingMode, detectedBuildings.length]);
+  }, [polygonPoints, isDrawingMode]);
 
   // Fetch climate data when location changes
   const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
@@ -463,16 +314,15 @@ const MapSection = ({
   const clearPolygon = useCallback(() => {
     setPolygonPoints([]);
     setCalculatedArea(null);
-    clearDetectedBuildings();
     
-    // Clear manual drawing polygon
+    // Clear polygon layer
     if (polygonLayerRef.current && mapRef.current) {
       mapRef.current.removeLayer(polygonLayerRef.current);
       polygonLayerRef.current = null;
     }
     pointMarkersRef.current.forEach(marker => mapRef.current?.removeLayer(marker));
     pointMarkersRef.current = [];
-  }, [clearDetectedBuildings]);
+  }, []);
 
   // Undo last point
   const undoLastPoint = useCallback(() => {
@@ -491,12 +341,6 @@ const MapSection = ({
       setIsDrawingMode(true);
     }
   }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
-
-  // Start manual drawing mode
-  const startManualDraw = useCallback(() => {
-    clearPolygon();
-    setIsDrawingMode(true);
-  }, [clearPolygon]);
 
   // Debounced search ref
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -606,39 +450,34 @@ const MapSection = ({
           </Button>
         </div>
 
-        {/* Drawing Controls - only show when in drawing mode or when we have a polygon */}
+        {/* Drawing Controls */}
         <div className="flex justify-center gap-3 mb-4 animate-slide-up" style={{ animationDelay: "0.15s" }}>
-          {!isDrawingMode && !calculatedArea && (
+          <Button
+            onClick={toggleDrawingMode}
+            variant={isDrawingMode ? "default" : "outline"}
+            className={`flex items-center gap-2 ${isDrawingMode ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
+          >
+            {isDrawingMode ? (
+              <>
+                <MousePointer className="w-4 h-4" />
+                {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
+              </>
+            ) : (
+              <>
+                <PenTool className="w-4 h-4" />
+                {isArabic ? 'ارسم السطح' : 'Draw Rooftop'}
+              </>
+            )}
+          </Button>
+          {isDrawingMode && polygonPoints.length > 0 && (
             <Button
-              onClick={startManualDraw}
+              onClick={undoLastPoint}
               variant="outline"
               className="flex items-center gap-2"
             >
-              <PenTool className="w-4 h-4" />
-              {t('map.manualDraw')}
+              <Undo2 className="w-4 h-4" />
+              {isArabic ? 'تراجع' : 'Undo'}
             </Button>
-          )}
-          {isDrawingMode && (
-            <>
-              <Button
-                onClick={toggleDrawingMode}
-                variant="default"
-                className="flex items-center gap-2 gradient-solar text-primary-foreground shadow-glow"
-              >
-                <MousePointer className="w-4 h-4" />
-                {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
-              </Button>
-              {polygonPoints.length > 0 && (
-                <Button
-                  onClick={undoLastPoint}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Undo2 className="w-4 h-4" />
-                  {isArabic ? 'تراجع' : 'Undo'}
-                </Button>
-              )}
-            </>
           )}
           {(polygonPoints.length > 0 || calculatedArea !== null) && (
             <Button
@@ -652,14 +491,9 @@ const MapSection = ({
           )}
         </div>
 
-        {/* Instructions */}
-        <div className="text-center mb-4 animate-fade-in">
-          {isSearchingBuildings ? (
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm font-medium">{t('map.searchingBuildings')}</span>
-            </div>
-          ) : isDrawingMode ? (
+        {/* Drawing Instructions */}
+        {isDrawingMode && (
+          <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
               {polygonPoints.length < MIN_POLYGON_POINTS 
                 ? (isArabic 
@@ -669,12 +503,8 @@ const MapSection = ({
                     ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو 'إنهاء الرسم'`
                     : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`)}
             </p>
-          ) : !calculatedArea ? (
-            <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
-              {t('map.clickToDetect')}
-            </p>
-          ) : null}
-        </div>
+          </div>
+        )}
 
         {/* Calculated Area Display */}
         {calculatedArea !== null && (
@@ -723,7 +553,7 @@ const MapSection = ({
             <div 
               ref={mapContainerRef} 
               className="w-full h-full z-0"
-              style={{ cursor: isDrawingMode ? "crosshair" : "pointer" }}
+              style={{ cursor: isDrawingMode ? "crosshair" : "grab" }}
             />
           </div>
           
