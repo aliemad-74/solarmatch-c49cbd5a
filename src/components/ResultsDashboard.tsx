@@ -6,6 +6,7 @@ import ResultCard from "./ResultCard";
 import ROITimeline from "./ROITimeline";
 import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
+import AIAdvisor from "./AIAdvisor";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { generateSolarReport } from "@/lib/pdfReport";
 import { useState } from "react";
@@ -15,9 +16,12 @@ interface ResultsDashboardProps {
   isVisible: boolean;
   locationName?: string;
   shareableParams?: ShareableParams;
+  monthlyConsumption?: number;
+  pvType?: string;
+  buildingType?: string;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment" }: ResultsDashboardProps) => {
   const { t } = useTranslation();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -303,6 +307,17 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams }:
             </div>
           </div>
         )}
+
+        {/* AI Solar Advisor */}
+        <div className="mb-6 animate-fade-in print:hidden" style={{ animationDelay: "130ms" }}>
+          <AIAdvisor 
+            results={results}
+            locationName={locationName || ''}
+            monthlyConsumption={monthlyConsumption}
+            pvType={pvType}
+            buildingType={buildingType}
+          />
+        </div>
 
         {/* Coverage Ratio & Calculation Breakdown */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
