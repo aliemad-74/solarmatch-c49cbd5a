@@ -4,46 +4,36 @@ import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import Footer from "@/components/Footer";
-import { calculateSolarFeasibility, SolarCalculation, PanelType, defaultClimateData } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PanelType, BuildingType, defaultClimateData } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
-import { deriveAllInsights, DerivedInsights } from "@/lib/autoDerive";
 
 const Index = () => {
+  // Manual inputs
   const [rooftopArea, setRooftopArea] = useState<number>(100);
+  const [panelType, setPanelType] = useState<PanelType>("standard");
+  const [buildingType, setBuildingType] = useState<BuildingType>("apartment");
+  const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
+  
+  // Map/location state
   const [selectedCity, setSelectedCity] = useState<string>("zagazig");
-  const [results, setResults] = useState<SolarCalculation | null>(null);
-  const [showResults, setShowResults] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [locationName, setLocationName] = useState<string>("");
   
-  // Auto-derived insights from location + NASA data
-  const [insights, setInsights] = useState<DerivedInsights | null>(null);
-
-  // Auto-derive ALL parameters when area or climate data changes
-  useEffect(() => {
-    const climate = climateData ?? defaultClimateData;
-    const lat = climate.location?.lat ?? 30.0444;
-    const lng = climate.location?.lng ?? 31.2357;
-    
-    const derived = deriveAllInsights(rooftopArea, lat, lng, climate);
-    setInsights(derived);
-  }, [rooftopArea, climateData]);
+  // Results
+  const [results, setResults] = useState<SolarCalculation | null>(null);
+  const [showResults, setShowResults] = useState(false);
 
   const handleCalculate = () => {
-    if (!insights) return;
-    
     const calculation = calculateSolarFeasibility(
       rooftopArea, 
       climateData, 
-      insights.costScenario, 
-      insights.electricityPrice, 
-      insights.usableFraction, 
-      insights.panelType
+      electricityPrice, 
+      panelType,
+      buildingType
     );
     setResults(calculation);
     setShowResults(true);
 
-    // Scroll to results
     setTimeout(() => {
       document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -65,10 +55,15 @@ const Index = () => {
         <InputPanel
           rooftopArea={rooftopArea}
           setRooftopArea={setRooftopArea}
+          panelType={panelType}
+          setPanelType={setPanelType}
+          buildingType={buildingType}
+          setBuildingType={setBuildingType}
+          electricityPrice={electricityPrice}
+          setElectricityPrice={setElectricityPrice}
           onCalculate={handleCalculate}
           locationName={locationName}
           climateData={climateData}
-          insights={insights}
         />
 
         <div id="results">
