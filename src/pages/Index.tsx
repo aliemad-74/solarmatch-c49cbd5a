@@ -1,18 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import Footer from "@/components/Footer";
-import { calculateSolarFeasibility, SolarCalculation, PanelType, BuildingType, defaultClimateData } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 
 const Index = () => {
   // Manual inputs
   const [rooftopArea, setRooftopArea] = useState<number>(100);
-  const [panelType, setPanelType] = useState<PanelType>("standard");
+  const [pvType, setPvType] = useState<PVType>("B_standard_mono");
   const [buildingType, setBuildingType] = useState<BuildingType>("apartment");
+  const [costScenario, setCostScenario] = useState<CostScenario>("medium");
   const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
+  const [monthlyConsumption, setMonthlyConsumption] = useState<number>(500);
   
   // Map/location state
   const [selectedCity, setSelectedCity] = useState<string>("zagazig");
@@ -28,8 +30,10 @@ const Index = () => {
       rooftopArea, 
       climateData, 
       electricityPrice, 
-      panelType,
-      buildingType
+      pvType,
+      buildingType,
+      costScenario,
+      monthlyConsumption
     );
     setResults(calculation);
     setShowResults(true);
@@ -55,12 +59,16 @@ const Index = () => {
         <InputPanel
           rooftopArea={rooftopArea}
           setRooftopArea={setRooftopArea}
-          panelType={panelType}
-          setPanelType={setPanelType}
+          pvType={pvType}
+          setPvType={setPvType}
           buildingType={buildingType}
           setBuildingType={setBuildingType}
+          costScenario={costScenario}
+          setCostScenario={setCostScenario}
           electricityPrice={electricityPrice}
           setElectricityPrice={setElectricityPrice}
+          monthlyConsumption={monthlyConsumption}
+          setMonthlyConsumption={setMonthlyConsumption}
           onCalculate={handleCalculate}
           locationName={locationName}
           climateData={climateData}

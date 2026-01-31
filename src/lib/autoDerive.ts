@@ -1,9 +1,9 @@
 import { ClimateData } from "./climateApi";
-import { PanelType, panelTypes, BuildingType, buildingTypes } from "./solarData";
+import { PVType, pvTypes, BuildingType, buildingTypes } from "./solarData";
 
 export interface DerivedInsights {
-  panelType: PanelType;
-  panelReason: string;
+  pvType: PVType;
+  pvReason: string;
   buildingType: BuildingType;
   buildingReason: string;
   electricityPrice: number;
@@ -41,15 +41,15 @@ export function deriveInsights(
   const peakMonths = findPeakMonths(climateData.monthlyIrradiance);
   const avgTemp = climateData.monthlyTemperature.reduce((a, b) => a + b, 0) / 12;
 
-  // Auto-suggest panel type
-  let panelType: PanelType = "standard";
-  let panelReason = "Balanced choice for typical rooftops";
+  // Auto-suggest PV type based on usable area
+  let pvType: PVType = "B_standard_mono";
+  let pvReason = "Balanced choice for typical rooftops";
   if (usableArea < 50) {
-    panelType = "modern";
-    panelReason = "Small roof - high-efficiency panels recommended";
+    pvType = "A_high_power_mono";
+    pvReason = "Small roof - high-efficiency panels recommended";
   } else if (usableArea > 200) {
-    panelType = "economy";
-    panelReason = "Large roof - economy panels are cost-effective";
+    pvType = "C_poly_economy";
+    pvReason = "Large roof - economy panels are cost-effective";
   }
 
   // Auto-suggest building type
@@ -67,8 +67,8 @@ export function deriveInsights(
   }
 
   return {
-    panelType,
-    panelReason,
+    pvType,
+    pvReason,
     buildingType,
     buildingReason,
     electricityPrice: 1.95,
