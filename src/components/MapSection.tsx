@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Square } from "lucide-react";
+import { MapPin, Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as turf from "@turf/turf";
@@ -33,7 +33,7 @@ const presetCities = {
 const MAX_POLYGON_POINTS = 12;
 const MIN_POLYGON_POINTS = 4;
 
-type MapSize = "normal" | "semi" | "full";
+type MapSize = "normal" | "large";
 
 const MapSection = ({ 
   selectedCity, 
@@ -125,7 +125,7 @@ const MapSection = ({
             if (prev.length >= MIN_POLYGON_POINTS) {
               const firstPoint = prev[0];
               const distance = e.latlng.distanceTo(firstPoint);
-              if (distance < 20) {
+              if (distance < 5) {
                 // Schedule polygon completion after state update
                 shouldCompleteRef.current = prev;
                 return prev;
@@ -520,50 +520,26 @@ const MapSection = ({
             Normal
           </Button>
           <Button
-            onClick={() => setMapSize("semi")}
-            variant={mapSize === "semi" ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            <Square className="w-4 h-4" />
-            Large
-          </Button>
-          <Button
-            onClick={() => setMapSize("full")}
-            variant={mapSize === "full" ? "default" : "outline"}
+            onClick={() => setMapSize("large")}
+            variant={mapSize === "large" ? "default" : "outline"}
             size="sm"
             className="flex items-center gap-1"
           >
             <Maximize2 className="w-4 h-4" />
-            Full Screen
+            Large
           </Button>
         </div>
 
         {/* Map Container */}
         <div 
-          className={`relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in transition-all duration-300 ${
-            mapSize === "full" ? "fixed inset-4 z-[200]" : ""
-          }`} 
+          className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in transition-all duration-300"
           style={{ animationDelay: "0.2s" }}
         >
-          {mapSize === "full" && (
-            <Button
-              onClick={() => setMapSize("normal")}
-              variant="secondary"
-              size="sm"
-              className="absolute top-4 right-4 z-[1001] shadow-lg"
-            >
-              <Minimize2 className="w-4 h-4 mr-1" />
-              Exit Full Screen
-            </Button>
-          )}
           <div 
             className={`bg-muted relative ${
               mapSize === "normal" 
                 ? "aspect-[16/9] md:aspect-[21/9]" 
-                : mapSize === "semi" 
-                  ? "aspect-square md:aspect-[16/9] min-h-[500px]" 
-                  : "h-full"
+                : "aspect-square md:aspect-[16/9] min-h-[500px]"
             }`}
           >
             <div 
