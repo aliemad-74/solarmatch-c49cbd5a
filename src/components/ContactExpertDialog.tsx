@@ -43,21 +43,25 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
     setError(null);
 
     try {
-      // For now, just log the lead - can be connected to Supabase later
-      const leadData = {
-        ...formData,
-        locationName,
-        rooftopArea: results?.usableArea,
-        estimatedCost: results?.totalCost,
-        estimatedSavings: results?.savingsYear,
-        kWInstalled: results?.kWInstalled,
-        timestamp: new Date().toISOString(),
-      };
+      const { error: insertError } = await supabase
+        .from('leads')
+        .insert([{
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          preferred_contact: formData.preferredContact,
+          best_time: formData.bestTime,
+          location_name: locationName || null,
+          rooftop_area: results?.usableArea || null,
+          kw_installed: results?.kWInstalled || null,
+          estimated_cost: results?.totalCost || null,
+          estimated_savings: results?.savingsYear || null,
+          status: 'new',
+        }]);
 
-      console.log("Lead captured:", leadData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (insertError) {
+        throw insertError;
+      }
       
       setSubmitted(true);
       setTimeout(() => {
