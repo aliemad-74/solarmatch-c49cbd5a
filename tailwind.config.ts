@@ -106,8 +106,8 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		boxShadow: {
-  			'glow': 'var(--shadow-glow)',
-  			'card': 'var(--shadow-md)',
+  			glow: 'var(--shadow-glow)',
+  			card: 'var(--shadow-md)',
   			'card-hover': 'var(--shadow-lg)'
   		},
   		keyframes: {
