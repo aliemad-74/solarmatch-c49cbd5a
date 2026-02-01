@@ -284,10 +284,9 @@ const InputPanel = ({
                     <Input
                       id="num-units"
                       type="number"
-                      value={numberOfUnits}
-                      onChange={(e) => setNumberOfUnits(Math.max(1, Number(e.target.value)))}
-                      min={1}
-                      max={500}
+                      value={numberOfUnits || ''}
+                      onChange={(e) => setNumberOfUnits(e.target.value === '' ? 0 : Number(e.target.value))}
+                      min={0}
                       className="h-10"
                     />
                   </div>
@@ -296,10 +295,9 @@ const InputPanel = ({
                     <Input
                       id="avg-consumption"
                       type="number"
-                      value={avgUnitConsumption}
-                      onChange={(e) => setAvgUnitConsumption(Math.max(50, Number(e.target.value)))}
-                      min={50}
-                      max={2000}
+                      value={avgUnitConsumption || ''}
+                      onChange={(e) => setAvgUnitConsumption(e.target.value === '' ? 0 : Number(e.target.value))}
+                      min={0}
                       className="h-10"
                     />
                   </div>
@@ -320,10 +318,9 @@ const InputPanel = ({
                 <Input
                   id="monthly-consumption"
                   type="number"
-                  value={monthlyConsumption}
-                  onChange={(e) => setMonthlyConsumption(Math.max(0, Number(e.target.value)))}
+                  value={monthlyConsumption || ''}
+                  onChange={(e) => setMonthlyConsumption(e.target.value === '' ? 0 : Number(e.target.value))}
                   min={0}
-                  max={50000}
                   className="h-12 text-lg font-medium"
                 />
                 <p className="text-xs text-muted-foreground">
