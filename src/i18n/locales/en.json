@@ -6,6 +6,121 @@
     "about": "About",
     "getStarted": "Get Started"
   },
+  "howItWorks": {
+    "hero": {
+      "title": "How SolarMatch Works",
+      "subtitle": "Our engineering-grade calculator uses real NASA climate data and Egypt's actual electricity tariffs to give you accurate solar feasibility estimates"
+    },
+    "step": "Step",
+    "stepsTitle": "Four Simple Steps",
+    "steps": {
+      "location": {
+        "title": "Select Your Location",
+        "description": "Click on the map or use GPS to pinpoint your building's location in Egypt",
+        "details": "We use your coordinates to fetch location-specific solar irradiance data from NASA's POWER API"
+      },
+      "configure": {
+        "title": "Configure Your System",
+        "description": "Enter your rooftop area, building type, and choose a panel package",
+        "details": "Select from economy, standard, or premium panels with different efficiency ratings and costs"
+      },
+      "calculate": {
+        "title": "Run the Calculation",
+        "description": "Our 11-step engineering model calculates your solar potential",
+        "details": "We factor in usable roof space, panel efficiency, local climate, and Egypt's 7-tier electricity tariffs"
+      },
+      "results": {
+        "title": "Get Your Report",
+        "description": "View detailed results including energy production, savings, and ROI timeline",
+        "details": "Download a PDF report, share your results, or contact a solar expert for next steps"
+      }
+    },
+    "methodologyTitle": "Our Calculation Methodology",
+    "methodologySubtitle": "Engineering-grade accuracy using industry-standard formulas",
+    "methodology": {
+      "irradiance": {
+        "title": "Solar Irradiance Data",
+        "description": "We use NASA POWER API data for Global Horizontal Irradiance (GHI) specific to your location, measured in kWh/m²/day"
+      },
+      "yield": {
+        "title": "Specific Yield Calculation",
+        "description": "Egypt-optimized yield of 1,800 kWh/kWp/year accounts for panel orientation, temperature effects, and system losses"
+      },
+      "roi": {
+        "title": "25-Year ROI Projections",
+        "description": "Financial modeling includes 0.5% annual panel degradation, optional electricity inflation, and Egypt's actual tariff structure"
+      },
+      "carbon": {
+        "title": "Carbon Footprint Reduction",
+        "description": "CO₂ savings calculated using Egypt's grid emission factor of 0.55 kg CO₂/kWh based on the national energy mix"
+      }
+    },
+    "dataSources": {
+      "title": "Our Data Sources",
+      "description": "SolarMatch relies on authoritative, up-to-date data sources to ensure accuracy:",
+      "nasa": "NASA POWER API - 40+ years of satellite-derived solar radiation data",
+      "tariffs": "Egypt Electricity Holding Company - Official 2024/2025 residential tariff rates",
+      "panels": "Industry-standard panel specifications from leading manufacturers"
+    },
+    "cta": {
+      "title": "Ready to Calculate?",
+      "description": "Get your personalized solar feasibility report in under a minute",
+      "button": "Start Calculator"
+    }
+  },
+  "about": {
+    "hero": {
+      "title": "About SolarMatch",
+      "subtitle": "Empowering Egypt's transition to sustainable solar energy through accessible, accurate feasibility analysis"
+    },
+    "mission": {
+      "title": "Our Mission",
+      "description": "SolarMatch aims to democratize solar feasibility analysis for Egyptian homeowners and businesses. We believe that accurate information is the first step toward sustainable energy adoption, and we're committed to making that information accessible to everyone."
+    },
+    "background": {
+      "title": "Project Background",
+      "p1": "SolarMatch was developed as a professional demonstration for a student innovation competition focused on sustainable technology solutions for the Egyptian market.",
+      "p2": "Egypt has exceptional solar potential, with average daily irradiance exceeding 5.5 kWh/m² across most of the country. However, many property owners lack access to reliable tools for evaluating whether solar makes sense for their specific situation.",
+      "p3": "Our platform bridges this gap by combining real NASA climate data with Egypt's actual electricity tariff structure to provide engineering-grade feasibility assessments that anyone can understand."
+    },
+    "valuesTitle": "Our Values",
+    "values": {
+      "accuracy": {
+        "title": "Scientific Accuracy",
+        "description": "We use peer-reviewed methodologies and authoritative data sources to ensure our calculations reflect real-world performance"
+      },
+      "accessibility": {
+        "title": "Accessibility",
+        "description": "Complex engineering calculations presented in a simple, intuitive interface that anyone can use without technical expertise"
+      },
+      "localization": {
+        "title": "Egypt-First Design",
+        "description": "Built specifically for the Egyptian market with local tariffs, Arabic language support, and region-appropriate assumptions"
+      },
+      "education": {
+        "title": "Educational Impact",
+        "description": "Beyond calculations, we aim to educate users about solar technology and its benefits for household economics and the environment"
+      }
+    },
+    "featuresTitle": "Platform Features",
+    "features": {
+      "realtime": "Real-time NASA climate data for any Egyptian location",
+      "tariffs": "Egypt's official 7-tier residential electricity tariffs",
+      "roi": "25-year financial projections with degradation modeling",
+      "ai": "AI-powered solar advisor for personalized recommendations",
+      "bilingual": "Full Arabic and English language support",
+      "reports": "Downloadable PDF reports and sharing capabilities"
+    },
+    "impact": {
+      "title": "Environmental Impact",
+      "description": "Every solar installation reduces dependence on fossil fuels and lowers carbon emissions. By helping more Egyptians understand their solar potential, we contribute to the country's renewable energy goals and a cleaner future for coming generations."
+    },
+    "cta": {
+      "title": "Try It Yourself",
+      "description": "See what solar could do for your property",
+      "button": "Start Calculator"
+    }
+  },
   "map": {
     "title": "Select Your Location",
     "subtitle": "Select your location and draw your rooftop to calculate solar feasibility with real NASA climate data",

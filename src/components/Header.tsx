@@ -1,14 +1,31 @@
-import { Sun } from "lucide-react";
+import { Sun, Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "react-router-dom";
 import LanguageToggle from "./LanguageToggle";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { useState } from "react";
 
 const Header = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navLinks = [
+    { path: "/how-it-works", label: t('header.howItWorks') },
+    { path: "/about", label: t('header.about') },
+  ];
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50 print:hidden">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl gradient-solar flex items-center justify-center shadow-glow">
             <Sun className="w-6 h-6 text-primary-foreground" />
           </div>
@@ -16,22 +33,67 @@ const Header = () => {
             <h1 className="font-display font-bold text-xl text-foreground">{t('header.title')}</h1>
             <p className="text-xs text-muted-foreground -mt-0.5">{t('header.subtitle')}</p>
           </div>
-        </div>
+        </Link>
+        
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            {t('header.howItWorks')}
-          </span>
-          <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            {t('header.about')}
-          </span>
-          <span className="text-sm font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer">
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`text-sm transition-colors ${
+                isActive(link.path)
+                  ? "text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Link
+            to="/"
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
             {t('header.getStarted')}
-          </span>
+          </Link>
           <LanguageToggle />
         </nav>
-        {/* Mobile language toggle */}
-        <div className="md:hidden">
+        
+        {/* Mobile Navigation */}
+        <div className="md:hidden flex items-center gap-2">
           <LanguageToggle />
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-64">
+              <nav className="flex flex-col gap-4 mt-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-lg transition-colors ${
+                      isActive(link.path)
+                        ? "text-primary font-medium"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-lg font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  {t('header.getStarted')}
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
