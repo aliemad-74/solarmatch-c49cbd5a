@@ -1,123 +1,177 @@
 
+# Enhanced Smart Insights with Comprehensive Solar Panel Data
 
-# خطة: اكتشاف حدود المباني تلقائياً باستخدام OpenStreetMap
+## Overview
+This plan enhances the "Smart Insights" section to display comprehensive, actionable solar panel-related information derived from NASA climate data. The new insights will help users understand optimal operation times, maintenance schedules, potential hazards, and performance factors for their solar installation.
 
-## ملخص الفكرة
-عند ضغط المستخدم على أي نقطة في الخريطة، سيتم البحث في قاعدة بيانات OpenStreetMap عن المباني القريبة وعرض حدودها تلقائياً للاختيار منها.
+## Current State
+The existing Smart Insights section shows only 3 cards:
+1. Solar Irradiance (annual average + peak months)
+2. Temperature (average + efficiency note)
+3. Yearly Potential (fixed 1,800 kWh/kW/year)
 
-## كيف سيعمل النظام
+## New Insights to Add
+
+Based on the NASA POWER data available (monthly irradiance, temperature, wind speed, cloud cover), we can derive the following solar-panel-relevant insights:
+
+### 1. Peak Production Hours
+- **Data source**: Solar irradiance patterns
+- **Display**: Best production months and estimated peak hours (10am-2pm typical for Egypt)
+- **Calculation**: Identify months with irradiance above 90% of maximum
+
+### 2. Cleaning Schedule Recommendation
+- **Data source**: Wind speed, cloud cover, temperature patterns
+- **Logic**: 
+  - Dusty conditions = high wind + low cloud cover + high temp (sandstorm risk)
+  - Recommend cleaning frequency: Monthly in dusty months (Mar-May), bi-monthly otherwise
+  - Identify high-dust risk months based on Egypt's Khamaseen season (March-May)
+- **Display**: "Clean panels monthly during Mar-May (sandstorm season)" or seasonal schedule
+
+### 3. Temperature Danger Zones
+- **Data source**: Monthly temperature data
+- **Logic**: 
+  - Panel efficiency drops ~0.4-0.5% per degree above 25°C
+  - Flag months where temp exceeds 35°C (high stress)
+  - Calculate estimated efficiency loss per month
+- **Display**: Hot months warning with efficiency loss percentage
+
+### 4. Wind Risk Assessment
+- **Data source**: Monthly wind speed
+- **Logic**:
+  - Wind > 5 m/s = moderate risk
+  - Wind > 8 m/s = high risk (panel mounting stress)
+  - Identify months requiring secure mounting inspection
+- **Display**: Wind risk level and affected months
+
+### 5. Cloud Cover Impact
+- **Data source**: Monthly cloud cover percentage
+- **Logic**: Show months with >30% cloud cover as reduced production periods
+- **Display**: Low production months due to overcast conditions
+
+### 6. Monthly Production Calendar
+- **Data source**: Monthly irradiance
+- **Display**: Visual indicator showing relative production each month (high/medium/low)
+
+### 7. Optimal Installation Month
+- **Data source**: Temperature + cloud cover
+- **Logic**: Best months for installation = moderate temp + low cloud cover
+- **Display**: Recommended installation period
+
+## Technical Implementation
+
+### Step 1: Create a new utility module for solar insights
+Create `src/lib/solarInsights.ts` with functions to derive all insights from ClimateData:
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│  1. المستخدم يضغط على نقطة في الخريطة                          │
-│                        ↓                                        │
-│  2. استدعاء Overpass API للبحث عن المباني القريبة (نصف قطر 50م) │
-│                        ↓                                        │
-│  3. عرض حدود المباني المكتشفة كـ polygons قابلة للاختيار       │
-│                        ↓                                        │
-│  4. المستخدم يختار المبنى المطلوب                               │
-│                        ↓                                        │
-│  5. حساب المساحة وجلب البيانات المناخية تلقائياً               │
-└─────────────────────────────────────────────────────────────────┘
++--------------------------------------------------+
+|               solarInsights.ts                   |
++--------------------------------------------------+
+| - getPeakProductionInfo(climateData)             |
+| - getCleaningSchedule(climateData)               |
+| - getTemperatureRisks(climateData)               |
+| - getWindRisks(climateData)                      |
+| - getCloudCoverImpact(climateData)               |
+| - getOptimalInstallMonth(climateData)            |
+| - getMonthlyProductionCalendar(climateData)      |
++--------------------------------------------------+
 ```
 
-## المزايا
+### Step 2: Update InputPanel.tsx Smart Insights Section
+Expand the collapsible insights section from 3 cards to a comprehensive 2-column grid with 6-8 insight cards:
 
-| الميزة | الوصف |
-|--------|-------|
-| مجاني 100% | Overpass API مجاني ولا يحتاج API key |
-| دقيق | يستخدم بيانات OSM الفعلية للمباني |
-| سهل الاستخدام | ضغطة واحدة بدلاً من رسم يدوي |
-| يدعم التراجع | المستخدم يمكنه الرسم يدوياً إذا لم يجد مبناه |
+1. **Peak Production** (sun icon) - Peak months + typical peak hours
+2. **Cleaning Schedule** (brush/droplet icon) - Recommended cleaning frequency
+3. **Heat Warning** (thermometer-sun icon) - Hot months + efficiency loss
+4. **Wind Assessment** (wind icon) - Risk level + affected months  
+5. **Cloud Impact** (cloud icon) - Overcast months affecting production
+6. **Best Install Time** (calendar icon) - Optimal installation period
+7. **Monthly Calendar** (grid icon) - Visual month-by-month production indicator
+8. **Yearly Potential** (existing) - Egypt average yield
 
-## التحذيرات المهمة
+### Step 3: Add Localization Keys
+Add new translation keys to both `en.json` and `ar.json` for all new insight labels and descriptions.
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/lib/solarInsights.ts` | **NEW** - Utility functions for deriving insights |
+| `src/components/InputPanel.tsx` | Expand Smart Insights section with new cards |
+| `src/i18n/locales/en.json` | Add new insight translation keys |
+| `src/i18n/locales/ar.json` | Add Arabic translations for insights |
+
+## Sample UI Layout
 
 ```text
-⚠️ تغطية OpenStreetMap في مصر متفاوتة:
-   - القاهرة والإسكندرية: تغطية جيدة
-   - المدن الصغيرة والريف: تغطية محدودة
-
-⚠️ سيتم توفير خيار "الرسم اليدوي" كبديل دائماً
++-----------------------------------------------+
+| Smart Insights (NASA Climate Data) - Cairo  ▼ |
++-----------------------------------------------+
+| +-------------------+  +-------------------+  |
+| | ☀️ Peak Production |  | 🧹 Cleaning       |  |
+| | May-Aug           |  | Monthly Mar-May   |  |
+| | 10am-2pm optimal  |  | Bi-monthly others |  |
+| +-------------------+  +-------------------+  |
+|                                               |
+| +-------------------+  +-------------------+  |
+| | 🌡️ Heat Warning   |  | 💨 Wind Risk      |  |
+| | Jun-Aug (>35°C)   |  | Low risk          |  |
+| | -8% efficiency    |  | Avg: 4.0 m/s      |  |
+| +-------------------+  +-------------------+  |
+|                                               |
+| +-------------------+  +-------------------+  |
+| | ☁️ Cloud Impact   |  | 📅 Best Install   |  |
+| | Dec-Feb overcast  |  | Mar-Apr or Sep-Oct|  |
+| | -15% production   |  | Moderate temps    |  |
+| +-------------------+  +-------------------+  |
+|                                               |
+| +-------------------------------------------+ |
+| | 📊 Monthly Production Calendar            | |
+| | J F M A M J J A S O N D                   | |
+| | 🟡🟡🟢🟢🟢🟢🟢🟢🟢🟢🟡🟡                   | |
+| +-------------------------------------------+ |
++-----------------------------------------------+
 ```
 
----
+## Insight Calculation Logic
 
-## التفاصيل التقنية
-
-### 1. Edge Function جديدة: `building-footprints`
-
-```text
-supabase/functions/building-footprints/index.ts
-
-المدخلات:
-- lat: خط العرض
-- lng: خط الطول
-- radius: نصف قطر البحث (افتراضي 50 متر)
-
-المخرجات:
-- buildings: مصفوفة من المباني مع إحداثيات الـ polygon
+### Cleaning Schedule
+```typescript
+function getCleaningSchedule(climateData: ClimateData) {
+  // Egypt's Khamaseen season: March-May (high dust)
+  // High wind + low cloud + high temp = dust accumulation
+  const dustyMonths = [2, 3, 4]; // Mar, Apr, May (0-indexed)
+  const recommendations = {
+    dustyMonths: ["Mar", "Apr", "May"],
+    dustyFrequency: "Weekly to monthly",
+    normalFrequency: "Every 2-3 months",
+    reason: "Khamaseen sandstorm season increases dust buildup"
+  };
+  return recommendations;
+}
 ```
 
-**Overpass Query:**
-```
-[out:json][timeout:10];
-way["building"](around:50, {lat}, {lng});
-out geom;
-```
-
-### 2. تعديلات على MapSection.tsx
-
-**الوضع الجديد: "Quick Select"**
-- عند تفعيله، الضغط على الخريطة يستدعي الـ API
-- عرض المباني المكتشفة بلون مختلف (برتقالي)
-- عند اختيار مبنى، يتحول للون الأخضر ويُحسب المساحة
-
-**أزرار جديدة:**
-```text
-[📍 اختيار سريع] [✏️ رسم يدوي] [🗑️ مسح]
+### Temperature Risk
+```typescript
+function getTemperatureRisks(climateData: ClimateData) {
+  const hotMonths = [];
+  const efficiencyLoss = [];
+  climateData.monthlyTemperature.forEach((temp, idx) => {
+    if (temp > 35) {
+      hotMonths.push(MONTHS[idx]);
+      // ~0.4% loss per degree above 25°C
+      efficiencyLoss.push(((temp - 25) * 0.4).toFixed(1));
+    }
+  });
+  return { hotMonths, avgEfficiencyLoss, dangerLevel };
+}
 ```
 
-### 3. معالجة عدم وجود مباني
+## Expected Outcome
+Users will see a comprehensive, actionable set of insights specifically relevant to their solar panel installation, including:
+- When panels will produce the most power
+- When and how often to clean panels
+- Which months pose risks to panel efficiency or hardware
+- Optimal timing for installation
+- Month-by-month production expectations
 
-إذا لم يجد الـ API مباني:
-- عرض رسالة: "لم نجد مباني مسجلة هنا، يمكنك الرسم يدوياً"
-- تفعيل وضع الرسم تلقائياً
-
-### 4. تحسينات UX
-
-- Loading indicator أثناء البحث
-- تظليل المباني المتاحة عند hover
-- عرض المساحة المحسوبة فوراً عند الاختيار
-- إمكانية تعديل الـ polygon بعد الاختيار (سحب النقاط)
-
----
-
-## الملفات المتأثرة
-
-| الملف | التغيير |
-|-------|---------|
-| `supabase/functions/building-footprints/index.ts` | **جديد** - Edge function للـ Overpass API |
-| `supabase/config.toml` | إضافة تكوين الـ function الجديدة |
-| `src/components/MapSection.tsx` | إضافة وضع "Quick Select" ومنطق اختيار المباني |
-| `src/i18n/locales/en.json` | ترجمات إنجليزية جديدة |
-| `src/i18n/locales/ar.json` | ترجمات عربية جديدة |
-
----
-
-## خطة التنفيذ
-
-### المرحلة 1: Backend
-1. إنشاء edge function `building-footprints`
-2. اختبار الـ Overpass API query
-3. معالجة الأخطاء وحالات عدم وجود بيانات
-
-### المرحلة 2: Frontend
-4. إضافة زر "اختيار سريع" 
-5. منطق استدعاء الـ API عند الضغط
-6. عرض المباني المكتشفة كـ polygons قابلة للاختيار
-
-### المرحلة 3: UX
-7. تجربة المستخدم (loading, errors, fallback)
-8. الترجمات العربية والإنجليزية
-9. تحسين التصميم والألوان
-
+All information is derived from NASA climate data for their specific location, making it highly relevant and personalized.
