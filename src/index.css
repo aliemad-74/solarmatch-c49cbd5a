@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,12 +19,12 @@
     --popover-foreground: 215 25% 15%;
 
     /* Primary - Vibrant teal for energy/sustainability */
-    --primary: 168 80% 35%;
+    --primary: 96 48% 48%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Soft slate for subtle backgrounds */
     --secondary: 210 15% 93%;
-    --secondary-foreground: 215 25% 25%;
+    --secondary-foreground: 0 0% 0%;
 
     /* Muted - Light gray for disabled/subtle text */
     --muted: 210 15% 95%;
