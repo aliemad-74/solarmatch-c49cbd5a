@@ -194,6 +194,8 @@
     "totalCost": "Total Cost",
     "yearly": "Yearly",
     "payback": "Payback",
+    "panels": "Panels",
+    "panelsNeeded": "Panels Needed",
     "installedCapacity": "Installed Capacity",
     "yearlyProduction": "Yearly Production",
     "yearlySavings": "Yearly Savings",
