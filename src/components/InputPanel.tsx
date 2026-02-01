@@ -1,4 +1,4 @@
-import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users } from "lucide-react";
+import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { ClimateData } from "@/lib/climateApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { getAllSolarInsights } from "@/lib/solarInsights";
 
 interface InputPanelProps {
   rooftopArea: number;
@@ -89,16 +90,8 @@ const InputPanel = ({
   const hasRealClimateData = climateData !== null && climateData !== undefined;
   const climate = climateData ?? defaultClimateData;
   
-  // Find peak months (only relevant when we have real data)
-  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const MONTHS_AR = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-  const monthNames = isArabic ? MONTHS_AR : MONTHS;
-  const maxIrr = Math.max(...climate.monthlyIrradiance);
-  const peakMonths = climate.monthlyIrradiance
-    .map((v, i) => ({ v, m: monthNames[i] }))
-    .filter(x => x.v >= maxIrr * 0.9)
-    .map(x => x.m);
-  const avgTemp = climate.monthlyTemperature.reduce((a, b) => a + b, 0) / 12;
+  // Get all solar insights from NASA climate data
+  const insights = getAllSolarInsights(climate, isArabic);
 
   // Building type labels with translations
   const buildingTypeLabels: Record<BuildingType, string> = {
@@ -382,7 +375,7 @@ const InputPanel = ({
             <div className="bg-card rounded-2xl border border-border/50 shadow-card overflow-hidden">
               <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-solar-green" />
+                  <Sparkles className="w-5 h-5 text-primary" />
                   <span className="font-medium text-foreground">{t('insights.title')}</span>
                   {locationName && (
                     <span className="text-xs text-muted-foreground">({locationName})</span>
@@ -392,39 +385,135 @@ const InputPanel = ({
               </CollapsibleTrigger>
               
               <CollapsibleContent>
-                <div className="p-4 pt-0 grid md:grid-cols-3 gap-4">
-                  {/* Solar Irradiance */}
-                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sun className="w-5 h-5 text-solar-gold" />
-                      <span className="font-medium text-sm">{t('insights.solarIrradiance')}</span>
+                <div className="p-4 pt-0 space-y-4">
+                  {/* Row 1: Peak Production, Cleaning Schedule, Heat Warning */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {/* Peak Production */}
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sun className="w-5 h-5 text-amber-500" />
+                        <span className="font-medium text-sm">{t('insights.peakProduction')}</span>
+                      </div>
+                      <p className="text-lg font-bold text-foreground">{insights.peakProduction.peakMonths.slice(0, 4).join(", ")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('insights.peakHours')}: {insights.peakProduction.peakHours}
+                      </p>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{climate.annualAvgIrradiance.toFixed(1)} kWh/m²/day</p>
-                    <p className="text-xs text-muted-foreground mt-1">{t('insights.peakMonths')}: {peakMonths.join(", ")}</p>
+
+                    {/* Cleaning Schedule */}
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Droplets className="w-5 h-5 text-sky-500" />
+                        <span className="font-medium text-sm">{t('insights.cleaningSchedule')}</span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {t('insights.dustySeason')}: {insights.cleaningSchedule.dustyFrequency}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {insights.cleaningSchedule.dustyMonths.slice(0, 3).join(", ")} • {insights.cleaningSchedule.reason}
+                      </p>
+                    </div>
+
+                    {/* Heat Warning */}
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Thermometer className="w-5 h-5 text-orange-500" />
+                        <span className="font-medium text-sm">{t('insights.heatWarning')}</span>
+                      </div>
+                      {insights.temperatureRisk.hotMonths.length > 0 ? (
+                        <>
+                          <p className="text-lg font-bold text-foreground">
+                            {insights.temperatureRisk.hotMonths.slice(0, 3).join(", ")}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('insights.efficiencyLoss')}: -{insights.temperatureRisk.avgEfficiencyLoss}% • {isArabic ? `الحد الأقصى ${insights.temperatureRisk.maxTemp.toFixed(0)}°م` : `Max ${insights.temperatureRisk.maxTemp.toFixed(0)}°C`}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{t('insights.noHeatRisk')}</p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Temperature */}
-                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Thermometer className="w-5 h-5 text-orange-500" />
-                      <span className="font-medium text-sm">{t('insights.temperature')}</span>
+                  {/* Row 2: Wind Risk, Cloud Cover, Best Install Time */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {/* Wind Assessment */}
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Wind className="w-5 h-5 text-teal-500" />
+                        <span className="font-medium text-sm">{t('insights.windRisk')}</span>
+                      </div>
+                      <p className="text-lg font-bold text-foreground">
+                        {insights.windRisk.riskLevel === "low" && t('insights.lowRisk')}
+                        {insights.windRisk.riskLevel === "moderate" && t('insights.moderateRisk')}
+                        {insights.windRisk.riskLevel === "high" && t('insights.highRisk')}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('insights.avgWind')}: {insights.windRisk.avgWindSpeed} m/s • {insights.windRisk.recommendation}
+                      </p>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{avgTemp.toFixed(0)}°C {t('insights.avgAnnual')}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {avgTemp > 28 
-                        ? (isArabic ? "درجات الحرارة المرتفعة قد تقلل الكفاءة 5-10%" : "High temps may reduce efficiency 5-10%") 
-                        : (isArabic ? "مناسب لكفاءة الألواح" : "Favorable for panel efficiency")}
-                    </p>
+
+                    {/* Cloud Cover Impact */}
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Cloud className="w-5 h-5 text-slate-500" />
+                        <span className="font-medium text-sm">{t('insights.cloudCover')}</span>
+                      </div>
+                      <p className="text-lg font-bold text-foreground">{insights.cloudCover.avgCloudCover}% {t('insights.avgCloud')}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {insights.cloudCover.overcastMonths.length > 0 
+                          ? `${t('insights.overcastMonths')}: ${insights.cloudCover.overcastMonths.slice(0, 3).join(", ")}` 
+                          : insights.cloudCover.productionImpact}
+                      </p>
+                    </div>
+
+                    {/* Best Install Time */}
+                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="w-5 h-5 text-primary" />
+                        <span className="font-medium text-sm">{t('insights.bestInstall')}</span>
+                      </div>
+                      <p className="text-lg font-bold text-foreground">{insights.optimalInstall.bestMonths.join(", ")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{insights.optimalInstall.reason}</p>
+                    </div>
                   </div>
 
-                  {/* Expected Yield */}
+                  {/* Monthly Production Calendar */}
                   <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap className="w-5 h-5 text-primary" />
-                      <span className="font-medium text-sm">{t('insights.yearlyPotential')}</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      <span className="font-medium text-sm">{t('insights.monthlyCalendar')}</span>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">1,800 kWh/kW/{isArabic ? 'سنة' : 'yr'}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'المتوسط الوطني لمصر' : 'Egypt national average'}</p>
+                    <div className="flex justify-between items-end gap-1">
+                      {insights.monthlyCalendar.map((month, idx) => (
+                        <div key={idx} className="flex flex-col items-center flex-1">
+                          <div 
+                            className={`w-full rounded-t-sm transition-all ${
+                              month.level === "high" 
+                                ? "bg-primary h-8" 
+                                : month.level === "medium" 
+                                  ? "bg-primary/60 h-5" 
+                                  : "bg-primary/30 h-3"
+                            }`}
+                            title={`${month.month}: ${month.irradiance.toFixed(1)} kWh/m²/day`}
+                          />
+                          <span className="text-[10px] text-muted-foreground mt-1">
+                            {month.month.slice(0, 1)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-sm bg-primary" /> {t('insights.high')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-sm bg-primary/60" /> {t('insights.medium')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-sm bg-primary/30" /> {t('insights.low')}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CollapsibleContent>
