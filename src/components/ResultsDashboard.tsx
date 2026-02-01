@@ -1,4 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -201,7 +201,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                       {option.package.justification}
                     </div>
                     
-                    <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-2 gap-2 text-center text-xs">
+                    <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-3 gap-2 text-center text-xs">
                       <div>
                         <p className="font-semibold text-foreground">{formatNumber(option.energyYear, 0)} kWh</p>
                         <p className="text-muted-foreground">{t('results.yearly')}</p>
@@ -209,6 +209,13 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                       <div>
                         <p className="font-semibold text-foreground">{formatNumber(option.paybackYears, 1)} yrs</p>
                         <p className="text-muted-foreground">{t('results.payback')}</p>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-center gap-1">
+                          <LayoutGrid className="w-3 h-3 text-muted-foreground" />
+                          <p className="font-semibold text-foreground">{option.panelCount}</p>
+                        </div>
+                        <p className="text-muted-foreground">{t('results.panels')}</p>
                       </div>
                     </div>
                   </div>
@@ -374,12 +381,19 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                 <span className="text-muted-foreground">4. Energy/Year</span>
                 <span className="font-mono text-foreground">{formatNumber(results.energyYear, 0)} kWh</span>
               </div>
+              <div className="flex justify-between py-1 border-b border-border/50 bg-primary/5 -mx-2 px-2 rounded">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  5. {t('results.panelsNeeded')}
+                </span>
+                <span className="font-mono font-bold text-primary">{results.panelCount} × {results.panelWattage}W</span>
+              </div>
               <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">8. {t('results.totalCost')}</span>
+                <span className="text-muted-foreground">6. {t('results.totalCost')}</span>
                 <span className="font-mono font-bold text-foreground">{formatCurrency(results.totalCost)}</span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">9. {t('results.payback')}</span>
+                <span className="text-muted-foreground">7. {t('results.payback')}</span>
                 <span className="font-mono text-foreground">{formatNumber(results.paybackYears, 1)} years</span>
               </div>
             </div>

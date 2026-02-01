@@ -22,6 +22,7 @@ export interface SystemPackage {
   costPerKW: number;
   costRange: string;
   justification: string;
+  typicalPanelWattage: number; // Typical wattage per panel for this tier
 }
 
 export const systemPackages: Record<string, SystemPackage> = {
@@ -33,6 +34,7 @@ export const systemPackages: Record<string, SystemPackage> = {
     costPerKW: 15000,
     costRange: "15,000",
     justification: "Uses less expensive polycrystalline panels with good value for larger installations.",
+    typicalPanelWattage: 350, // 330-400W typical poly panels
   },
   standard: {
     name: "Standard Balanced",
@@ -42,6 +44,7 @@ export const systemPackages: Record<string, SystemPackage> = {
     costPerKW: 19000,
     costRange: "19,000",
     justification: "Balanced choice with standard monocrystalline modules for optimal price-performance.",
+    typicalPanelWattage: 450, // 400-500W standard mono panels
   },
   premium: {
     name: "Premium High-Density",
@@ -51,6 +54,7 @@ export const systemPackages: Record<string, SystemPackage> = {
     costPerKW: 26000,
     costRange: "26,000",
     justification: "Highest performance per m² using premium high-power monocrystalline modules.",
+    typicalPanelWattage: 600, // 550-700W high-power mono panels (like Canadian Solar TOPBiHiKu7)
   },
 };
 
@@ -175,6 +179,7 @@ export interface PackageCalculation {
   savingsYear: number;
   paybackYears: number;
   coverageRatio: number;
+  panelCount: number; // Number of panels needed
 }
 
 export interface SolarCalculation {
@@ -223,6 +228,10 @@ export interface SolarCalculation {
   effectiveMonthlyConsumption: number;
   annualConsumption: number;
   unitsCovered: number;
+  
+  // Panel count
+  panelCount: number;
+  panelWattage: number;
   
   // Metadata
   pvType: PVType;
@@ -283,6 +292,9 @@ export function calculateSolarFeasibility(
     const annualConsumption = effectiveMonthlyConsumption * 12;
     const coverageRatio = annualConsumption > 0 ? energyYear / annualConsumption : 0;
     
+    // Calculate panel count
+    const panelCount = Math.ceil((kWInstalled * 1000) / pkg.typicalPanelWattage);
+    
     return {
       packageKey: key,
       package: pkg,
@@ -292,6 +304,7 @@ export function calculateSolarFeasibility(
       savingsYear,
       paybackYears,
       coverageRatio,
+      panelCount,
     };
   });
 
@@ -393,6 +406,10 @@ export function calculateSolarFeasibility(
   const unitAnnualConsumption = avgUnitConsumption * 12;
   const unitsCovered = unitAnnualConsumption > 0 ? energyYear / unitAnnualConsumption : 0;
 
+  // Panel count calculation based on selected package
+  const panelWattage = selectedPkg.typicalPanelWattage;
+  const panelCount = Math.ceil((kWInstalled * 1000) / panelWattage);
+
   // ============================================
   // STEP 11: CO2 impact (tons/year)
   // ============================================
@@ -429,6 +446,8 @@ export function calculateSolarFeasibility(
     effectiveMonthlyConsumption,
     annualConsumption,
     unitsCovered,
+    panelCount,
+    panelWattage,
     pvType,
     buildingType,
     costScenario,
