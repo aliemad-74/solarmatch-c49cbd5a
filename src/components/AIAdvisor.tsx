@@ -36,7 +36,7 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
         coverageRatio: results.coverageRatio,
         pvType,
         buildingType,
-        co2Saved: results.co2Saved,
+        co2Reduction: results.co2Saved,
         totalCost: results.totalCost,
         savingsYear: results.savingsYear,
         paybackYears: results.paybackYears,
