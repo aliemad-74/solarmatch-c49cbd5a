@@ -7,6 +7,7 @@ import ROITimeline from "./ROITimeline";
 import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 import AIAdvisor from "./AIAdvisor";
+import IdealSizingCard from "./IdealSizingCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { generateSolarReport } from "@/lib/pdfReport";
 import { useState } from "react";
@@ -399,6 +400,13 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             </div>
           </div>
         </div>
+
+        {/* Ideal System Sizing Analysis */}
+        {results.idealSizing && (
+          <div className="mb-6 print:hidden">
+            <IdealSizingCard analysis={results.idealSizing} />
+          </div>
+        )}
 
         {/* 25-Year ROI Timeline */}
         <div className="mb-6 print:hidden">
