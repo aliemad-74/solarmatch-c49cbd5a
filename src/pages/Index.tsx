@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
+import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
@@ -150,6 +151,8 @@ const Index = () => {
             buildingType={buildingType}
           />
         </div>
+
+        <FAQSection />
       </main>
 
       <Footer />
