@@ -368,5 +368,44 @@
     "undersizingImpact": "Impact of undersizing:",
     "undersizingEffect1": "Partial coverage only",
     "undersizingEffect2": "Continued grid dependency"
+  },
+  "faq": {
+    "badge": "FAQ",
+    "title": "Frequently Asked Questions",
+    "subtitle": "Everything you need to know about solar energy in Egypt",
+    "questions": {
+      "howMuchCost": {
+        "q": "How much does a solar panel system cost in Egypt?",
+        "a": "Solar system costs in Egypt range from 15,000 to 26,000 EGP per kW depending on panel quality. A typical 5kW residential system costs between 75,000-130,000 EGP. Our calculator provides accurate estimates based on your specific requirements and chosen package tier."
+      },
+      "roofSize": {
+        "q": "What roof size do I need for solar panels?",
+        "a": "You need approximately 6-8.5 m² per kW of solar capacity, depending on panel efficiency. For a typical 5kW system, you'd need 30-43 m² of usable roof space. Our tool calculates usable area based on your building type (50-75% of total roof)."
+      },
+      "paybackPeriod": {
+        "q": "How long until the system pays for itself?",
+        "a": "Most residential solar systems in Egypt pay back within 4-7 years, depending on your electricity consumption and local rates. With Egypt's 7-tier tariff system, higher consumers see faster payback. After payback, you enjoy 15-20+ years of free electricity."
+      },
+      "maintenance": {
+        "q": "What maintenance do solar panels require?",
+        "a": "Solar panels require minimal maintenance. Regular cleaning every 2-4 weeks during dusty seasons (especially Khamaseen in spring) and monthly during normal periods. No moving parts means very low maintenance costs—typically 1-2% of system cost annually."
+      },
+      "gridConnection": {
+        "q": "Do I need to stay connected to the grid?",
+        "a": "It depends on your coverage ratio. Systems under 100% coverage should stay grid-connected. 100-120% coverage works well with hybrid (grid + battery) systems. Over 120% coverage may allow off-grid operation, though grid connection enables net metering benefits."
+      },
+      "lifespan": {
+        "q": "How long do solar panels last?",
+        "a": "Quality solar panels last 25-30 years with minimal degradation (about 0.5% efficiency loss per year). Most manufacturers offer 25-year performance warranties. Inverters typically need replacement after 10-15 years."
+      },
+      "weather": {
+        "q": "Do solar panels work in hot weather or cloudy days?",
+        "a": "Solar panels work year-round but output varies. Egypt's average 5.5+ kWh/m²/day irradiance is excellent. Panels lose about 0.4% efficiency per degree above 25°C. Cloudy days reduce output by 10-25% but still generate power. Our Smart Insights show monthly variations."
+      },
+      "permits": {
+        "q": "Do I need permits for solar installation in Egypt?",
+        "a": "Residential systems under 500 kW typically require notification to the electricity distribution company. Net metering agreements need approval from the local electricity authority. Commercial installations may need additional environmental permits."
+      }
+    }
   }
 }
