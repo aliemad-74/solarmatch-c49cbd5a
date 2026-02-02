@@ -340,5 +340,33 @@
     "error": "Failed to get advice. Please try again.",
     "rateLimitError": "Rate limit exceeded. Please try again later.",
     "paymentError": "Please add credits to get AI advice."
+  },
+  "idealSizing": {
+    "title": "Ideal System Sizing Analysis",
+    "formula": "P_ideal = E_day ÷ (PSH × PR)",
+    "dailyConsumption": "Daily Consumption",
+    "peakSunHours": "Peak Sun Hours",
+    "performanceRatio": "Performance Ratio",
+    "idealSize": "Ideal Size",
+    "yourSystem": "Your System",
+    "difference": "Difference",
+    "oversized": "Oversized",
+    "undersized": "Undersized",
+    "optimal": "Optimal",
+    "recommendation": "Recommendation",
+    "significantlyOversizedMessage": "Your system is significantly larger than needed. This is ideal for future consumption growth, maximizing net metering income, or if you plan to add electric vehicles or appliances.",
+    "moderatelyOversizedMessage": "Your system is moderately oversized, providing a good buffer for consumption growth and ensuring reliable coverage throughout the year.",
+    "slightlyOversizedMessage": "Your system is well-balanced with a slight margin for efficiency losses and future needs.",
+    "optimalMessage": "Your system is perfectly sized for your current consumption. Excellent match between production and demand!",
+    "slightlyUndersizedMessage": "Your system covers most of your needs but you may still rely on the grid during peak months. Consider upgrading if budget allows.",
+    "significantlyUndersizedMessage": "Your system is significantly undersized. Consider increasing panel count, switching to higher-density panels, or expanding usable roof area.",
+    "optimalPackage": "Suggested Package",
+    "whyOversizing": "Benefits of oversizing:",
+    "oversizingBenefit1": "Offset future consumption growth",
+    "oversizingBenefit2": "Maximize net metering income",
+    "oversizingBenefit3": "Maximum roof utilization",
+    "undersizingImpact": "Impact of undersizing:",
+    "undersizingEffect1": "Partial coverage only",
+    "undersizingEffect2": "Continued grid dependency"
   }
 }

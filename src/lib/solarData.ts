@@ -167,6 +167,109 @@ export function getConnectionRecommendation(coverageRatio: number): ConnectionRe
 }
 
 // ================================================
+// IDEAL SYSTEM SIZING ANALYSIS
+// ================================================
+
+export type IdealSizingRecommendation = 
+  | "significantly_oversized" 
+  | "moderately_oversized" 
+  | "slightly_oversized" 
+  | "optimal" 
+  | "slightly_undersized" 
+  | "significantly_undersized";
+
+export interface IdealSizingAnalysis {
+  dailyConsumption: number;          // kWh/day
+  peakSunHours: number;              // h/day from NASA data
+  performanceRatio: number;          // 0.80 default
+  idealSystemSize: number;           // kW
+  installedSystemSize: number;       // kW
+  oversizePercent: number;           // positive = oversized, negative = undersized
+  recommendation: IdealSizingRecommendation;
+  optimalPackage: PackageType | null;
+  explanationKey: string;            // translation key for recommendation message
+}
+
+const PERFORMANCE_RATIO = 0.80;  // Industry standard for well-maintained systems
+const DAYS_PER_MONTH_AVG = 30.44;  // Average days per month
+
+/**
+ * Calculate ideal system sizing analysis
+ * Formula: P_ideal = E_day / (PSH × PR)
+ */
+export function calculateIdealSizing(
+  monthlyConsumption: number,
+  peakSunHours: number,
+  installedSystemSize: number
+): IdealSizingAnalysis {
+  // Convert monthly consumption to daily
+  const dailyConsumption = monthlyConsumption / DAYS_PER_MONTH_AVG;
+  
+  // Calculate ideal system size: P_ideal = E_day / (PSH × PR)
+  const idealSystemSize = dailyConsumption / (peakSunHours * PERFORMANCE_RATIO);
+  
+  // Calculate oversize percentage: ((P_system - P_ideal) / P_ideal) × 100
+  const oversizePercent = idealSystemSize > 0 
+    ? ((installedSystemSize - idealSystemSize) / idealSystemSize) * 100 
+    : 0;
+  
+  // Determine recommendation based on oversize percentage
+  let recommendation: IdealSizingRecommendation;
+  let explanationKey: string;
+  
+  if (oversizePercent > 50) {
+    recommendation = "significantly_oversized";
+    explanationKey = "significantlyOversizedMessage";
+  } else if (oversizePercent > 20) {
+    recommendation = "moderately_oversized";
+    explanationKey = "moderatelyOversizedMessage";
+  } else if (oversizePercent > 5) {
+    recommendation = "slightly_oversized";
+    explanationKey = "slightlyOversizedMessage";
+  } else if (oversizePercent >= -5) {
+    recommendation = "optimal";
+    explanationKey = "optimalMessage";
+  } else if (oversizePercent >= -20) {
+    recommendation = "slightly_undersized";
+    explanationKey = "slightlyUndersizedMessage";
+  } else {
+    recommendation = "significantly_undersized";
+    explanationKey = "significantlyUndersizedMessage";
+  }
+  
+  // Determine optimal package based on ideal system size
+  let optimalPackage: PackageType | null = null;
+  
+  // Find which package would best fit the ideal size
+  const packages = Object.entries(systemPackages) as [PackageType, SystemPackage][];
+  for (const [key, pkg] of packages) {
+    // Calculate how many kW this package can provide in same area
+    // A smaller ideal size suggests economy is sufficient
+    if (idealSystemSize <= 3) {
+      optimalPackage = "economy";
+      break;
+    } else if (idealSystemSize <= 6) {
+      optimalPackage = "standard";
+      break;
+    } else {
+      optimalPackage = "premium";
+    }
+  }
+  
+  return {
+    dailyConsumption,
+    peakSunHours,
+    performanceRatio: PERFORMANCE_RATIO,
+    idealSystemSize,
+    installedSystemSize,
+    oversizePercent,
+    recommendation,
+    optimalPackage,
+    explanationKey,
+  };
+}
+
+// ================================================
 // CALCULATION RESULT INTERFACE
 // ================================================
 
@@ -241,6 +344,9 @@ export interface SolarCalculation {
   
   // Warnings
   warnings: string[];
+  
+  // Ideal System Sizing Analysis
+  idealSizing?: IdealSizingAnalysis;
 }
 
 // ================================================
@@ -458,6 +564,15 @@ export function calculateSolarFeasibility(
   // Get connection recommendation based on coverage
   const connectionRecommendation = getConnectionRecommendation(coverageRatio);
 
+  // ============================================
+  // IDEAL SYSTEM SIZING ANALYSIS
+  // ============================================
+  const idealSizing = calculateIdealSizing(
+    effectiveMonthlyConsumption,
+    climate.annualAvgIrradiance,
+    kWInstalled
+  );
+
   return {
     usableArea,
     kWMax,
@@ -488,6 +603,7 @@ export function calculateSolarFeasibility(
     costScenario,
     climateData: climate,
     warnings,
+    idealSizing,
   };
 }
 
