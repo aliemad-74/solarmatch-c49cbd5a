@@ -169,7 +169,26 @@
     "residential": "منزل سكني",
     "apartment": "عمارة سكنية",
     "commercial": "تجاري",
-    "industrial": "صناعي"
+    "industrial": "صناعي",
+    "agricultural": "مزرعة زراعية"
+  },
+  "farmMode": {
+    "title": "وضع المزرعة الزراعية",
+    "areaInFeddans": "المساحة بالفدان",
+    "feddanEquivalent": "١ فدان = ٤,٢٠٠ م²",
+    "totalArea": "المساحة الإجمالية",
+    "activityType": "نوع النشاط الزراعي",
+    "dripIrrigation": "ري بالتنقيط",
+    "greenhouse": "صوب زراعية",
+    "poultryLivestock": "دواجن/ماشية",
+    "coldStorage": "تخزين مبرد",
+    "equipmentConsumption": "استهلاك المعدات الشهري",
+    "estimationTip": "تقدير سريع",
+    "pumpEstimate": "مضخة ري ٥ حصان ≈ ١,٥٠٠ ك.و.س/شهر",
+    "greenhouseEstimate": "صوبة ١,٠٠٠ م² ≈ ٨٠٠ ك.و.س/شهر",
+    "poultryEstimate": "حظيرة دواجن ≈ ٢,٠٠٠ ك.و.س/شهر",
+    "useEstimate": "استخدم التقدير",
+    "customValue": "قيمة مخصصة"
   },
   "packages": {
     "economy": "القيمة الاقتصادية",

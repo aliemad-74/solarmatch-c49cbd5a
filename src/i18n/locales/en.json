@@ -169,7 +169,26 @@
     "residential": "Residential House",
     "apartment": "Apartment Building",
     "commercial": "Commercial",
-    "industrial": "Industrial"
+    "industrial": "Industrial",
+    "agricultural": "Agricultural Farm"
+  },
+  "farmMode": {
+    "title": "Agricultural Farm Mode",
+    "areaInFeddans": "Area in Feddans",
+    "feddanEquivalent": "1 Feddan = 4,200 m²",
+    "totalArea": "Total Area",
+    "activityType": "Agricultural Activity Type",
+    "dripIrrigation": "Drip Irrigation",
+    "greenhouse": "Greenhouses",
+    "poultryLivestock": "Poultry/Livestock",
+    "coldStorage": "Cold Storage",
+    "equipmentConsumption": "Monthly Equipment Consumption",
+    "estimationTip": "Quick Estimation",
+    "pumpEstimate": "5 HP irrigation pump ≈ 1,500 kWh/month",
+    "greenhouseEstimate": "1,000 m² greenhouse ≈ 800 kWh/month",
+    "poultryEstimate": "Poultry house ≈ 2,000 kWh/month",
+    "useEstimate": "Use Estimate",
+    "customValue": "Custom Value"
   },
   "packages": {
     "economy": "Economy Value",

@@ -111,9 +111,49 @@ export const buildingTypes = {
   apartment: { label: "Apartment Building", usableFraction: 0.60, description: "Moderate usable space (55-65%)" },
   commercial: { label: "Commercial", usableFraction: 0.70, description: "Good usable area (65-75%)" },
   industrial: { label: "Industrial", usableFraction: 0.75, description: "Optimal flat roof (70-80%)" },
+  agricultural: { label: "Agricultural Farm", usableFraction: 0.85, description: "Open farm land (80-90% usable)" },
 };
 
 export type BuildingType = keyof typeof buildingTypes;
+
+// ================================================
+// AGRICULTURAL FARM CONSTANTS
+// ================================================
+
+export const FEDDAN_TO_SQM = 4200.83; // 1 Egyptian Feddan = 4,200.83 m²
+
+export type AgriculturalActivity = keyof typeof agriculturalActivities;
+
+export const agriculturalActivities = {
+  drip_irrigation: { 
+    name: "Drip Irrigation",
+    nameAr: "ري بالتنقيط",
+    estimatedConsumption: 2000,  // kWh/feddan/month
+    description: "Modern irrigation pumps",
+    descriptionAr: "مضخات ري حديثة"
+  },
+  greenhouse: {
+    name: "Greenhouses",
+    nameAr: "صوب زراعية",
+    estimatedConsumption: 5000,  // kWh/greenhouse/month
+    description: "Cooling, ventilation, lighting",
+    descriptionAr: "تبريد وتهوية وإضاءة"
+  },
+  poultry_livestock: {
+    name: "Poultry/Livestock",
+    nameAr: "دواجن/ماشية",
+    estimatedConsumption: 8000,  // kWh/barn/month
+    description: "Cooling, heating, lighting",
+    descriptionAr: "تبريد وتدفئة وإضاءة"
+  },
+  cold_storage: {
+    name: "Cold Storage",
+    nameAr: "تخزين مبرد",
+    estimatedConsumption: 10000, // kWh/month
+    description: "Crop preservation refrigerators",
+    descriptionAr: "ثلاجات حفظ المحاصيل"
+  }
+};
 
 // ================================================
 // TIME CONSTANTS

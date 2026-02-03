@@ -1,16 +1,17 @@
-import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets } from "lucide-react";
+import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD, systemPackages } from "@/lib/solarData";
+import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD, systemPackages, agriculturalActivities, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { getAllSolarInsights } from "@/lib/solarInsights";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface InputPanelProps {
   rooftopArea: number;
@@ -31,6 +32,15 @@ interface InputPanelProps {
   setNumberOfUnits: (units: number) => void;
   avgUnitConsumption: number;
   setAvgUnitConsumption: (consumption: number) => void;
+  // Farm Mode props
+  farmMode: boolean;
+  setFarmMode: (mode: boolean) => void;
+  areaInFeddans: number;
+  setAreaInFeddans: (feddans: number) => void;
+  agriculturalActivity: AgriculturalActivity;
+  setAgriculturalActivity: (activity: AgriculturalActivity) => void;
+  farmEquipmentConsumption: number;
+  setFarmEquipmentConsumption: (consumption: number) => void;
   onCalculate: () => void;
   locationName?: string;
   climateData?: ClimateData | null;
@@ -55,6 +65,14 @@ const InputPanel = ({
   setNumberOfUnits,
   avgUnitConsumption,
   setAvgUnitConsumption,
+  farmMode,
+  setFarmMode,
+  areaInFeddans,
+  setAreaInFeddans,
+  agriculturalActivity,
+  setAgriculturalActivity,
+  farmEquipmentConsumption,
+  setFarmEquipmentConsumption,
   onCalculate,
   locationName,
   climateData,
@@ -93,12 +111,32 @@ const InputPanel = ({
   // Get all solar insights from NASA climate data
   const insights = getAllSolarInsights(climate, isArabic);
 
+  // Handle Farm Mode toggle - sync area and building type
+  useEffect(() => {
+    if (farmMode) {
+      // When enabling farm mode, set building type to agricultural
+      setBuildingType("agricultural");
+      // Convert feddan to sqm
+      setRooftopArea(Math.round(areaInFeddans * FEDDAN_TO_SQM));
+      // Disable building mode
+      if (buildingMode) setBuildingMode(false);
+    }
+  }, [farmMode, areaInFeddans]);
+
+  // Handle building mode toggle - disable farm mode
+  useEffect(() => {
+    if (buildingMode && farmMode) {
+      setFarmMode(false);
+    }
+  }, [buildingMode]);
+
   // Building type labels with translations
   const buildingTypeLabels: Record<BuildingType, string> = {
     residential: t('buildingTypes.residential'),
     apartment: t('buildingTypes.apartment'),
     commercial: t('buildingTypes.commercial'),
     industrial: t('buildingTypes.industrial'),
+    agricultural: t('buildingTypes.agricultural'),
   };
 
   // Package labels with translations
@@ -106,6 +144,14 @@ const InputPanel = ({
     economy: t('packages.economy'),
     standard: t('packages.standard'),
     premium: t('packages.premium'),
+  };
+
+  // Agricultural activity labels
+  const activityLabels: Record<AgriculturalActivity, { label: string; icon: string }> = {
+    drip_irrigation: { label: t('farmMode.dripIrrigation'), icon: "🌱" },
+    greenhouse: { label: t('farmMode.greenhouse'), icon: "🏠" },
+    poultry_livestock: { label: t('farmMode.poultryLivestock'), icon: "🐔" },
+    cold_storage: { label: t('farmMode.coldStorage'), icon: "❄️" },
   };
 
   return (
@@ -167,14 +213,16 @@ const InputPanel = ({
             </div>
           </div>
 
-          {/* Building Type Selection */}
-          <div className="space-y-3 mb-6">
+          {/* Building Type Selection - Hide Agricultural option when not in farm mode */}
+          <div className={`space-y-3 mb-6 ${farmMode ? 'hidden' : ''}`}>
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Building2 className="w-4 h-4 text-muted-foreground" />
               {t('input.buildingType')}
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {(Object.entries(buildingTypes) as [BuildingType, typeof buildingTypes[BuildingType]][]).map(([key, data]) => (
+              {(Object.entries(buildingTypes) as [BuildingType, typeof buildingTypes[BuildingType]][])
+                .filter(([key]) => key !== 'agricultural')
+                .map(([key, data]) => (
                 <button
                   key={key}
                   onClick={() => setBuildingType(key)}
@@ -248,8 +296,121 @@ const InputPanel = ({
             </div>
           </div>
 
-          {/* ==================== CONSUMPTION SECTION ==================== */}
+          {/* ==================== FARM MODE SECTION ==================== */}
           <div className="border-t border-border pt-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Wheat className="w-4 h-4 text-muted-foreground" />
+                {t('farmMode.title')}
+              </Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{farmMode ? (isArabic ? 'مفعّل' : 'Enabled') : (isArabic ? 'معطّل' : 'Disabled')}</span>
+                <Switch
+                  checked={farmMode}
+                  onCheckedChange={setFarmMode}
+                />
+              </div>
+            </div>
+
+            {farmMode && (
+              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <CardContent className="p-4 space-y-4">
+                  {/* Area in Feddans */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      {t('farmMode.areaInFeddans')}
+                    </Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        value={areaInFeddans || ''}
+                        onChange={(e) => setAreaInFeddans(e.target.value === '' ? 0 : Number(e.target.value))}
+                        min={0.1}
+                        step={0.5}
+                        className="h-12 text-lg font-medium flex-1"
+                        placeholder={isArabic ? "أدخل المساحة بالفدان" : "Enter area in feddans"}
+                      />
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        {isArabic ? 'فدان' : 'Feddan'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">=</span>
+                      <span className="font-bold text-primary">{Math.round(areaInFeddans * FEDDAN_TO_SQM).toLocaleString()} m²</span>
+                      <span className="text-xs text-muted-foreground">({t('farmMode.feddanEquivalent')})</span>
+                    </div>
+                  </div>
+
+                  {/* Agricultural Activity Type */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-foreground">
+                      {t('farmMode.activityType')}
+                    </Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {(Object.entries(agriculturalActivities) as [AgriculturalActivity, typeof agriculturalActivities[AgriculturalActivity]][]).map(([key, data]) => (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            setAgriculturalActivity(key);
+                            // Auto-suggest consumption based on activity and feddans
+                            const estimated = key === 'drip_irrigation' 
+                              ? data.estimatedConsumption * areaInFeddans
+                              : data.estimatedConsumption;
+                            setFarmEquipmentConsumption(Math.round(estimated));
+                          }}
+                          className={`p-3 rounded-xl border text-center transition-all ${
+                            agriculturalActivity === key 
+                              ? "bg-primary/10 border-primary text-primary" 
+                              : "bg-background/80 border-border/50 text-muted-foreground hover:border-primary/50"
+                          }`}
+                        >
+                          <span className="text-xl">{activityLabels[key].icon}</span>
+                          <p className="font-medium text-xs mt-1">{activityLabels[key].label}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Equipment Consumption */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-primary" />
+                      {t('farmMode.equipmentConsumption')}
+                    </Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        value={farmEquipmentConsumption || ''}
+                        onChange={(e) => setFarmEquipmentConsumption(e.target.value === '' ? 0 : Number(e.target.value))}
+                        min={0}
+                        className="h-12 text-lg font-medium flex-1"
+                      />
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        {t('common.kWh')}/{t('common.month')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Estimation Tips */}
+                  <div className="bg-background/60 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <Lightbulb className="w-4 h-4 text-amber-500" />
+                      {t('farmMode.estimationTip')}
+                    </div>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• {t('farmMode.pumpEstimate')}</li>
+                      <li>• {t('farmMode.greenhouseEstimate')}</li>
+                      <li>• {t('farmMode.poultryEstimate')}</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* ==================== CONSUMPTION SECTION (Hide when Farm Mode is active) ==================== */}
+          <div className={`border-t border-border pt-6 mb-6 ${farmMode ? 'hidden' : ''}`}>
             <div className="flex items-center justify-between mb-4">
               <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                 <Building className="w-4 h-4 text-muted-foreground" />

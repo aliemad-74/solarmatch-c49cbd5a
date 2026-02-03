@@ -6,7 +6,7 @@ import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
-import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 
@@ -25,6 +25,12 @@ const Index = () => {
   const [buildingMode, setBuildingMode] = useState<boolean>(false);
   const [numberOfUnits, setNumberOfUnits] = useState<number>(10);
   const [avgUnitConsumption, setAvgUnitConsumption] = useState<number>(300);
+  
+  // Farm Mode inputs
+  const [farmMode, setFarmMode] = useState<boolean>(false);
+  const [areaInFeddans, setAreaInFeddans] = useState<number>(5);
+  const [agriculturalActivity, setAgriculturalActivity] = useState<AgriculturalActivity>("drip_irrigation");
+  const [farmEquipmentConsumption, setFarmEquipmentConsumption] = useState<number>(10000);
   
   // Map/location state
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
@@ -64,9 +70,14 @@ const Index = () => {
   };
 
   // Calculate effective monthly consumption
-  const effectiveMonthlyConsumption = buildingMode 
-    ? numberOfUnits * avgUnitConsumption 
-    : monthlyConsumption;
+  // Farm mode uses farm equipment consumption
+  // Building mode uses units × avg consumption
+  // Standard mode uses monthly consumption
+  const effectiveMonthlyConsumption = farmMode 
+    ? farmEquipmentConsumption
+    : buildingMode 
+      ? numberOfUnits * avgUnitConsumption 
+      : monthlyConsumption;
 
   const handleCalculate = () => {
     const calculation = calculateSolarFeasibility(
@@ -135,6 +146,14 @@ const Index = () => {
           setNumberOfUnits={setNumberOfUnits}
           avgUnitConsumption={avgUnitConsumption}
           setAvgUnitConsumption={setAvgUnitConsumption}
+          farmMode={farmMode}
+          setFarmMode={setFarmMode}
+          areaInFeddans={areaInFeddans}
+          setAreaInFeddans={setAreaInFeddans}
+          agriculturalActivity={agriculturalActivity}
+          setAgriculturalActivity={setAgriculturalActivity}
+          farmEquipmentConsumption={farmEquipmentConsumption}
+          setFarmEquipmentConsumption={setFarmEquipmentConsumption}
           onCalculate={handleCalculate}
           locationName={locationName}
           climateData={climateData}
