@@ -1,195 +1,199 @@
 
-# Ideal System Sizing Formula Implementation
+# إضافة وضع المزارع الزراعية (Agricultural Farm Mode)
 
-## Overview
-This plan adds an engineering-grade ideal system sizing calculation to the solar feasibility calculator. It computes the theoretically optimal system size based on user consumption and location-specific Peak Sun Hours (PSH), then compares it with the roof-constrained installed system to show oversizing/undersizing percentages with actionable recommendations.
+## نظرة عامة
+إضافة نوع مشروع جديد مخصص للمزارع الزراعية في مصر، مع دعم:
+- إدخال المساحة بالفدان (مع التحويل التلقائي للمتر المربع)
+- نسبة استغلال مساحة مناسبة للمزارع (85-90%)
+- حسابات استهلاك خاصة بالمعدات الزراعية (مضخات ري، أنظمة تبريد، إلخ)
 
-## The Formula
-
-### Ideal System Size Calculation
+## معلومات مهمة
 ```text
-P_ideal = E_day / (PSH × PR)
+الفدان في مصر = 4,200.83 متر مربع (تقريباً 4,200 م²)
 
-Where:
-- E_day = Daily energy consumption (kWh/day)
-- PSH = Peak Sun Hours (h/day) - derived from annual irradiance
-- PR = Performance Ratio (0.75-0.85, using 0.80 as default)
+المزارع عادة تحتاج طاقة شمسية لـ:
+- مضخات الري (Solar Water Pumping)
+- أنظمة التبريد والتخزين
+- الإضاءة والأسوار الكهربائية
+- معدات الزراعة الحديثة
 ```
 
-### Converting User Input to Daily Consumption
-```text
-E_day = Monthly_Consumption / 30.44  (average days per month)
-```
+## التغييرات المطلوبة
 
-### Oversizing Percentage
-```text
-Oversize% = ((P_system - P_ideal) / P_ideal) × 100
-
-- Positive = System is larger than needed
-- Negative = System is smaller than needed (undersized)
-```
-
-## Implementation Details
-
-### Step 1: Extend Data Model (`src/lib/solarData.ts`)
-
-Add new interface fields and calculation logic:
+### 1. إضافة نوع مبنى جديد "مزرعة" (solarData.ts)
 
 ```text
-+-----------------------------------------------+
-| New IdealSizingAnalysis Interface             |
-+-----------------------------------------------+
-| dailyConsumption: number (kWh/day)            |
-| peakSunHours: number (h/day from NASA data)   |
-| performanceRatio: number (0.80 default)       |
-| idealSystemSize: number (kW)                  |
-| installedSystemSize: number (kW)              |
-| oversizePercent: number (positive/negative)   |
-| recommendation: IdealSizingRecommendation     |
-| optimalPackage: PackageType | null            |
-+-----------------------------------------------+
-```
-
-New recommendation types:
-- **oversized**: System is 20%+ larger than needed
-- **slightly_oversized**: System is 5-20% larger
-- **optimal**: System is within ±5% of ideal
-- **undersized**: System is more than 5% smaller than needed
-- **severely_undersized**: System is 30%+ smaller than needed
-
-### Step 2: Add Calculation Logic
-
-The calculation will derive PSH from NASA climate data:
-
-```text
-PSH Calculation:
-PSH = Annual Average Irradiance (kWh/m²/day)
-     (NASA POWER provides this directly as ALLSKY_SFC_SW_DWN)
-
-For Egypt default: PSH ≈ 5.78 h/day (from defaultClimateData.annualAvgIrradiance)
-```
-
-Implementation in `calculateSolarFeasibility()`:
-1. Convert monthly consumption to daily: `E_day = effectiveMonthlyConsumption / 30.44`
-2. Get PSH from climate data: `PSH = climateData.annualAvgIrradiance`
-3. Calculate ideal size: `P_ideal = E_day / (PSH × PR)`
-4. Calculate oversize: `Oversize% = ((kWInstalled - P_ideal) / P_ideal) × 100`
-5. Generate recommendation based on oversize percentage
-
-### Step 3: New UI Component (`src/components/IdealSizingCard.tsx`)
-
-A new card component in the Results Dashboard displaying:
-
-```text
-+--------------------------------------------------+
-| Ideal System Sizing Analysis                      |
-+--------------------------------------------------+
-| Your Consumption: 500 kWh/month → 16.4 kWh/day   |
-| Peak Sun Hours: 5.78 h/day (based on location)   |
-| Performance Ratio: 80%                            |
-|                                                   |
-| ┌─────────────────────────────────────────────┐  |
-| │  Ideal Size      │  Your System  │ Difference│  |
-| │     3.5 kW       │     6 kW      │   +71%    │  |
-| └─────────────────────────────────────────────┘  |
-|                                                   |
-| Recommendation:                                   |
-| Your system is OVERSIZED by 71%.                 |
-| This is common for residential to:               |
-| • Offset future consumption growth               |
-| • Maximize roof utilization                      |
-| • Generate surplus for net metering              |
-|                                                   |
-| Optimal Package: Economy (3 kW would suffice)    |
-+--------------------------------------------------+
-```
-
-### Step 4: Update ResultsDashboard.tsx
-
-Insert the new IdealSizingCard component after the "Coverage Ratio & Calculation Breakdown" section, before the ROI Timeline.
-
-### Step 5: Add Translations
-
-New translation keys for both English and Arabic:
-
-```text
-"idealSizing": {
-  "title": "Ideal System Sizing Analysis",
-  "formula": "P_ideal = E_day ÷ (PSH × PR)",
-  "dailyConsumption": "Daily Consumption",
-  "peakSunHours": "Peak Sun Hours",
-  "performanceRatio": "Performance Ratio",
-  "idealSize": "Ideal System Size",
-  "yourSystem": "Your System",
-  "difference": "Difference",
-  "oversized": "Oversized",
-  "undersized": "Undersized",
-  "optimal": "Optimal",
-  "recommendation": "Recommendation",
-  "oversizedMessage": "Your system is larger than needed...",
-  "undersizedMessage": "Your system is smaller than needed...",
-  "optimalMessage": "Your system is well-sized...",
-  "optimalPackage": "Suggested Package",
-  "whyOversizing": "Why oversizing matters:",
-  "oversizingBenefits": "• Future consumption growth\n• Net metering income\n• Maximum roof utilization",
-  "undersizingImpact": "Impact of undersizing:",
-  "undersizingEffects": "• Partial coverage only\n• Continued grid dependency"
+buildingTypes = {
+  ...existing types,
+  agricultural: {
+    label: "Agricultural Farm",
+    usableFraction: 0.85,  // مساحات مفتوحة كبيرة
+    description: "Open farm land (80-90% usable)"
+  }
 }
 ```
 
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/lib/solarData.ts` | Add IdealSizingAnalysis interface and calculation logic |
-| `src/components/IdealSizingCard.tsx` | **NEW** - Display component for ideal sizing analysis |
-| `src/components/ResultsDashboard.tsx` | Import and render IdealSizingCard |
-| `src/i18n/locales/en.json` | Add English translations |
-| `src/i18n/locales/ar.json` | Add Arabic translations |
-
-## User Experience Flow
-
-1. User enters consumption (monthly or via Building Mode)
-2. System converts to daily consumption automatically
-3. Upon calculation, the Ideal Sizing Analysis card appears
-4. User sees clear comparison: Ideal vs Installed with percentage
-5. Color-coded recommendation explains the situation
-6. If oversized: Explains benefits (future growth, net metering)
-7. If undersized: Suggests increasing system or switching package
-8. Suggests the optimal package tier based on ideal size
-
-## Recommendation Logic
+### 2. إضافة وضع المزارع في InputPanel.tsx
 
 ```text
-If Oversize% > 50%:
-  "Significantly oversized - ideal for future growth or net metering"
-  Suggest: Consider Economy package for cost savings
-
-If Oversize% between 20-50%:
-  "Moderately oversized - good buffer for consumption growth"
-  Status: Acceptable
-
-If Oversize% between 5-20%:
-  "Slightly oversized - well balanced"
-  Status: Optimal
-
-If Oversize% between -5% and 5%:
-  "Perfectly sized for current consumption"
-  Status: Optimal
-
-If Oversize% between -5% and -20%:
-  "Slightly undersized - covers ~85-95% of needs"
-  Suggest: Consider upgrading or adding panels
-
-If Oversize% < -20%:
-  "Significantly undersized - consider larger system"
-  Suggest: Switch to higher-density panels or increase area
++--------------------------------------------------+
+| وضع المزرعة                              [تبديل] |
++--------------------------------------------------+
+| إذا كان مفعل:                                    |
+|                                                   |
+| المساحة بالفدان: [____] فدان                     |
+| = XXX,XXX متر مربع                               |
+|                                                   |
+| نوع النشاط الزراعي:                              |
+| ○ ري بالغمر     ○ ري بالتنقيط                   |
+| ○ صوب زراعية    ○ مزرعة دواجن/ماشية            |
+|                                                   |
+| استهلاك المعدات الشهري: [____] ك.و.س             |
+| (مضخات + تبريد + إضاءة)                          |
++--------------------------------------------------+
 ```
 
-## Technical Considerations
+### 3. التصميم المقترح للواجهة
 
-- PSH is derived from NASA's annual average irradiance (already available in ClimateData)
-- Performance Ratio of 0.80 is industry standard for well-maintained systems
-- The calculation respects the existing 150% residential coverage cap
-- Works with both single-consumption and Building Mode multi-unit inputs
-- All calculations are deterministic and do not require external API calls
+```text
+┌─────────────────────────────────────────────────────┐
+│  🌾 وضع المزرعة الزراعية              [ON/OFF]     │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  المساحة المتاحة للألواح                            │
+│  ┌─────────────────────────────────────────────┐    │
+│  │  [  5  ] فدان  =  21,000 م²                │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  نوع المشروع الزراعي                                │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐      │
+│  │  🌱 ري     │ │  🏠 صوب   │ │  🐔 دواجن  │      │
+│  │  بالتنقيط  │ │  زراعية   │ │  /ماشية   │      │
+│  └────────────┘ └────────────┘ └────────────┘      │
+│                                                      │
+│  الاستهلاك الشهري للمعدات                           │
+│  [  15,000  ] ك.و.س/شهر                            │
+│                                                      │
+│  💡 تقدير سريع:                                    │
+│  • مضخة ري 5 حصان ≈ 1,500 ك.و.س/شهر              │
+│  • صوبة 1,000 م² ≈ 800 ك.و.س/شهر                 │
+│  • حظيرة دواجن ≈ 2,000 ك.و.س/شهر                 │
+└─────────────────────────────────────────────────────┘
+```
+
+## الملفات المطلوب تعديلها
+
+| الملف | التغييرات |
+|-------|-----------|
+| `src/lib/solarData.ts` | إضافة نوع `agricultural` في buildingTypes مع usableFraction = 0.85 |
+| `src/components/InputPanel.tsx` | إضافة وضع المزرعة مع حقل الفدان ونوع النشاط الزراعي |
+| `src/i18n/locales/en.json` | ترجمات إنجليزية للمزارع |
+| `src/i18n/locales/ar.json` | ترجمات عربية للمزارع |
+| `src/pages/Index.tsx` | إضافة state variables جديدة لوضع المزرعة |
+
+## تفاصيل التنفيذ
+
+### الثوابت الجديدة (solarData.ts)
+
+```text
+FEDDAN_TO_SQM = 4200.83  // 1 فدان = 4,200.83 م²
+
+// أنواع الأنشطة الزراعية مع تقديرات الاستهلاك
+agriculturalActivities = {
+  drip_irrigation: { 
+    name: "ري بالتنقيط",
+    estimatedConsumption: 2000,  // ك.و.س/فدان/شهر
+    description: "مضخات ري حديثة"
+  },
+  greenhouse: {
+    name: "صوب زراعية",
+    estimatedConsumption: 5000,  // ك.و.س/صوبة/شهر
+    description: "تبريد وتهوية وإضاءة"
+  },
+  poultry_livestock: {
+    name: "دواجن/ماشية",
+    estimatedConsumption: 8000,  // ك.و.س/حظيرة/شهر
+    description: "تبريد وتدفئة وإضاءة"
+  },
+  cold_storage: {
+    name: "تخزين مبرد",
+    estimatedConsumption: 10000, // ك.و.س/شهر
+    description: "ثلاجات حفظ المحاصيل"
+  }
+}
+```
+
+### الترجمات الجديدة
+
+```text
+// English
+"farmMode": {
+  "title": "Agricultural Farm Mode",
+  "areaInFeddans": "Area in Feddans",
+  "feddanEquivalent": "1 Feddan = 4,200 m²",
+  "totalArea": "Total Area",
+  "activityType": "Agricultural Activity Type",
+  "dripIrrigation": "Drip Irrigation",
+  "greenhouse": "Greenhouses",
+  "poultryLivestock": "Poultry/Livestock",
+  "coldStorage": "Cold Storage",
+  "equipmentConsumption": "Monthly Equipment Consumption",
+  "estimationTip": "Quick Estimation",
+  "pumpEstimate": "5 HP irrigation pump ≈ 1,500 kWh/month",
+  "greenhouseEstimate": "1,000 m² greenhouse ≈ 800 kWh/month",
+  "poultryEstimate": "Poultry house ≈ 2,000 kWh/month"
+}
+
+// Arabic
+"farmMode": {
+  "title": "وضع المزرعة الزراعية",
+  "areaInFeddans": "المساحة بالفدان",
+  "feddanEquivalent": "١ فدان = ٤,٢٠٠ م²",
+  "totalArea": "المساحة الإجمالية",
+  "activityType": "نوع النشاط الزراعي",
+  "dripIrrigation": "ري بالتنقيط",
+  "greenhouse": "صوب زراعية",
+  "poultryLivestock": "دواجن/ماشية",
+  "coldStorage": "تخزين مبرد",
+  "equipmentConsumption": "استهلاك المعدات الشهري",
+  "estimationTip": "تقدير سريع",
+  "pumpEstimate": "مضخة ري ٥ حصان ≈ ١,٥٠٠ ك.و.س/شهر",
+  "greenhouseEstimate": "صوبة ١,٠٠٠ م² ≈ ٨٠٠ ك.و.س/شهر",
+  "poultryEstimate": "حظيرة دواجن ≈ ٢,٠٠٠ ك.و.س/شهر"
+}
+```
+
+### منطق التحويل
+
+```text
+// تحويل الفدان إلى متر مربع
+areaInSqm = feddans × 4200.83
+
+// حساب الاستهلاك التقديري (اختياري)
+estimatedConsumption = feddans × consumptionPerFeddan[activityType]
+```
+
+## مميزات وضع المزرعة
+
+1. **إدخال بالفدان** - وحدة قياس مألوفة للمزارعين المصريين
+2. **نسبة استغلال عالية (85%)** - المزارع عادة مساحات مفتوحة
+3. **تقديرات استهلاك ذكية** - مساعدة المزارع في تقدير احتياجاته
+4. **أنواع نشاط متعددة** - ري، صوب، دواجن، تخزين مبرد
+5. **لا يتأثر بسقف 150%** - المشاريع الزراعية ليست سكنية
+
+## تدفق المستخدم
+
+```text
+1. المستخدم يفعّل "وضع المزرعة الزراعية" ← يظهر قسم خاص
+2. يدخل المساحة بالفدان ← يظهر التحويل للمتر المربع تلقائياً
+3. يختار نوع النشاط الزراعي ← يظهر تقدير للاستهلاك
+4. يعدّل الاستهلاك الشهري (اختياري) ← أو يستخدم التقدير
+5. يضغط "احسب" ← تظهر النتائج بوحدات مناسبة للمزارع
+```
+
+## ملاحظات فنية
+
+- وضع المزرعة يتجاوز وضع المبنى (Building Mode) - لا يمكن تفعيلهما معاً
+- عند تفعيل وضع المزرعة، يتغير نوع المبنى تلقائياً إلى "agricultural"
+- لا يُطبق سقف 150% على المشاريع الزراعية (مثل التجاري والصناعي)
+- يمكن للمزارع الكبيرة الاستفادة من الباقة الاقتصادية بشكل أفضل
