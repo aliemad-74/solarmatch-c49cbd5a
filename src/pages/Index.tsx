@@ -6,7 +6,6 @@ import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
-import { MarketPricesPanel } from "@/components/MarketPricesPanel";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
@@ -171,11 +170,6 @@ const Index = () => {
             buildingType={buildingType}
           />
         </div>
-
-        {/* Market Prices Simulation Panel */}
-        <section className="py-8 px-4 max-w-6xl mx-auto">
-          <MarketPricesPanel />
-        </section>
 
         <FAQSection />
       </main>
