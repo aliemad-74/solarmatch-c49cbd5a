@@ -172,17 +172,7 @@ const Index = () => {
       <Header />
       
       <main>
-        {/* Hero Section */}
-        <section className="pt-24 pb-8 bg-gradient-to-b from-primary/5 to-background">
-          <div className="container mx-auto px-4">
-            <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-3">{t("hero.title")}</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">{t("hero.subtitle")}</p>
-            </div>
-          </div>
-        </section>
-
-        <MapSection 
+        <MapSection
           onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
           onClimateDataFetched={setClimateData}
           onLocationChange={setLocationName}
