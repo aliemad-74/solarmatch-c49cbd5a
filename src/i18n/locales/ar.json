@@ -4,7 +4,10 @@
     "subtitle": "جدوى الطاقة الشمسية للأسطح",
     "howItWorks": "كيف يعمل",
     "about": "عن المشروع",
-    "getStarted": "ابدأ الآن"
+    "getStarted": "ابدأ الآن",
+    "adminDashboard": "لوحة التحكم",
+    "signOut": "تسجيل الخروج",
+    "account": "الحساب"
   },
   "howItWorks": {
     "hero": {

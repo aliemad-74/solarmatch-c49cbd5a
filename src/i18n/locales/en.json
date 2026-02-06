@@ -4,7 +4,10 @@
     "subtitle": "Rooftop Solar Feasibility",
     "howItWorks": "How it Works",
     "about": "About",
-    "getStarted": "Get Started"
+    "getStarted": "Get Started",
+    "adminDashboard": "Dashboard",
+    "signOut": "Sign Out",
+    "account": "Account"
   },
   "howItWorks": {
     "hero": {
