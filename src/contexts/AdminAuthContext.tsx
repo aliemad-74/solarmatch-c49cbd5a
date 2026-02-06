@@ -51,37 +51,71 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      setSession(currentSession);
-      setAdmin(currentSession?.user ?? null);
+    let isMounted = true;
 
-      if (currentSession?.user) {
-        // Check admin role using setTimeout to avoid race condition
-        setTimeout(async () => {
-          const hasAdminRole = await checkAdminRole(currentSession.user.id);
-          setIsAdmin(hasAdminRole);
-          setIsLoading(false);
-        }, 0);
-      } else {
-        setIsAdmin(false);
-        setIsLoading(false);
+    const fetchAdminRole = async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error checking admin role:", error);
+          return false;
+        }
+        return !!data;
+      } catch (error) {
+        console.error("Error checking admin role:", error);
+        return false;
       }
-    });
+    };
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setAdmin(existingSession?.user ?? null);
+    // Listener for ONGOING auth changes (does NOT control isLoading)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        if (!isMounted) return;
+        setSession(currentSession);
+        setAdmin(currentSession?.user ?? null);
 
-      if (existingSession?.user) {
-        const hasAdminRole = await checkAdminRole(existingSession.user.id);
-        setIsAdmin(hasAdminRole);
+        if (currentSession?.user) {
+          // Fire and forget for ongoing changes
+          fetchAdminRole(currentSession.user.id).then((hasRole) => {
+            if (isMounted) setIsAdmin(hasRole);
+          });
+        } else {
+          setIsAdmin(false);
+        }
       }
-      setIsLoading(false);
-    });
+    );
 
-    return () => subscription.unsubscribe();
+    // INITIAL load (controls isLoading)
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        setSession(existingSession);
+        setAdmin(existingSession?.user ?? null);
+
+        // Fetch role BEFORE setting loading false
+        if (existingSession?.user) {
+          const hasRole = await fetchAdminRole(existingSession.user.id);
+          if (isMounted) setIsAdmin(hasRole);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {

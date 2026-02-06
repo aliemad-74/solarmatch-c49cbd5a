@@ -1,4 +1,4 @@
-import { Sun, Menu } from "lucide-react";
+import { Sun, Menu, Settings, LogOut, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import LanguageToggle from "./LanguageToggle";
@@ -8,12 +8,23 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUserAuth } from "@/contexts/UserAuthContext";
 
 const Header = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAdmin, admin, signOut: adminSignOut } = useAdminAuth();
+  const { user, signOut: userSignOut, profile } = useUserAuth();
 
   const navLinks = [
     { path: "/how-it-works", label: t('header.howItWorks') },
@@ -50,12 +61,61 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
-          <Link
-            to="/"
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-          >
-            {t('header.getStarted')}
-          </Link>
+          
+          {/* Admin Dashboard Link */}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+            >
+              <Settings className="w-4 h-4" />
+              {t('header.adminDashboard')}
+            </Link>
+          )}
+          
+          {/* User Menu */}
+          {(user || admin) ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <User className="w-4 h-4" />
+                  <span className="max-w-24 truncate">
+                    {profile?.name || admin?.email?.split('@')[0] || t('header.account')}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <Settings className="w-4 h-4" />
+                        {t('header.adminDashboard')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem 
+                  onClick={() => {
+                    if (admin) adminSignOut();
+                    if (user) userSignOut();
+                  }}
+                  className="text-destructive flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t('header.signOut')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link
+              to="/"
+              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              {t('header.getStarted')}
+            </Link>
+          )}
           <LanguageToggle />
         </nav>
         
@@ -84,13 +144,41 @@ const Header = () => {
                     {link.label}
                   </Link>
                 ))}
-                <Link
-                  to="/"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-lg font-medium text-primary hover:text-primary/80 transition-colors"
-                >
-                  {t('header.getStarted')}
-                </Link>
+                
+                {/* Admin Dashboard Link - Mobile */}
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-lg font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-2"
+                  >
+                    <Settings className="w-5 h-5" />
+                    {t('header.adminDashboard')}
+                  </Link>
+                )}
+                
+                {(user || admin) ? (
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start text-lg text-destructive p-0 h-auto"
+                    onClick={() => {
+                      if (admin) adminSignOut();
+                      if (user) userSignOut();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="w-5 h-5 me-2" />
+                    {t('header.signOut')}
+                  </Button>
+                ) : (
+                  <Link
+                    to="/"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-lg font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {t('header.getStarted')}
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
