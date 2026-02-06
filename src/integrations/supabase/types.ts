@@ -101,8 +101,48 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          report_limit: number
+          reports_generated: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          report_limit?: number
+          reports_generated?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          report_limit?: number
+          reports_generated?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       report_history: {
         Row: {
+          auth_user_id: string | null
           created_at: string
           id: string
           ip_address: string | null
@@ -111,6 +151,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string
           id?: string
           ip_address?: string | null
@@ -119,6 +160,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string
           id?: string
           ip_address?: string | null
