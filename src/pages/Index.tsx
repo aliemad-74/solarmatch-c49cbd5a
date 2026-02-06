@@ -57,6 +57,15 @@ const Index = () => {
     }
   }, []);
 
+  // Reset state when user logs out
+  useEffect(() => {
+    if (!user) {
+      setResults(null);
+      setShowResults(false);
+      setPendingCalculation(false);
+    }
+  }, [user]);
+
   const loadSharedParams = (params: ShareableParams) => {
     setRooftopArea(params.rooftopArea);
     setPvType(params.pvType);
