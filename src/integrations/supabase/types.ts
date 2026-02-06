@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          name: string
+          phone: string
+          report_limit: number
+          reports_generated: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          name: string
+          phone: string
+          report_limit?: number
+          reports_generated?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          name?: string
+          phone?: string
+          report_limit?: number
+          reports_generated?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           best_time: string
@@ -61,6 +100,41 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      report_history: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          location_name: string | null
+          system_size_kw: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          location_name?: string | null
+          system_size_kw?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          location_name?: string | null
+          system_size_kw?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
