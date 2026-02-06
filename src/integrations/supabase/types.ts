@@ -53,6 +53,24 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_email_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           best_time: string
@@ -140,6 +158,27 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       report_history: {
         Row: {
           auth_user_id: string | null
@@ -204,12 +243,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_registration_allowed: {
+        Args: { p_email: string; p_ip_address: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      record_registration: {
+        Args: { p_ip_address: string; p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
