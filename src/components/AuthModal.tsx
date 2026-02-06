@@ -6,9 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useUserAuth } from '@/contexts/UserAuthContext';
-import { Loader2, Sun, Shield, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, Sun, Shield, CheckCircle2, AlertCircle, Mail } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -64,11 +63,9 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     password: ''
   });
 
-  // OTP verification state
-  const [showOtpVerification, setShowOtpVerification] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [pendingEmail, setPendingEmail] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
+  // Email sent success state
+  const [emailSent, setEmailSent] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState('');
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     setError(null);
@@ -133,10 +130,10 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
       if (error) {
         setError(error);
       } else {
-        // Show OTP verification screen
-        setPendingEmail(signUpData.email);
-        setShowOtpVerification(true);
-        setSuccess(t('auth.otpSent'));
+        // Show email sent confirmation
+        setSentToEmail(signUpData.email);
+        setEmailSent(true);
+        setSuccess(t('auth.checkEmail'));
       }
     } catch (err) {
       console.error('Sign up error:', err);
@@ -176,47 +173,20 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     setIsSubmitting(false);
   };
 
-  const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) return;
-    
-    setError(null);
-    setIsVerifying(true);
-    
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: pendingEmail,
-        token: otpCode,
-        type: 'signup'
-      });
-      
-      if (error) {
-        setError(error.message);
-      } else {
-        setShowOtpVerification(false);
-        onSuccess();
-        onOpenChange(false);
-      }
-    } catch (err) {
-      setError(t('auth.errors.unknown'));
-    }
-    
-    setIsVerifying(false);
-  };
-
-  const handleResendOtp = async () => {
+  const handleResendEmail = async () => {
     setError(null);
     setIsSubmitting(true);
     
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: pendingEmail
+        email: sentToEmail
       });
       
       if (error) {
         setError(error.message);
       } else {
-        setSuccess(t('auth.otpResent'));
+        setSuccess(t('auth.emailResent'));
       }
     } catch (err) {
       setError(t('auth.errors.unknown'));
@@ -225,31 +195,30 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     setIsSubmitting(false);
   };
 
-  const handleBackFromOtp = () => {
-    setShowOtpVerification(false);
-    setOtpCode('');
-    setPendingEmail('');
+  const handleBackFromEmailSent = () => {
+    setEmailSent(false);
+    setSentToEmail('');
     setError(null);
     setSuccess(null);
   };
 
   const isRTL = i18n.language === 'ar';
-  const isDisabled = isSubmitting || isOAuthLoading !== null || isVerifying;
+  const isDisabled = isSubmitting || isOAuthLoading !== null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
         <DialogHeader className="text-center sm:text-center">
           <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-solar-gold/20 flex items-center justify-center">
-            <Sun className="w-6 h-6 text-primary" />
+            {emailSent ? <Mail className="w-6 h-6 text-primary" /> : <Sun className="w-6 h-6 text-primary" />}
           </div>
           <DialogTitle className="text-lg font-display">
-            {showOtpVerification ? t('auth.enterOtp') : t('auth.title')}
+            {emailSent ? t('auth.emailSentTitle') : t('auth.title')}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            {showOtpVerification ? (
+            {emailSent ? (
               <>
-                {t('auth.otpDescription')} <span className="font-medium text-foreground" dir="ltr">{pendingEmail}</span>
+                {t('auth.emailSentDescription')} <span className="font-medium text-foreground" dir="ltr">{sentToEmail}</span>
               </>
             ) : (
               t('auth.description')
@@ -271,67 +240,41 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
           </div>
         )}
 
-        {/* OTP Verification Screen */}
-        {showOtpVerification ? (
+        {/* Email Sent Confirmation Screen */}
+        {emailSent ? (
           <div className="space-y-4 mt-4">
-            <div className="flex justify-center" dir="ltr">
-              <InputOTP
-                maxLength={6}
-                value={otpCode}
-                onChange={setOtpCode}
-                disabled={isVerifying}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
+            <div className="p-4 bg-muted/50 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-2">
+                {t('auth.checkEmailInstructions')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t('auth.checkSpam')}
+              </p>
             </div>
 
-            <Button
-              onClick={handleVerifyOtp}
-              className="w-full bg-gradient-to-r from-primary to-solar-gold hover:opacity-90"
-              disabled={otpCode.length !== 6 || isVerifying}
-            >
-              {isVerifying ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  {t('auth.verifying')}
-                </>
-              ) : (
-                t('auth.verifyCode')
-              )}
-            </Button>
-
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-col gap-2">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={handleBackFromOtp}
-                disabled={isVerifying}
-                className="gap-1"
+                onClick={handleResendEmail}
+                disabled={isSubmitting}
+                className="w-full"
               >
-                <ArrowLeft className="w-4 h-4" />
-                {t('auth.backToSignup')}
+                {isSubmitting ? (
+                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                ) : null}
+                {t('auth.resendEmail')}
               </Button>
               
               <Button
                 type="button"
-                variant="link"
+                variant="ghost"
                 size="sm"
-                onClick={handleResendOtp}
-                disabled={isSubmitting || isVerifying}
+                onClick={handleBackFromEmailSent}
+                className="w-full"
               >
-                {isSubmitting ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  t('auth.resendCode')
-                )}
+                {t('auth.backToSignup')}
               </Button>
             </div>
           </div>
