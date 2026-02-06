@@ -474,7 +474,11 @@
       "password": "كلمة المرور",
       "signIn": "تسجيل الدخول",
       "signingIn": "جاري تسجيل الدخول...",
-      "backToSite": "→ العودة للموقع"
+      "backToSite": "→ العودة للموقع",
+      "continueWithGoogle": "المتابعة بحساب Google",
+      "continueWithApple": "المتابعة بحساب Apple",
+      "orContinueWith": "أو المتابعة بالبريد الإلكتروني",
+      "oauthError": "فشل تسجيل الدخول. حاول مرة أخرى."
     },
     "dashboard": {
       "title": "الرئيسية",
