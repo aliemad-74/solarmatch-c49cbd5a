@@ -469,7 +469,12 @@
     "creatingAccount": "Creating account...",
     "signingIn": "Signing in...",
     "checkEmail": "Please check your email to verify your account.",
-    "oauthError": "Failed to sign in. Please try again."
+    "oauthError": "Failed to sign in. Please try again.",
+    "errors": {
+      "blocked_email_domain": "This email domain is not allowed. Please use a different email.",
+      "ip_limit_exceeded": "Too many accounts created from this network. Please try again later.",
+      "unknown": "An error occurred. Please try again."
+    }
   },
   "limitReached": {
     "title": "Free Report Used",

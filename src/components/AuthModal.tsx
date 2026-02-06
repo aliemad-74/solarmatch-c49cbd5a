@@ -9,7 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserAuth } from '@/contexts/UserAuthContext';
 import { Loader2, Sun, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
+// Get client IP
+async function getClientIP(): Promise<string> {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip;
+  } catch {
+    return 'unknown';
+  }
+}
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -81,17 +92,42 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
 
     setIsSubmitting(true);
     
-    const { error } = await signUpWithEmail(
-      signUpData.email, 
-      signUpData.password, 
-      signUpData.name,
-      signUpData.phone || undefined
-    );
-    
-    if (error) {
-      setError(error);
-    } else {
-      setSuccess(t('auth.checkEmail'));
+    try {
+      // Get client IP
+      const ip = await getClientIP();
+      
+      // Check if registration is allowed
+      const { data: checkResult, error: checkError } = await supabase.rpc(
+        'check_registration_allowed',
+        { p_ip_address: ip, p_email: signUpData.email }
+      );
+      
+      if (checkError) {
+        console.error('Error checking registration:', checkError);
+      } else if (checkResult) {
+        const result = checkResult as { allowed: boolean; reason?: string; message?: string };
+        if (!result.allowed) {
+          setError(t(`auth.errors.${result.reason}`) || result.message || t('auth.errors.unknown'));
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      const { error } = await signUpWithEmail(
+        signUpData.email, 
+        signUpData.password, 
+        signUpData.name,
+        signUpData.phone || undefined
+      );
+      
+      if (error) {
+        setError(error);
+      } else {
+        setSuccess(t('auth.checkEmail'));
+      }
+    } catch (err) {
+      console.error('Sign up error:', err);
+      setError(t('auth.errors.unknown'));
     }
     
     setIsSubmitting(false);
