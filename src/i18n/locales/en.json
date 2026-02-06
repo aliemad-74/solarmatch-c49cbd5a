@@ -7,7 +7,91 @@
     "getStarted": "Get Started",
     "adminDashboard": "Dashboard",
     "signOut": "Sign Out",
-    "account": "Account"
+    "account": "Account",
+    "myAccount": "My Account"
+  },
+  "hero": {
+    "title": "Calculate Your Solar Potential",
+    "subtitle": "Get accurate solar feasibility estimates using NASA climate data and Egypt's electricity tariffs"
+  },
+  "counter": {
+    "reportsGenerated": "Reports Generated",
+    "happyUsers": "Happy Users",
+    "kwCalculated": "kW Calculated"
+  },
+  "testimonials": {
+    "title": "What Our Users Say",
+    "subtitle": "Real experiences from Egyptian homeowners and businesses who used SolarMatch",
+    "person1": {
+      "name": "Ahmed Mohamed",
+      "role": "Homeowner",
+      "location": "Cairo",
+      "content": "SolarMatch helped me understand exactly what I needed for my villa. The calculations were accurate and the installer quoted almost the same price!"
+    },
+    "person2": {
+      "name": "Mohamed Hassan",
+      "role": "Business Owner",
+      "location": "Alexandria",
+      "content": "As a factory owner, I needed precise estimates. The detailed breakdown and 25-year ROI projection convinced our board to invest in solar."
+    },
+    "person3": {
+      "name": "Sara Ahmed",
+      "role": "Apartment Building Manager",
+      "location": "Giza",
+      "content": "The multi-unit mode was perfect for our building. We now have solar covering 8 apartments and saving thousands monthly."
+    }
+  },
+  "forgotPassword": {
+    "title": "Reset Password",
+    "description": "Enter your email and we'll send you a reset link",
+    "submit": "Send Reset Link",
+    "sending": "Sending...",
+    "emailSentTitle": "Check Your Email",
+    "emailSentDescription": "We've sent a password reset link to your email",
+    "checkEmail": "Click the link in the email to reset your password",
+    "checkSpam": "Can't find it? Check your spam folder.",
+    "backToLogin": "Back to Login",
+    "backToHome": "Back to Home"
+  },
+  "resetPassword": {
+    "title": "Set New Password",
+    "description": "Enter your new password below",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "submit": "Update Password",
+    "updating": "Updating...",
+    "successTitle": "Password Updated!",
+    "successDescription": "Your password has been successfully updated",
+    "redirecting": "Redirecting to home page...",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters"
+  },
+  "account": {
+    "title": "My Account",
+    "backToHome": "Back to Home",
+    "profileInfo": "Profile Information",
+    "profileDescription": "Your personal details",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "accountType": "Account Type",
+    "memberSince": "Member Since",
+    "reportsUsage": "Reports Usage",
+    "reportsDescription": "Your report generation limit",
+    "reportsUsed": "Reports Used",
+    "remaining": "Remaining",
+    "noReportsRemaining": "You've used all your free reports. Contact us to get more.",
+    "reportsHistory": "Reports History",
+    "reportsHistoryDescription": "Your previously generated solar reports",
+    "noReports": "No reports generated yet",
+    "noLocation": "No location specified"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "backToHome": "Back to Home",
+    "howItWorks": "Learn How It Works",
+    "helpfulLinks": "Helpful Links"
   },
   "howItWorks": {
     "hero": {
@@ -466,6 +550,7 @@
     "individual": "Individual",
     "business": "Business",
     "password": "Password",
+    "forgotPassword": "Forgot password?",
     "privacyNote": "Your contact information is used only to generate your solar report and provide relevant service updates.",
     "createAccount": "Create Account",
     "creatingAccount": "Creating account...",
@@ -532,7 +617,18 @@
       "totalUsers": "Total Users",
       "totalReports": "Total Reports",
       "totalLeads": "Total Leads",
-      "newLeadsToday": "New Leads Today"
+      "newLeadsToday": "New Leads Today",
+      "usersToday": "New Users Today",
+      "totalKw": "Total kW Calculated"
+    },
+    "dateFilter": {
+      "preset": "Time Period",
+      "allTime": "All Time",
+      "today": "Today",
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "last90Days": "Last 90 Days",
+      "pickDate": "Pick a date range"
     },
     "users": {
       "title": "Users Management",
@@ -544,6 +640,7 @@
       "reports": "Reports",
       "limit": "Limit",
       "status": "Status",
+      "type": "Type",
       "createdAt": "Registered",
       "actions": "Actions",
       "noUsers": "No users found",
@@ -551,7 +648,8 @@
       "limitUpdatedDesc": "User report limit has been updated",
       "limitUpdateError": "Failed to update limit",
       "authenticated": "Authenticated Users",
-      "legacy": "Legacy Users"
+      "legacy": "Legacy Users",
+      "exportCSV": "Export CSV"
     },
     "reports": {
       "title": "Reports History",
@@ -562,7 +660,8 @@
       "systemSize": "System Size",
       "createdAt": "Generated",
       "noReports": "No reports found",
-      "noLocation": "No location"
+      "noLocation": "No location",
+      "exportCSV": "Export CSV"
     },
     "leads": {
       "title": "Leads Management",
@@ -578,7 +677,8 @@
       "noLeads": "No leads found",
       "statusUpdated": "Status Updated",
       "statusUpdatedDesc": "Lead status has been updated",
-      "statusUpdateError": "Failed to update status"
+      "statusUpdateError": "Failed to update status",
+      "exportCSV": "Export CSV"
     }
   },
   "admin.leads.status": {

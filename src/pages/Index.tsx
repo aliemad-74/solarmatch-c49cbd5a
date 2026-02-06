@@ -8,13 +8,15 @@ import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import LimitReachedModal from "@/components/LimitReachedModal";
+import Testimonials from "@/components/Testimonials";
+import LiveCounter from "@/components/LiveCounter";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 
 const Index = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, profile, canGenerateReport, recordReportGeneration } = useUserAuth();
   
   // Auth modal state
@@ -170,6 +172,17 @@ const Index = () => {
       <Header />
       
       <main>
+        {/* Hero Stats Section */}
+        <section className="pt-24 pb-8 bg-gradient-to-b from-primary/5 to-background">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">{t("hero.title")}</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">{t("hero.subtitle")}</p>
+            </div>
+            <LiveCounter />
+          </div>
+        </section>
+
         <MapSection 
           onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
           onClimateDataFetched={setClimateData}
@@ -219,6 +232,9 @@ const Index = () => {
             buildingType={buildingType}
           />
         </div>
+
+        {/* Testimonials Section */}
+        <Testimonials />
 
         <FAQSection />
       </main>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -482,6 +483,17 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
                   disabled={isDisabled}
                 />
                 {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+              </div>
+
+              {/* Forgot Password Link */}
+              <div className="text-center">
+                <Link 
+                  to="/forgot-password" 
+                  onClick={() => onOpenChange(false)}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {t('auth.forgotPassword')}
+                </Link>
               </div>
 
               <Button
