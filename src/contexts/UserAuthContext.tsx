@@ -12,6 +12,7 @@ interface Profile {
   avatar_url: string | null;
   reports_generated: number;
   report_limit: number;
+  user_type: 'individual' | 'business';
   created_at: string;
   updated_at: string;
 }

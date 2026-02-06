@@ -131,6 +131,7 @@ export type Database = {
           reports_generated: number
           updated_at: string
           user_id: string
+          user_type: string
         }
         Insert: {
           avatar_url?: string | null
@@ -143,6 +144,7 @@ export type Database = {
           reports_generated?: number
           updated_at?: string
           user_id: string
+          user_type?: string
         }
         Update: {
           avatar_url?: string | null
@@ -155,6 +157,7 @@ export type Database = {
           reports_generated?: number
           updated_at?: string
           user_id?: string
+          user_type?: string
         }
         Relationships: []
       }
