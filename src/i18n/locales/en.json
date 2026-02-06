@@ -474,7 +474,11 @@
       "password": "Password",
       "signIn": "Sign In",
       "signingIn": "Signing in...",
-      "backToSite": "← Back to site"
+      "backToSite": "← Back to site",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithApple": "Continue with Apple",
+      "orContinueWith": "or continue with email",
+      "oauthError": "Failed to sign in. Please try again."
     },
     "dashboard": {
       "title": "Dashboard",
