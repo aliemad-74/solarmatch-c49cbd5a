@@ -62,17 +62,6 @@ const Header = () => {
             </Link>
           ))}
           
-          {/* Admin Dashboard Link */}
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-            >
-              <Settings className="w-4 h-4" />
-              {t('header.adminDashboard')}
-            </Link>
-          )}
-          
           {/* User Menu */}
           {(user || admin) ? (
             <DropdownMenu>
