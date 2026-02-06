@@ -1,215 +1,245 @@
 
-# User Access & Monetization System Implementation Plan
+# Admin Dashboard - خطة تنفيذ لوحة التحكم الكاملة
 
-## Overview
-Implement a complete user registration, email verification, free trial, and paywall system to monetize the solar report generation feature.
-
----
-
-## Database Schema Changes
-
-### New Table: `app_users`
-Stores user registration data separately from Supabase Auth users.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| email | text | Unique, user email |
-| name | text | Full name |
-| phone | text | Mobile number |
-| status | text | "unverified" or "verified" |
-| reports_generated | integer | Counter (starts at 0) |
-| report_limit | integer | Max reports allowed (default: 1) |
-| verification_token | text | Unique token for email verification |
-| token_expires_at | timestamptz | Token expiration (24 hours) |
-| ip_address | text | Last used IP (abuse prevention) |
-| created_at | timestamptz | Registration timestamp |
-
-### New Table: `report_history`
-Tracks each report generation for auditing.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| user_id | uuid | FK to app_users |
-| location_name | text | Location of calculation |
-| system_size_kw | numeric | kW installed |
-| created_at | timestamptz | When report was generated |
-| ip_address | text | IP at generation time |
-
-### RLS Policies
-- `app_users`: Public INSERT (registration), authenticated READ own record
-- `report_history`: Authenticated INSERT/READ own records only
+## ملخص المشروع
+بناء لوحة تحكم Admin كاملة تشمل إدارة المستخدمين والتقارير والعملاء المحتملين (Leads) مع نظام صلاحيات آمن.
 
 ---
 
-## User Flow Architecture
+## الهيكل الحالي
+
+### الجداول الموجودة:
+- **app_users**: المستخدمين المسجلين (الاسم، الإيميل، الموبايل، عدد التقارير)
+- **report_history**: سجل التقارير المولدة لكل مستخدم
+- **leads**: طلبات التواصل من العملاء المحتملين
+- **user_roles**: جدول الصلاحيات (فارغ حالياً، مربوط بـ auth.users)
+
+### المشكلة الحالية:
+- لا يوجد نظام تسجيل دخول حقيقي (Supabase Auth)
+- جدول `user_roles` مربوط بـ `auth.users` لكن التطبيق يستخدم `app_users` فقط
+- RLS policies على `leads` تتطلب admin role لكن لا أحد لديه هذا الـ role
+
+---
+
+## الحل المقترح
+
+### نهج مبسط وآمن:
+سنبني نظام Admin يعتمد على **Supabase Auth** للـ Admin فقط، مع الحفاظ على نظام التسجيل الحالي للمستخدمين العاديين.
 
 ```text
-+------------------+     +--------------------+     +------------------+
-| 1. User clicks   | --> | 2. Registration    | --> | 3. Email sent    |
-|   "Calculate"    |     |    Modal shown     |     |    with link     |
-+------------------+     +--------------------+     +------------------+
-                                                            |
-                                                            v
-+------------------+     +--------------------+     +------------------+
-| 6. Report        | <-- | 5. Status =        | <-- | 4. User clicks   |
-|    Generated     |     |    "verified"      |     |    verify link   |
-+------------------+     +--------------------+     +------------------+
-        |
-        v
-+------------------+     +--------------------+     +------------------+
-| 7. reports_      | --> | 8. Next attempt    | --> | 9. Paywall       |
-|    generated = 1 |     |    blocked         |     |    shown         |
-+------------------+     +--------------------+     +------------------+
++------------------+     +------------------+
+|   Regular Users  |     |   Admin Users    |
++------------------+     +------------------+
+| app_users table  |     | auth.users +     |
+| (name, email,    |     | user_roles table |
+|  phone, etc.)    |     | (role = 'admin') |
++------------------+     +------------------+
+        |                        |
+        v                        v
+  Registration Modal      /admin/login page
+  (no auth required)      (Supabase Auth)
 ```
 
 ---
 
-## Components to Create
+## المكونات المطلوبة
 
-### 1. Registration Modal (`src/components/RegistrationModal.tsx`)
-- Form fields: Name, Email, Mobile Phone
-- Validation using Zod schema
-- Saves to `app_users` table with status = "unverified"
-- Triggers email verification edge function
-- Shows "Check your email" message after submission
+### 1. صفحات جديدة
 
-### 2. Email Verification Page (`src/pages/Verify.tsx`)
-- Route: `/verify?token=xxx`
-- Validates token against database
-- Updates user status to "verified"
-- Shows success message with redirect to calculator
+| الصفحة | المسار | الوظيفة |
+|--------|--------|---------|
+| Admin Login | `/admin/login` | تسجيل دخول الـ Admin |
+| Admin Dashboard | `/admin` | الصفحة الرئيسية للـ Admin |
+| Users Management | `/admin/users` | عرض المستخدمين وتعديل الصلاحيات |
+| Reports History | `/admin/reports` | عرض كل التقارير المولدة |
+| Leads Management | `/admin/leads` | عرض وتعديل حالة الـ Leads |
 
-### 3. Paywall Modal (`src/components/PaywallModal.tsx`)
-- Shows when `reports_generated >= report_limit`
-- Displays pricing options:
-  - 1 report: 49 EGP
-  - 3 reports: 99 EGP
-  - Company subscription (contact sales)
-- Integrates with Stripe for payments
+### 2. المكونات الجديدة
 
-### 4. User Context Provider (`src/contexts/UserContext.tsx`)
-- Manages user state across the app
-- Checks localStorage for user session
-- Provides `user`, `isVerified`, `canGenerateReport` states
+- **AdminAuthContext**: إدارة حالة تسجيل دخول الـ Admin
+- **AdminLayout**: Layout موحد لصفحات الـ Admin مع Sidebar
+- **AdminProtectedRoute**: حماية صفحات الـ Admin
+- **UsersTable**: جدول عرض المستخدمين مع البحث والفلترة
+- **ReportsTable**: جدول عرض التقارير
+- **LeadsTable**: جدول عرض وتعديل الـ Leads
+- **StatsCards**: كروت إحصائيات (إجمالي المستخدمين، التقارير، الـ Leads)
 
----
+### 3. تعديلات قاعدة البيانات
 
-## Edge Functions to Create
+#### إضافة Admin User:
+```sql
+-- إنشاء حساب Admin عبر Supabase Auth ثم:
+INSERT INTO user_roles (user_id, role) 
+VALUES ('<admin-auth-user-id>', 'admin');
+```
 
-### 1. `send-verification-email` 
-- Generates unique verification token
-- Saves token to database with 24hr expiry
-- Sends email via Resend API
-- Email contains: verification link to `/verify?token=xxx`
-
-### 2. `verify-email`
-- Validates token exists and not expired
-- Updates user status to "verified"
-- Returns success/failure response
-
-### 3. `check-report-access`
-- Checks if user can generate a report
-- Validates: email verified, reports_generated < report_limit
-- Returns access status and remaining reports
-
-### 4. `record-report-generation`
-- Called after successful PDF generation
-- Increments `reports_generated` counter
-- Logs to `report_history` table
-
-### 5. `process-payment` (Stripe webhook handler)
-- Handles successful payment events
-- Increases user's `report_limit` accordingly
-- 1 report purchase: +1 to limit
-- 3 report bundle: +3 to limit
+#### تحديث RLS Policies:
+- تأكيد أن الـ Admin يمكنه قراءة كل الجداول
+- إضافة policy للـ Admin لتعديل `app_users.report_limit`
 
 ---
 
-## File Changes Summary
+## تدفق العمل (User Flow)
 
-### New Files
-| Path | Purpose |
-|------|---------|
-| `src/components/RegistrationModal.tsx` | User registration form |
-| `src/components/PaywallModal.tsx` | Payment gate after free trial |
-| `src/components/VerificationPending.tsx` | "Check your email" UI |
-| `src/pages/Verify.tsx` | Email verification handler |
-| `src/contexts/UserContext.tsx` | User state management |
-| `src/hooks/useUser.tsx` | User hook for components |
-| `src/lib/userValidation.ts` | Zod schemas for user forms |
-| `supabase/functions/send-verification-email/index.ts` | Email sender |
-| `supabase/functions/verify-email/index.ts` | Token validator |
-| `supabase/functions/check-report-access/index.ts` | Access control |
-| `supabase/functions/record-report-generation/index.ts` | Usage tracker |
-
-### Modified Files
-| Path | Changes |
-|------|---------|
-| `src/pages/Index.tsx` | Add registration gate before calculation |
-| `src/components/ResultsDashboard.tsx` | Gate PDF download, track usage |
-| `src/App.tsx` | Add `/verify` route, UserProvider wrapper |
-| `src/i18n/locales/en.json` | Add registration/paywall translations |
-| `src/i18n/locales/ar.json` | Add Arabic translations |
-| `supabase/config.toml` | Register new edge functions |
+```text
+Admin يفتح /admin/login
+       |
+       v
+  Supabase Auth Login
+  (email + password)
+       |
+       v
+  التحقق من user_roles
+  (هل لديه role = 'admin'?)
+       |
+   +---+---+
+   |       |
+  نعم     لا
+   |       |
+   v       v
+Dashboard  رسالة خطأ
+           "ليس لديك صلاحية"
+```
 
 ---
 
-## Security Measures
+## التفاصيل التقنية
 
-1. **Email Validation**: Server-side validation via database trigger
-2. **Token Security**: Cryptographically random tokens, 24hr expiry
-3. **Rate Limiting**: Edge functions have request limits
-4. **IP Tracking**: Secondary abuse prevention (not primary identifier)
-5. **RLS Policies**: Users can only access their own data
-6. **CORS Headers**: Proper origin control on edge functions
+### 1. Admin Authentication Context
+
+```typescript
+// src/contexts/AdminAuthContext.tsx
+interface AdminAuthContextType {
+  admin: User | null;
+  isLoading: boolean;
+  isAdmin: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
+```
+
+- يستخدم Supabase Auth
+- يتحقق من وجود role = 'admin' في `user_roles`
+- يخزن الـ session تلقائياً
+
+### 2. Admin Layout Component
+
+- Sidebar مع روابط للصفحات
+- Header يعرض اسم الـ Admin وزر تسجيل الخروج
+- Responsive design (يتحول لـ drawer على الموبايل)
+- دعم RTL للعربية
+
+### 3. Dashboard Statistics
+
+```typescript
+interface DashboardStats {
+  totalUsers: number;
+  totalReports: number;
+  totalLeads: number;
+  newLeadsToday: number;
+  usersToday: number;
+}
+```
+
+### 4. Users Management Features
+
+- عرض جدول المستخدمين (الاسم، الإيميل، الموبايل، التقارير، تاريخ التسجيل)
+- البحث بالاسم أو الإيميل
+- تعديل `report_limit` للسماح بتقارير إضافية
+- عرض تفاصيل المستخدم (التقارير المولدة)
+
+### 5. Leads Management Features
+
+- عرض كل الـ Leads مع التفاصيل
+- تغيير الحالة (new, contacted, qualified, closed)
+- فلترة حسب الحالة وتاريخ الإضافة
+- عرض تفاصيل المشروع (الموقع، حجم النظام، التكلفة)
+
+### 6. Reports History Features
+
+- عرض كل التقارير المولدة
+- فلترة حسب التاريخ أو المستخدم
+- عرض الموقع وحجم النظام
 
 ---
 
-## Privacy & Trust
+## الملفات الجديدة
 
-The app will display:
-> "Your contact information is used only to generate your solar report and provide relevant service updates."
-
-- No auto-subscription
-- No data selling
-- Clear payment requirements upfront
-
----
-
-## Pricing Structure
-
-| Option | Price | Reports |
-|--------|-------|---------|
-| Free Trial | 0 EGP | 1 |
-| Single Report | 49 EGP | +1 |
-| Bundle | 99 EGP | +3 |
-| Company Monthly | Contact | Unlimited + PDF + Branding |
-
----
-
-## Required Secrets
-
-Before implementation, the following secret needs to be configured:
-
-- **RESEND_API_KEY**: For sending verification emails
-  - Get from: https://resend.com/api-keys
-  - User must have a verified domain at: https://resend.com/domains
+```text
+src/
+├── contexts/
+│   └── AdminAuthContext.tsx        # Admin auth state
+├── components/admin/
+│   ├── AdminLayout.tsx             # Layout with sidebar
+│   ├── AdminSidebar.tsx            # Navigation sidebar
+│   ├── AdminProtectedRoute.tsx     # Route guard
+│   ├── StatsCards.tsx              # Dashboard stats
+│   ├── UsersTable.tsx              # Users data table
+│   ├── ReportsTable.tsx            # Reports data table
+│   └── LeadsTable.tsx              # Leads data table
+├── pages/admin/
+│   ├── AdminLogin.tsx              # Login page
+│   ├── AdminDashboard.tsx          # Main dashboard
+│   ├── AdminUsers.tsx              # Users management
+│   ├── AdminReports.tsx            # Reports history
+│   └── AdminLeads.tsx              # Leads management
+└── i18n/
+    └── locales/
+        ├── en.json                 # + admin translations
+        └── ar.json                 # + admin translations
+```
 
 ---
 
-## Implementation Order
+## الأمان (Security)
 
-1. Database migrations (tables + RLS)
-2. User context and hooks
-3. Registration modal component
-4. Send verification email edge function
-5. Verification page
-6. Calculate button gate (require registration)
-7. Report access check
-8. Report generation tracking
-9. Paywall modal
-10. Stripe integration for payments
-11. Translations (EN/AR)
-12. Testing and refinement
+### ما سيتم تأمينه:
+
+1. **Server-side validation**: RLS policies تمنع الوصول غير المصرح
+2. **Role verification**: التحقق من الـ role باستخدام `has_role()` function
+3. **Session management**: Supabase يدير الـ sessions تلقائياً
+4. **Protected routes**: React Router يحمي الصفحات client-side
+
+### RLS Policies المطلوبة:
+
+```sql
+-- Admin can read all app_users
+CREATE POLICY "Admins can view all users"
+ON public.app_users FOR SELECT
+USING (has_role(auth.uid(), 'admin'));
+
+-- Admin can update app_users (e.g., report_limit)
+CREATE POLICY "Admins can update users"
+ON public.app_users FOR UPDATE
+USING (has_role(auth.uid(), 'admin'));
+
+-- Admin can read all report_history
+CREATE POLICY "Admins can view all reports"
+ON public.report_history FOR SELECT
+USING (has_role(auth.uid(), 'admin'));
+```
+
+---
+
+## خطوات التنفيذ
+
+1. **إضافة RLS policies جديدة للـ Admin**
+2. **بناء AdminAuthContext**
+3. **بناء صفحة Admin Login**
+4. **بناء AdminLayout و Sidebar**
+5. **بناء Dashboard مع الإحصائيات**
+6. **بناء صفحة إدارة المستخدمين**
+7. **بناء صفحة إدارة التقارير**
+8. **بناء صفحة إدارة Leads**
+9. **إضافة الترجمات (EN + AR)**
+10. **إنشاء أول Admin user**
+
+---
+
+## ملاحظة مهمة
+
+بعد التنفيذ، ستحتاج إلى:
+1. إنشاء حساب Admin عبر Backend (سأساعدك في ذلك)
+2. اختبار تسجيل الدخول والصلاحيات
+3. التأكد من عمل كل الصفحات
+
