@@ -477,6 +477,138 @@ const InputPanel = ({
             )}
           </div>
 
+          {/* ==================== COMPACT SMART INSIGHTS - Before Calculate ==================== */}
+          {hasRealClimateData && (
+            <Collapsible open={showInsights} onOpenChange={setShowInsights} className="mb-6">
+              <CollapsibleTrigger className="w-full p-3 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 flex items-center justify-between hover:bg-primary/10 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="font-medium text-sm text-foreground">{t('insights.title')}</span>
+                  {locationName && (
+                    <span className="text-xs text-muted-foreground">• {locationName}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {!showInsights && (
+                    <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Sun className="w-3 h-3 text-amber-500" />
+                        {insights.peakProduction.peakMonths.slice(0, 2).join(", ")}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Thermometer className="w-3 h-3 text-orange-500" />
+                        {insights.temperatureRisk.maxTemp.toFixed(0)}°C
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Wind className="w-3 h-3 text-teal-500" />
+                        {insights.windRisk.avgWindSpeed}m/s
+                      </span>
+                    </div>
+                  )}
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showInsights ? "rotate-180" : ""}`} />
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <div className="mt-3 space-y-3">
+                  {/* Row 1: Key Insights */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {/* Peak Production */}
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Sun className="w-4 h-4 text-amber-500" />
+                        <span className="font-medium text-xs">{t('insights.peakProduction')}</span>
+                      </div>
+                      <p className="text-sm font-bold text-foreground">{insights.peakProduction.peakMonths.slice(0, 3).join(", ")}</p>
+                      <p className="text-[10px] text-muted-foreground">{insights.peakProduction.peakHours}</p>
+                    </div>
+
+                    {/* Heat Warning */}
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Thermometer className="w-4 h-4 text-orange-500" />
+                        <span className="font-medium text-xs">{t('insights.heatWarning')}</span>
+                      </div>
+                      {insights.temperatureRisk.hotMonths.length > 0 ? (
+                        <>
+                          <p className="text-sm font-bold text-foreground">{insights.temperatureRisk.hotMonths.slice(0, 2).join(", ")}</p>
+                          <p className="text-[10px] text-muted-foreground">-{insights.temperatureRisk.avgEfficiencyLoss}% • {insights.temperatureRisk.maxTemp.toFixed(0)}°C</p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">{t('insights.noHeatRisk')}</p>
+                      )}
+                    </div>
+
+                    {/* Cleaning */}
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Droplets className="w-4 h-4 text-sky-500" />
+                        <span className="font-medium text-xs">{t('insights.cleaningSchedule')}</span>
+                      </div>
+                      <p className="text-sm font-bold text-foreground">{insights.cleaningSchedule.dustyFrequency}</p>
+                      <p className="text-[10px] text-muted-foreground">{insights.cleaningSchedule.dustyMonths.slice(0, 2).join(", ")}</p>
+                    </div>
+                  </div>
+
+                  {/* Row 2: More Insights */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Wind */}
+                    <div className="p-2 rounded-lg bg-muted/20 border border-border/30 text-center">
+                      <Wind className="w-4 h-4 text-teal-500 mx-auto mb-1" />
+                      <p className="text-xs font-bold text-foreground">
+                        {insights.windRisk.riskLevel === "low" && t('insights.lowRisk')}
+                        {insights.windRisk.riskLevel === "moderate" && t('insights.moderateRisk')}
+                        {insights.windRisk.riskLevel === "high" && t('insights.highRisk')}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">{insights.windRisk.avgWindSpeed} m/s</p>
+                    </div>
+
+                    {/* Cloud */}
+                    <div className="p-2 rounded-lg bg-muted/20 border border-border/30 text-center">
+                      <Cloud className="w-4 h-4 text-slate-500 mx-auto mb-1" />
+                      <p className="text-xs font-bold text-foreground">{insights.cloudCover.avgCloudCover}%</p>
+                      <p className="text-[10px] text-muted-foreground">{t('insights.avgCloud')}</p>
+                    </div>
+
+                    {/* Best Install */}
+                    <div className="p-2 rounded-lg bg-muted/20 border border-border/30 text-center">
+                      <Calendar className="w-4 h-4 text-primary mx-auto mb-1" />
+                      <p className="text-xs font-bold text-foreground">{insights.optimalInstall.bestMonths.slice(0, 2).join(", ")}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('insights.bestInstall')}</p>
+                    </div>
+                  </div>
+
+                  {/* Monthly Mini Calendar */}
+                  <div className="p-2 rounded-lg bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <TrendingUp className="w-3 h-3 text-primary" />
+                      <span className="font-medium text-[10px] text-muted-foreground">{t('insights.monthlyCalendar')}</span>
+                    </div>
+                    <div className="flex justify-between items-end gap-0.5">
+                      {insights.monthlyCalendar.map((month, idx) => (
+                        <div key={idx} className="flex flex-col items-center flex-1">
+                          <div 
+                            className={`w-full rounded-t-sm transition-all ${
+                              month.level === "high" 
+                                ? "bg-primary h-5" 
+                                : month.level === "medium" 
+                                  ? "bg-primary/60 h-3" 
+                                  : "bg-primary/30 h-2"
+                            }`}
+                            title={`${month.month}: ${month.irradiance.toFixed(1)} kWh/m²/day`}
+                          />
+                          <span className="text-[8px] text-muted-foreground mt-0.5">
+                            {month.month.slice(0, 1)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
           {/* Calculate Button */}
           <Button
             onClick={onCalculate}
@@ -487,158 +619,6 @@ const InputPanel = ({
             {t('input.calculate')}
           </Button>
         </div>
-
-        {/* ==================== AUTO INSIGHTS (COLLAPSIBLE) - Only show when location is detected ==================== */}
-        {hasRealClimateData && (
-          <Collapsible open={showInsights} onOpenChange={setShowInsights}>
-            <div className="bg-card rounded-2xl border border-border/50 shadow-card overflow-hidden">
-              <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <span className="font-medium text-foreground">{t('insights.title')}</span>
-                  {locationName && (
-                    <span className="text-xs text-muted-foreground">({locationName})</span>
-                  )}
-                </div>
-                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showInsights ? "rotate-180" : ""}`} />
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <div className="p-4 pt-0 space-y-4">
-                  {/* Row 1: Peak Production, Cleaning Schedule, Heat Warning */}
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {/* Peak Production */}
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sun className="w-5 h-5 text-amber-500" />
-                        <span className="font-medium text-sm">{t('insights.peakProduction')}</span>
-                      </div>
-                      <p className="text-lg font-bold text-foreground">{insights.peakProduction.peakMonths.slice(0, 4).join(", ")}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('insights.peakHours')}: {insights.peakProduction.peakHours}
-                      </p>
-                    </div>
-
-                    {/* Cleaning Schedule */}
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Droplets className="w-5 h-5 text-sky-500" />
-                        <span className="font-medium text-sm">{t('insights.cleaningSchedule')}</span>
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {t('insights.dustySeason')}: {insights.cleaningSchedule.dustyFrequency}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {insights.cleaningSchedule.dustyMonths.slice(0, 3).join(", ")} • {insights.cleaningSchedule.reason}
-                      </p>
-                    </div>
-
-                    {/* Heat Warning */}
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Thermometer className="w-5 h-5 text-orange-500" />
-                        <span className="font-medium text-sm">{t('insights.heatWarning')}</span>
-                      </div>
-                      {insights.temperatureRisk.hotMonths.length > 0 ? (
-                        <>
-                          <p className="text-lg font-bold text-foreground">
-                            {insights.temperatureRisk.hotMonths.slice(0, 3).join(", ")}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {t('insights.efficiencyLoss')}: -{insights.temperatureRisk.avgEfficiencyLoss}% • {isArabic ? `الحد الأقصى ${insights.temperatureRisk.maxTemp.toFixed(0)}°م` : `Max ${insights.temperatureRisk.maxTemp.toFixed(0)}°C`}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">{t('insights.noHeatRisk')}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Row 2: Wind Risk, Cloud Cover, Best Install Time */}
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {/* Wind Assessment */}
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Wind className="w-5 h-5 text-teal-500" />
-                        <span className="font-medium text-sm">{t('insights.windRisk')}</span>
-                      </div>
-                      <p className="text-lg font-bold text-foreground">
-                        {insights.windRisk.riskLevel === "low" && t('insights.lowRisk')}
-                        {insights.windRisk.riskLevel === "moderate" && t('insights.moderateRisk')}
-                        {insights.windRisk.riskLevel === "high" && t('insights.highRisk')}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('insights.avgWind')}: {insights.windRisk.avgWindSpeed} m/s • {insights.windRisk.recommendation}
-                      </p>
-                    </div>
-
-                    {/* Cloud Cover Impact */}
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Cloud className="w-5 h-5 text-slate-500" />
-                        <span className="font-medium text-sm">{t('insights.cloudCover')}</span>
-                      </div>
-                      <p className="text-lg font-bold text-foreground">{insights.cloudCover.avgCloudCover}% {t('insights.avgCloud')}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {insights.cloudCover.overcastMonths.length > 0 
-                          ? `${t('insights.overcastMonths')}: ${insights.cloudCover.overcastMonths.slice(0, 3).join(", ")}` 
-                          : insights.cloudCover.productionImpact}
-                      </p>
-                    </div>
-
-                    {/* Best Install Time */}
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-5 h-5 text-primary" />
-                        <span className="font-medium text-sm">{t('insights.bestInstall')}</span>
-                      </div>
-                      <p className="text-lg font-bold text-foreground">{insights.optimalInstall.bestMonths.join(", ")}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{insights.optimalInstall.reason}</p>
-                    </div>
-                  </div>
-
-                  {/* Monthly Production Calendar */}
-                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                    <div className="flex items-center gap-2 mb-3">
-                      <TrendingUp className="w-5 h-5 text-primary" />
-                      <span className="font-medium text-sm">{t('insights.monthlyCalendar')}</span>
-                    </div>
-                    <div className="flex justify-between items-end gap-1">
-                      {insights.monthlyCalendar.map((month, idx) => (
-                        <div key={idx} className="flex flex-col items-center flex-1">
-                          <div 
-                            className={`w-full rounded-t-sm transition-all ${
-                              month.level === "high" 
-                                ? "bg-primary h-8" 
-                                : month.level === "medium" 
-                                  ? "bg-primary/60 h-5" 
-                                  : "bg-primary/30 h-3"
-                            }`}
-                            title={`${month.month}: ${month.irradiance.toFixed(1)} kWh/m²/day`}
-                          />
-                          <span className="text-[10px] text-muted-foreground mt-1">
-                            {month.month.slice(0, 1)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-sm bg-primary" /> {t('insights.high')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-sm bg-primary/60" /> {t('insights.medium')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-sm bg-primary/30" /> {t('insights.low')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </div>
-          </Collapsible>
-        )}
 
       </div>
     </section>
