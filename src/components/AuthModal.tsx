@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useUserAuth } from '@/contexts/UserAuthContext';
-import { Loader2, Sun, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Sun, Shield, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -60,6 +61,12 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     email: '',
     password: ''
   });
+
+  // OTP verification state
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     setError(null);
@@ -123,7 +130,10 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
       if (error) {
         setError(error);
       } else {
-        setSuccess(t('auth.checkEmail'));
+        // Show OTP verification screen
+        setPendingEmail(signUpData.email);
+        setShowOtpVerification(true);
+        setSuccess(t('auth.otpSent'));
       }
     } catch (err) {
       console.error('Sign up error:', err);
@@ -163,8 +173,65 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     setIsSubmitting(false);
   };
 
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) return;
+    
+    setError(null);
+    setIsVerifying(true);
+    
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: pendingEmail,
+        token: otpCode,
+        type: 'signup'
+      });
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        setShowOtpVerification(false);
+        onSuccess();
+        onOpenChange(false);
+      }
+    } catch (err) {
+      setError(t('auth.errors.unknown'));
+    }
+    
+    setIsVerifying(false);
+  };
+
+  const handleResendOtp = async () => {
+    setError(null);
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: pendingEmail
+      });
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess(t('auth.otpResent'));
+      }
+    } catch (err) {
+      setError(t('auth.errors.unknown'));
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const handleBackFromOtp = () => {
+    setShowOtpVerification(false);
+    setOtpCode('');
+    setPendingEmail('');
+    setError(null);
+    setSuccess(null);
+  };
+
   const isRTL = i18n.language === 'ar';
-  const isDisabled = isSubmitting || isOAuthLoading !== null;
+  const isDisabled = isSubmitting || isOAuthLoading !== null || isVerifying;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -174,10 +241,16 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
             <Sun className="w-6 h-6 text-primary" />
           </div>
           <DialogTitle className="text-lg font-display">
-            {t('auth.title')}
+            {showOtpVerification ? t('auth.enterOtp') : t('auth.title')}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            {t('auth.description')}
+            {showOtpVerification ? (
+              <>
+                {t('auth.otpDescription')} <span className="font-medium text-foreground" dir="ltr">{pendingEmail}</span>
+              </>
+            ) : (
+              t('auth.description')
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -194,6 +267,73 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
             <span>{success}</span>
           </div>
         )}
+
+        {/* OTP Verification Screen */}
+        {showOtpVerification ? (
+          <div className="space-y-4 mt-4">
+            <div className="flex justify-center" dir="ltr">
+              <InputOTP
+                maxLength={6}
+                value={otpCode}
+                onChange={setOtpCode}
+                disabled={isVerifying}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <Button
+              onClick={handleVerifyOtp}
+              className="w-full bg-gradient-to-r from-primary to-solar-gold hover:opacity-90"
+              disabled={otpCode.length !== 6 || isVerifying}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  {t('auth.verifying')}
+                </>
+              ) : (
+                t('auth.verifyCode')
+              )}
+            </Button>
+
+            <div className="flex items-center justify-between text-sm">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleBackFromOtp}
+                disabled={isVerifying}
+                className="gap-1"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {t('auth.backToSignup')}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                onClick={handleResendOtp}
+                disabled={isSubmitting || isVerifying}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  t('auth.resendCode')
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
 
         {/* OAuth Buttons */}
         <div className="grid grid-cols-2 gap-2 mt-3">
@@ -389,6 +529,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
             </form>
           </TabsContent>
         </Tabs>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
