@@ -6,12 +6,21 @@ import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
+import RegistrationModal from "@/components/RegistrationModal";
+import LimitReachedModal from "@/components/LimitReachedModal";
+import { useUser } from "@/contexts/UserContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 
 const Index = () => {
   const { i18n } = useTranslation();
+  const { user, canGenerateReport, recordReportGeneration } = useUser();
+  
+  // Registration modal state
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
+  const [pendingCalculation, setPendingCalculation] = useState(false);
   
   // Manual inputs
   const [rooftopArea, setRooftopArea] = useState<number>(100);
@@ -79,7 +88,15 @@ const Index = () => {
       ? numberOfUnits * avgUnitConsumption 
       : monthlyConsumption;
 
-  const handleCalculate = () => {
+  // Handle registration success - proceed with calculation
+  useEffect(() => {
+    if (pendingCalculation && user && canGenerateReport) {
+      setPendingCalculation(false);
+      performCalculation();
+    }
+  }, [user, canGenerateReport, pendingCalculation]);
+
+  const performCalculation = async () => {
     const calculation = calculateSolarFeasibility(
       rooftopArea, 
       climateData, 
@@ -95,9 +112,32 @@ const Index = () => {
     setResults(calculation);
     setShowResults(true);
 
+    // Record report generation
+    if (user) {
+      await recordReportGeneration(locationName, calculation.kWInstalled);
+    }
+
     setTimeout(() => {
       document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
+  };
+
+  const handleCalculate = () => {
+    // Check if user is registered
+    if (!user) {
+      setShowRegistrationModal(true);
+      setPendingCalculation(true);
+      return;
+    }
+
+    // Check if user can generate more reports
+    if (!canGenerateReport) {
+      setShowLimitReachedModal(true);
+      return;
+    }
+
+    // Proceed with calculation
+    performCalculation();
   };
 
   // Get shareable params for the share dialog
@@ -175,6 +215,21 @@ const Index = () => {
       </main>
 
       <Footer />
+
+      {/* Registration Modal */}
+      <RegistrationModal
+        open={showRegistrationModal}
+        onOpenChange={setShowRegistrationModal}
+        onSuccess={() => {
+          // Will trigger calculation via useEffect
+        }}
+      />
+
+      {/* Limit Reached Modal */}
+      <LimitReachedModal
+        open={showLimitReachedModal}
+        onOpenChange={setShowLimitReachedModal}
+      />
     </div>
   );
 };

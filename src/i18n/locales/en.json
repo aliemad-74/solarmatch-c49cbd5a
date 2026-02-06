@@ -426,5 +426,32 @@
         "a": "Residential systems under 500 kW typically require notification to the electricity distribution company. Net metering agreements need approval from the local electricity authority. Commercial installations may need additional environmental permits."
       }
     }
+  },
+  "registration": {
+    "title": "Get Your Free Solar Report",
+    "description": "Enter your details to receive your personalized solar feasibility report",
+    "name": "Full Name",
+    "namePlaceholder": "Enter your full name",
+    "email": "Email Address",
+    "emailPlaceholder": "your@email.com",
+    "phone": "Mobile Number",
+    "phonePlaceholder": "+20 XXX XXX XXXX",
+    "privacyNote": "Your contact information is used only to generate your solar report and provide relevant service updates.",
+    "benefit1": "One free comprehensive solar report",
+    "benefit2": "Detailed ROI analysis & recommendations",
+    "submit": "Get My Free Report",
+    "submitting": "Processing...",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidPhone": "Please enter a valid phone number",
+    "error": "Registration failed. Please try again."
+  },
+  "limitReached": {
+    "title": "Free Report Used",
+    "description": "You've already generated your free solar report. Contact us to get more reports.",
+    "contactUs": "Choose how you'd like to reach us:",
+    "whatsapp": "Contact via WhatsApp",
+    "email": "Send us an Email",
+    "phone": "Call Us",
+    "upgradeInfo": "Individual reports starting from 49 EGP. Company subscriptions available."
   }
 }
