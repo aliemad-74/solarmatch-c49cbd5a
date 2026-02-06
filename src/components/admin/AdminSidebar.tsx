@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import {
   LogOut,
   Sun,
   Menu,
-  X,
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -67,9 +67,17 @@ const AdminSidebar = () => {
         ))}
       </nav>
 
-      {/* User info & logout */}
+      {/* Back to site & User info & logout */}
       <div className="p-4 border-t border-border space-y-3">
-        <div className="text-sm">
+        <Link
+          to="/"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+        >
+          <Home className="h-5 w-5" />
+          <span>{t("admin.backToSite")}</span>
+        </Link>
+        <div className="text-sm pt-2">
           <p className="font-medium truncate">{admin?.email}</p>
           <p className="text-xs text-muted-foreground">{t("admin.role")}</p>
         </div>

@@ -485,6 +485,7 @@
     "subtitle": "SolarMatch Management",
     "role": "Administrator",
     "logout": "Sign Out",
+    "backToSite": "Back to Site",
     "error": "Error",
     "nav": {
       "dashboard": "Dashboard",
