@@ -453,5 +453,91 @@
     "email": "Send us an Email",
     "phone": "Call Us",
     "upgradeInfo": "Individual reports starting from 49 EGP. Company subscriptions available."
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "subtitle": "SolarMatch Management",
+    "role": "Administrator",
+    "logout": "Sign Out",
+    "error": "Error",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "reports": "Reports",
+      "leads": "Leads"
+    },
+    "login": {
+      "title": "Admin Login",
+      "description": "Sign in to access the admin dashboard",
+      "email": "Email Address",
+      "emailPlaceholder": "admin@example.com",
+      "password": "Password",
+      "signIn": "Sign In",
+      "signingIn": "Signing in...",
+      "backToSite": "← Back to site"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Overview of your solar platform",
+      "reportsChart": "Reports Generated",
+      "leadsChart": "New Leads",
+      "last7Days": "Last 7 days"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalReports": "Total Reports",
+      "totalLeads": "Total Leads",
+      "newLeadsToday": "New Leads Today"
+    },
+    "users": {
+      "title": "Users Management",
+      "subtitle": "View and manage registered users",
+      "search": "Search by name, email, or phone...",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "reports": "Reports",
+      "limit": "Limit",
+      "status": "Status",
+      "createdAt": "Registered",
+      "actions": "Actions",
+      "noUsers": "No users found",
+      "limitUpdated": "Limit Updated",
+      "limitUpdatedDesc": "User report limit has been updated",
+      "limitUpdateError": "Failed to update limit"
+    },
+    "reports": {
+      "title": "Reports History",
+      "subtitle": "All generated solar reports",
+      "search": "Search by location or user...",
+      "user": "User",
+      "location": "Location",
+      "systemSize": "System Size",
+      "createdAt": "Generated",
+      "noReports": "No reports found",
+      "noLocation": "No location"
+    },
+    "leads": {
+      "title": "Leads Management",
+      "subtitle": "Manage potential customer requests",
+      "search": "Search by name, email, or phone...",
+      "filterByStatus": "Filter by status",
+      "allStatuses": "All Statuses",
+      "name": "Name",
+      "contact": "Contact",
+      "project": "Project Details",
+      "status": "Status",
+      "createdAt": "Submitted",
+      "noLeads": "No leads found",
+      "statusUpdated": "Status Updated",
+      "statusUpdatedDesc": "Lead status has been updated",
+      "statusUpdateError": "Failed to update status"
+    }
+  },
+  "admin.leads.status": {
+    "new": "New",
+    "contacted": "Contacted",
+    "qualified": "Qualified",
+    "closed": "Closed"
   }
 }

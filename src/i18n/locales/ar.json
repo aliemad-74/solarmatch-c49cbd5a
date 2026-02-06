@@ -453,5 +453,91 @@
     "email": "أرسل لنا إيميل",
     "phone": "اتصل بنا",
     "upgradeInfo": "التقارير الفردية تبدأ من 49 جنيه. اشتراكات الشركات متاحة."
+  },
+  "admin": {
+    "title": "لوحة التحكم",
+    "subtitle": "إدارة سولار ماتش",
+    "role": "مدير النظام",
+    "logout": "تسجيل الخروج",
+    "error": "خطأ",
+    "nav": {
+      "dashboard": "الرئيسية",
+      "users": "المستخدمون",
+      "reports": "التقارير",
+      "leads": "العملاء المحتملون"
+    },
+    "login": {
+      "title": "تسجيل دخول المدير",
+      "description": "سجل الدخول للوصول إلى لوحة التحكم",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "admin@example.com",
+      "password": "كلمة المرور",
+      "signIn": "تسجيل الدخول",
+      "signingIn": "جاري تسجيل الدخول...",
+      "backToSite": "→ العودة للموقع"
+    },
+    "dashboard": {
+      "title": "الرئيسية",
+      "subtitle": "نظرة عامة على منصتك الشمسية",
+      "reportsChart": "التقارير المولدة",
+      "leadsChart": "العملاء الجدد",
+      "last7Days": "آخر 7 أيام"
+    },
+    "stats": {
+      "totalUsers": "إجمالي المستخدمين",
+      "totalReports": "إجمالي التقارير",
+      "totalLeads": "إجمالي العملاء",
+      "newLeadsToday": "عملاء اليوم"
+    },
+    "users": {
+      "title": "إدارة المستخدمين",
+      "subtitle": "عرض وإدارة المستخدمين المسجلين",
+      "search": "البحث بالاسم أو الإيميل أو الهاتف...",
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "reports": "التقارير",
+      "limit": "الحد",
+      "status": "الحالة",
+      "createdAt": "تاريخ التسجيل",
+      "actions": "إجراءات",
+      "noUsers": "لا يوجد مستخدمون",
+      "limitUpdated": "تم تحديث الحد",
+      "limitUpdatedDesc": "تم تحديث حد تقارير المستخدم",
+      "limitUpdateError": "فشل تحديث الحد"
+    },
+    "reports": {
+      "title": "سجل التقارير",
+      "subtitle": "جميع تقارير الطاقة الشمسية المولدة",
+      "search": "البحث بالموقع أو المستخدم...",
+      "user": "المستخدم",
+      "location": "الموقع",
+      "systemSize": "حجم النظام",
+      "createdAt": "تاريخ التوليد",
+      "noReports": "لا توجد تقارير",
+      "noLocation": "بدون موقع"
+    },
+    "leads": {
+      "title": "إدارة العملاء المحتملين",
+      "subtitle": "إدارة طلبات العملاء المحتملين",
+      "search": "البحث بالاسم أو الإيميل أو الهاتف...",
+      "filterByStatus": "فلترة حسب الحالة",
+      "allStatuses": "كل الحالات",
+      "name": "الاسم",
+      "contact": "بيانات التواصل",
+      "project": "تفاصيل المشروع",
+      "status": "الحالة",
+      "createdAt": "تاريخ الإرسال",
+      "noLeads": "لا يوجد عملاء",
+      "statusUpdated": "تم تحديث الحالة",
+      "statusUpdatedDesc": "تم تحديث حالة العميل",
+      "statusUpdateError": "فشل تحديث الحالة"
+    }
+  },
+  "admin.leads.status": {
+    "new": "جديد",
+    "contacted": "تم التواصل",
+    "qualified": "مؤهل",
+    "closed": "مغلق"
   }
 }
