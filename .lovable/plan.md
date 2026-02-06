@@ -1,245 +1,296 @@
 
-# Admin Dashboard - خطة تنفيذ لوحة التحكم الكاملة
-
-## ملخص المشروع
-بناء لوحة تحكم Admin كاملة تشمل إدارة المستخدمين والتقارير والعملاء المحتملين (Leads) مع نظام صلاحيات آمن.
+# خطة التنفيذ الفوري لتطوير SolarMatch
+## كل ما يمكن تنفيذه الآن بدون API خارجي
 
 ---
 
-## الهيكل الحالي
+## نظرة عامة
 
-### الجداول الموجودة:
-- **app_users**: المستخدمين المسجلين (الاسم، الإيميل، الموبايل، عدد التقارير)
-- **report_history**: سجل التقارير المولدة لكل مستخدم
-- **leads**: طلبات التواصل من العملاء المحتملين
-- **user_roles**: جدول الصلاحيات (فارغ حالياً، مربوط بـ auth.users)
-
-### المشكلة الحالية:
-- لا يوجد نظام تسجيل دخول حقيقي (Supabase Auth)
-- جدول `user_roles` مربوط بـ `auth.users` لكن التطبيق يستخدم `app_users` فقط
-- RLS policies على `leads` تتطلب admin role لكن لا أحد لديه هذا الـ role
+هذه الخطة تتضمن **12 ميزة** يمكن تنفيذها فورًا باستخدام الموارد المتاحة حاليًا (Supabase Auth، قاعدة البيانات الحالية، React/TypeScript).
 
 ---
 
-## الحل المقترح
+## الجزء الأول: تحسينات المصادقة والحسابات
 
-### نهج مبسط وآمن:
-سنبني نظام Admin يعتمد على **Supabase Auth** للـ Admin فقط، مع الحفاظ على نظام التسجيل الحالي للمستخدمين العاديين.
+### 1. صفحة "نسيت كلمة المرور" (Forgot Password)
 
-```text
-+------------------+     +------------------+
-|   Regular Users  |     |   Admin Users    |
-+------------------+     +------------------+
-| app_users table  |     | auth.users +     |
-| (name, email,    |     | user_roles table |
-|  phone, etc.)    |     | (role = 'admin') |
-+------------------+     +------------------+
-        |                        |
-        v                        v
-  Registration Modal      /admin/login page
-  (no auth required)      (Supabase Auth)
-```
+**الهدف**: السماح للمستخدمين باستعادة كلمات مرورهم
 
----
+**التنفيذ**:
+- إنشاء صفحة جديدة `src/pages/ForgotPassword.tsx`
+- إضافة رابط "نسيت كلمة المرور؟" في AuthModal
+- استخدام `supabase.auth.resetPasswordForEmail(email)`
+- إنشاء صفحة `src/pages/ResetPassword.tsx` لإدخال كلمة المرور الجديدة
 
-## المكونات المطلوبة
-
-### 1. صفحات جديدة
-
-| الصفحة | المسار | الوظيفة |
-|--------|--------|---------|
-| Admin Login | `/admin/login` | تسجيل دخول الـ Admin |
-| Admin Dashboard | `/admin` | الصفحة الرئيسية للـ Admin |
-| Users Management | `/admin/users` | عرض المستخدمين وتعديل الصلاحيات |
-| Reports History | `/admin/reports` | عرض كل التقارير المولدة |
-| Leads Management | `/admin/leads` | عرض وتعديل حالة الـ Leads |
-
-### 2. المكونات الجديدة
-
-- **AdminAuthContext**: إدارة حالة تسجيل دخول الـ Admin
-- **AdminLayout**: Layout موحد لصفحات الـ Admin مع Sidebar
-- **AdminProtectedRoute**: حماية صفحات الـ Admin
-- **UsersTable**: جدول عرض المستخدمين مع البحث والفلترة
-- **ReportsTable**: جدول عرض التقارير
-- **LeadsTable**: جدول عرض وتعديل الـ Leads
-- **StatsCards**: كروت إحصائيات (إجمالي المستخدمين، التقارير، الـ Leads)
-
-### 3. تعديلات قاعدة البيانات
-
-#### إضافة Admin User:
-```sql
--- إنشاء حساب Admin عبر Supabase Auth ثم:
-INSERT INTO user_roles (user_id, role) 
-VALUES ('<admin-auth-user-id>', 'admin');
-```
-
-#### تحديث RLS Policies:
-- تأكيد أن الـ Admin يمكنه قراءة كل الجداول
-- إضافة policy للـ Admin لتعديل `app_users.report_limit`
+**الملفات المتأثرة**:
+- `src/pages/ForgotPassword.tsx` (جديد)
+- `src/pages/ResetPassword.tsx` (جديد)
+- `src/components/AuthModal.tsx` (إضافة رابط)
+- `src/App.tsx` (إضافة Routes)
+- `src/i18n/locales/en.json` و `ar.json` (ترجمات)
 
 ---
 
-## تدفق العمل (User Flow)
+### 2. صفحة "حسابي" (My Account Dashboard)
 
-```text
-Admin يفتح /admin/login
-       |
-       v
-  Supabase Auth Login
-  (email + password)
-       |
-       v
-  التحقق من user_roles
-  (هل لديه role = 'admin'?)
-       |
-   +---+---+
-   |       |
-  نعم     لا
-   |       |
-   v       v
-Dashboard  رسالة خطأ
-           "ليس لديك صلاحية"
-```
+**الهدف**: عرض بيانات المستخدم وتقاريره السابقة
+
+**التنفيذ**:
+- إنشاء صفحة `src/pages/Account.tsx`
+- عرض معلومات الحساب (الاسم، الإيميل، الهاتف، نوع الحساب)
+- عرض التقارير السابقة من جدول `report_history`
+- عرض عدد التقارير المتبقية
+
+**الملفات المتأثرة**:
+- `src/pages/Account.tsx` (جديد)
+- `src/App.tsx` (إضافة Route)
+- `src/components/Header.tsx` (إضافة رابط "حسابي")
+- الترجمات
+
+---
+
+## الجزء الثاني: تحسينات لوحة تحكم الأدمن
+
+### 3. عرض نوع الحساب (فرد/شركة) في جدول المستخدمين
+
+**الهدف**: تمييز المستخدمين حسب نوع الحساب
+
+**التنفيذ**:
+- إضافة عمود "نوع الحساب" في `UsersTable.tsx`
+- عرض Badge مختلف للأفراد والشركات
+
+**الملفات المتأثرة**:
+- `src/components/admin/UsersTable.tsx`
+- الترجمات
+
+---
+
+### 4. تصدير البيانات إلى CSV
+
+**الهدف**: تمكين الأدمن من تصدير المستخدمين والتقارير والـ Leads
+
+**التنفيذ**:
+- إنشاء utility function `src/lib/exportUtils.ts`
+- إضافة زر "تصدير CSV" في كل جدول
+
+**الملفات المتأثرة**:
+- `src/lib/exportUtils.ts` (جديد)
+- `src/components/admin/UsersTable.tsx`
+- `src/components/admin/LeadsTable.tsx`
+- `src/components/admin/ReportsTable.tsx`
+- الترجمات
+
+---
+
+### 5. إحصائيات إضافية في الداشبورد
+
+**الهدف**: عرض إحصائيات أكثر تفصيلاً
+
+**التنفيذ**:
+- إضافة: المستخدمون الجدد اليوم، متوسط حجم النظام، إجمالي kW
+- تحسين StatsCards لعرض المزيد
+
+**الملفات المتأثرة**:
+- `src/pages/admin/AdminDashboard.tsx`
+- `src/components/admin/StatsCards.tsx`
+- الترجمات
+
+---
+
+### 6. فلترة حسب التاريخ في الجداول
+
+**الهدف**: تمكين الفلترة حسب نطاق زمني
+
+**التنفيذ**:
+- إضافة Date Range Picker في جداول الأدمن
+- فلترة النتائج حسب التاريخ المحدد
+
+**الملفات المتأثرة**:
+- `src/components/admin/UsersTable.tsx`
+- `src/components/admin/LeadsTable.tsx`
+- `src/components/admin/ReportsTable.tsx`
+- الترجمات
+
+---
+
+## الجزء الثالث: تحسينات الواجهة والتجربة
+
+### 7. تحسين صفحة الهبوط (Landing Page Enhancements)
+
+**الهدف**: إضافة عداد حي للتقارير وتحسين Hero Section
+
+**التنفيذ**:
+- إضافة عداد "X+ تقرير تم توليده"
+- تحسين التصميم مع animations
+
+**الملفات المتأثرة**:
+- `src/pages/Index.tsx`
+- `src/components/HeroSection.tsx` (جديد أو ضمن Index)
+- الترجمات
+
+---
+
+### 8. شهادات العملاء (Testimonials Section)
+
+**الهدف**: إضافة قسم شهادات وهمية للعرض
+
+**التنفيذ**:
+- إنشاء مكون `src/components/Testimonials.tsx`
+- إضافة 3-4 شهادات مع صور placeholder
+
+**الملفات المتأثرة**:
+- `src/components/Testimonials.tsx` (جديد)
+- `src/pages/Index.tsx`
+- الترجمات
+
+---
+
+### 9. تحسين تجربة الموبايل
+
+**الهدف**: تحسين العرض على الأجهزة الصغيرة
+
+**التنفيذ**:
+- تحسين حجم الأزرار والمسافات
+- تحسين جداول الأدمن للعرض الجانبي (horizontal scroll)
+- تحسين الخريطة على الموبايل
+
+**الملفات المتأثرة**:
+- ملفات CSS والمكونات المختلفة
+
+---
+
+## الجزء الرابع: تحسينات SEO والأداء
+
+### 10. تحسين Meta Tags الديناميكية
+
+**الهدف**: تحسين ظهور الموقع في محركات البحث
+
+**التنفيذ**:
+- إضافة React Helmet أو استخدام document.title
+- تحديث Open Graph tags
+- إضافة meta descriptions
+
+**الملفات المتأثرة**:
+- `index.html`
+- إضافة مكون `src/components/SEOHead.tsx`
+
+---
+
+### 11. إضافة صفحة 404 محسّنة
+
+**الهدف**: تحسين صفحة "الصفحة غير موجودة"
+
+**التنفيذ**:
+- تحسين تصميم NotFound.tsx
+- إضافة روابط مفيدة
+
+**الملفات المتأثرة**:
+- `src/pages/NotFound.tsx`
+
+---
+
+### 12. Loading States محسّنة
+
+**الهدف**: تحسين تجربة الانتظار
+
+**التنفيذ**:
+- إضافة Skeleton loaders أفضل
+- تحسين حالات التحميل
+
+**الملفات المتأثرة**:
+- مكونات متعددة
+
+---
+
+## ملخص الملفات الجديدة
+
+| الملف | الوصف |
+|-------|-------|
+| `src/pages/ForgotPassword.tsx` | صفحة طلب استعادة كلمة المرور |
+| `src/pages/ResetPassword.tsx` | صفحة إدخال كلمة المرور الجديدة |
+| `src/pages/Account.tsx` | صفحة حسابي |
+| `src/lib/exportUtils.ts` | وظائف تصدير CSV |
+| `src/components/Testimonials.tsx` | قسم شهادات العملاء |
+| `src/components/SEOHead.tsx` | مكون Meta Tags |
+
+---
+
+## ملخص التعديلات على الملفات الحالية
+
+| الملف | التعديل |
+|-------|---------|
+| `src/App.tsx` | إضافة Routes جديدة |
+| `src/components/AuthModal.tsx` | إضافة رابط "نسيت كلمة المرور" |
+| `src/components/Header.tsx` | إضافة رابط "حسابي" |
+| `src/components/admin/UsersTable.tsx` | عمود نوع الحساب + تصدير CSV + فلترة تاريخ |
+| `src/components/admin/LeadsTable.tsx` | تصدير CSV + فلترة تاريخ |
+| `src/components/admin/ReportsTable.tsx` | تصدير CSV + فلترة تاريخ |
+| `src/components/admin/StatsCards.tsx` | إحصائيات إضافية |
+| `src/pages/admin/AdminDashboard.tsx` | بيانات إضافية |
+| `src/pages/Index.tsx` | عداد التقارير + Testimonials |
+| `src/pages/NotFound.tsx` | تحسين التصميم |
+| `src/i18n/locales/en.json` | ترجمات جديدة |
+| `src/i18n/locales/ar.json` | ترجمات جديدة |
+| `index.html` | Meta tags محسّنة |
+
+---
+
+## الترتيب المقترح للتنفيذ
+
+**المجموعة 1** (الأكثر أهمية):
+1. صفحة "نسيت كلمة المرور"
+2. صفحة "حسابي"
+3. عرض نوع الحساب في الأدمن
+
+**المجموعة 2** (مفيدة جداً):
+4. تصدير CSV
+5. فلترة التاريخ
+6. إحصائيات إضافية
+
+**المجموعة 3** (تحسينات):
+7. تحسين Landing Page
+8. شهادات العملاء
+9. تحسين الموبايل
+10. SEO
+11. صفحة 404
+12. Loading States
 
 ---
 
 ## التفاصيل التقنية
 
-### 1. Admin Authentication Context
-
-```typescript
-// src/contexts/AdminAuthContext.tsx
-interface AdminAuthContextType {
-  admin: User | null;
-  isLoading: boolean;
-  isAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
-```
-
-- يستخدم Supabase Auth
-- يتحقق من وجود role = 'admin' في `user_roles`
-- يخزن الـ session تلقائياً
-
-### 2. Admin Layout Component
-
-- Sidebar مع روابط للصفحات
-- Header يعرض اسم الـ Admin وزر تسجيل الخروج
-- Responsive design (يتحول لـ drawer على الموبايل)
-- دعم RTL للعربية
-
-### 3. Dashboard Statistics
-
-```typescript
-interface DashboardStats {
-  totalUsers: number;
-  totalReports: number;
-  totalLeads: number;
-  newLeadsToday: number;
-  usersToday: number;
-}
-```
-
-### 4. Users Management Features
-
-- عرض جدول المستخدمين (الاسم، الإيميل، الموبايل، التقارير، تاريخ التسجيل)
-- البحث بالاسم أو الإيميل
-- تعديل `report_limit` للسماح بتقارير إضافية
-- عرض تفاصيل المستخدم (التقارير المولدة)
-
-### 5. Leads Management Features
-
-- عرض كل الـ Leads مع التفاصيل
-- تغيير الحالة (new, contacted, qualified, closed)
-- فلترة حسب الحالة وتاريخ الإضافة
-- عرض تفاصيل المشروع (الموقع، حجم النظام، التكلفة)
-
-### 6. Reports History Features
-
-- عرض كل التقارير المولدة
-- فلترة حسب التاريخ أو المستخدم
-- عرض الموقع وحجم النظام
-
----
-
-## الملفات الجديدة
+### استخدام Supabase Auth للـ Password Reset
 
 ```text
-src/
-├── contexts/
-│   └── AdminAuthContext.tsx        # Admin auth state
-├── components/admin/
-│   ├── AdminLayout.tsx             # Layout with sidebar
-│   ├── AdminSidebar.tsx            # Navigation sidebar
-│   ├── AdminProtectedRoute.tsx     # Route guard
-│   ├── StatsCards.tsx              # Dashboard stats
-│   ├── UsersTable.tsx              # Users data table
-│   ├── ReportsTable.tsx            # Reports data table
-│   └── LeadsTable.tsx              # Leads data table
-├── pages/admin/
-│   ├── AdminLogin.tsx              # Login page
-│   ├── AdminDashboard.tsx          # Main dashboard
-│   ├── AdminUsers.tsx              # Users management
-│   ├── AdminReports.tsx            # Reports history
-│   └── AdminLeads.tsx              # Leads management
-└── i18n/
-    └── locales/
-        ├── en.json                 # + admin translations
-        └── ar.json                 # + admin translations
+// طلب إعادة تعيين
+supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: `${window.location.origin}/reset-password`
+})
+
+// تحديث كلمة المرور
+supabase.auth.updateUser({ password: newPassword })
+```
+
+### تصدير CSV
+
+```text
+function exportToCSV(data, filename) {
+  const headers = Object.keys(data[0]).join(',')
+  const rows = data.map(row => Object.values(row).join(','))
+  const csv = [headers, ...rows].join('\n')
+  // Download logic
+}
 ```
 
 ---
 
-## الأمان (Security)
+## النتيجة المتوقعة
 
-### ما سيتم تأمينه:
+بعد تنفيذ هذه الخطة ستحصل على:
+- نظام مصادقة كامل مع استعادة كلمة المرور
+- صفحة حساب شخصي للمستخدمين
+- لوحة تحكم أدمن متقدمة مع فلترة وتصدير
+- واجهة مستخدم محسّنة على جميع الأجهزة
+- SEO محسّن للموقع
 
-1. **Server-side validation**: RLS policies تمنع الوصول غير المصرح
-2. **Role verification**: التحقق من الـ role باستخدام `has_role()` function
-3. **Session management**: Supabase يدير الـ sessions تلقائياً
-4. **Protected routes**: React Router يحمي الصفحات client-side
-
-### RLS Policies المطلوبة:
-
-```sql
--- Admin can read all app_users
-CREATE POLICY "Admins can view all users"
-ON public.app_users FOR SELECT
-USING (has_role(auth.uid(), 'admin'));
-
--- Admin can update app_users (e.g., report_limit)
-CREATE POLICY "Admins can update users"
-ON public.app_users FOR UPDATE
-USING (has_role(auth.uid(), 'admin'));
-
--- Admin can read all report_history
-CREATE POLICY "Admins can view all reports"
-ON public.report_history FOR SELECT
-USING (has_role(auth.uid(), 'admin'));
-```
-
----
-
-## خطوات التنفيذ
-
-1. **إضافة RLS policies جديدة للـ Admin**
-2. **بناء AdminAuthContext**
-3. **بناء صفحة Admin Login**
-4. **بناء AdminLayout و Sidebar**
-5. **بناء Dashboard مع الإحصائيات**
-6. **بناء صفحة إدارة المستخدمين**
-7. **بناء صفحة إدارة التقارير**
-8. **بناء صفحة إدارة Leads**
-9. **إضافة الترجمات (EN + AR)**
-10. **إنشاء أول Admin user**
-
----
-
-## ملاحظة مهمة
-
-بعد التنفيذ، ستحتاج إلى:
-1. إنشاء حساب Admin عبر Backend (سأساعدك في ذلك)
-2. اختبار تسجيل الدخول والصلاحيات
-3. التأكد من عمل كل الصفحات
-
+**هل توافق على البدء بالتنفيذ؟**
