@@ -69,6 +69,22 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Helper to record registration tracking
+  const recordRegistrationTracking = async (userId: string) => {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      const ip = data.ip || 'unknown';
+      
+      await supabase.rpc('record_registration', { 
+        p_ip_address: ip, 
+        p_user_id: userId 
+      });
+    } catch (error) {
+      console.error('Error recording registration tracking:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
@@ -76,6 +92,18 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user) {
+        // Record registration for new signups
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          // Check if this is a new user (profile might not exist yet)
+          const createdAt = new Date(currentSession.user.created_at);
+          const now = new Date();
+          const isNewUser = (now.getTime() - createdAt.getTime()) < 60000; // Created within last minute
+          
+          if (isNewUser) {
+            recordRegistrationTracking(currentSession.user.id);
+          }
+        }
+        
         // Use setTimeout to avoid race conditions
         setTimeout(async () => {
           const profileData = await fetchProfile(currentSession.user.id);
