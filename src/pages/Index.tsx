@@ -6,19 +6,19 @@ import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
-import RegistrationModal from "@/components/RegistrationModal";
+import AuthModal from "@/components/AuthModal";
 import LimitReachedModal from "@/components/LimitReachedModal";
-import { useUser } from "@/contexts/UserContext";
+import { useUserAuth } from "@/contexts/UserAuthContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 
 const Index = () => {
   const { i18n } = useTranslation();
-  const { user, canGenerateReport, recordReportGeneration } = useUser();
+  const { user, profile, canGenerateReport, recordReportGeneration } = useUserAuth();
   
-  // Registration modal state
-  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  // Auth modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
   const [pendingCalculation, setPendingCalculation] = useState(false);
   
@@ -88,13 +88,13 @@ const Index = () => {
       ? numberOfUnits * avgUnitConsumption 
       : monthlyConsumption;
 
-  // Handle registration success - proceed with calculation
+  // Handle auth success - proceed with calculation
   useEffect(() => {
-    if (pendingCalculation && user && canGenerateReport) {
+    if (pendingCalculation && user && profile && canGenerateReport) {
       setPendingCalculation(false);
       performCalculation();
     }
-  }, [user, canGenerateReport, pendingCalculation]);
+  }, [user, profile, canGenerateReport, pendingCalculation]);
 
   const performCalculation = async () => {
     const calculation = calculateSolarFeasibility(
@@ -113,7 +113,7 @@ const Index = () => {
     setShowResults(true);
 
     // Record report generation
-    if (user) {
+    if (user && profile) {
       await recordReportGeneration(locationName, calculation.kWInstalled);
     }
 
@@ -123,9 +123,9 @@ const Index = () => {
   };
 
   const handleCalculate = () => {
-    // Check if user is registered
-    if (!user) {
-      setShowRegistrationModal(true);
+    // Check if user is authenticated
+    if (!user || !profile) {
+      setShowAuthModal(true);
       setPendingCalculation(true);
       return;
     }
@@ -216,10 +216,10 @@ const Index = () => {
 
       <Footer />
 
-      {/* Registration Modal */}
-      <RegistrationModal
-        open={showRegistrationModal}
-        onOpenChange={setShowRegistrationModal}
+      {/* Auth Modal */}
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
         onSuccess={() => {
           // Will trigger calculation via useEffect
         }}

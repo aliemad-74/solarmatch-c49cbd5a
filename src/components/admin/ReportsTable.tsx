@@ -23,11 +23,16 @@ const ReportsTable = () => {
   const { data: reports, isLoading } = useQuery({
     queryKey: ["admin-reports"],
     queryFn: async () => {
+      // Fetch reports with profile data (new auth) and legacy app_users
       const { data, error } = await supabase
         .from("report_history")
         .select(`
           *,
-          app_users (
+          profiles:auth_user_id (
+            name,
+            email
+          ),
+          app_users:user_id (
             name,
             email
           )
@@ -40,8 +45,10 @@ const ReportsTable = () => {
   });
 
   const filteredReports = reports?.filter(
-    (report) =>
+    (report: any) =>
       report.location_name?.toLowerCase().includes(search.toLowerCase()) ||
+      report.profiles?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      report.profiles?.email?.toLowerCase().includes(search.toLowerCase()) ||
       report.app_users?.name?.toLowerCase().includes(search.toLowerCase()) ||
       report.app_users?.email?.toLowerCase().includes(search.toLowerCase())
   );
@@ -89,13 +96,15 @@ const ReportsTable = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredReports?.map((report) => (
+              filteredReports?.map((report: any) => (
                 <TableRow key={report.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{report.app_users?.name || "-"}</p>
+                      <p className="font-medium">
+                        {report.profiles?.name || report.app_users?.name || "-"}
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        {report.app_users?.email || "-"}
+                        {report.profiles?.email || report.app_users?.email || "-"}
                       </p>
                     </div>
                   </TableCell>
@@ -107,7 +116,7 @@ const ReportsTable = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-yellow-500" />
+                      <Zap className="h-4 w-4 text-primary" />
                       <span>
                         {report.system_size_kw
                           ? `${report.system_size_kw} kW`

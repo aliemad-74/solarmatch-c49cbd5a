@@ -15,8 +15,9 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const today = startOfDay(new Date()).toISOString();
 
-      const [usersResult, reportsResult, leadsResult, newLeadsResult, newUsersResult] =
+      const [profilesResult, legacyUsersResult, reportsResult, leadsResult, newLeadsResult, newProfilesResult] =
         await Promise.all([
+          supabase.from("profiles").select("id", { count: "exact", head: true }),
           supabase.from("app_users").select("id", { count: "exact", head: true }),
           supabase.from("report_history").select("id", { count: "exact", head: true }),
           supabase.from("leads").select("id", { count: "exact", head: true }),
@@ -25,17 +26,17 @@ const AdminDashboard = () => {
             .select("id", { count: "exact", head: true })
             .gte("created_at", today),
           supabase
-            .from("app_users")
+            .from("profiles")
             .select("id", { count: "exact", head: true })
             .gte("created_at", today),
         ]);
 
       return {
-        totalUsers: usersResult.count || 0,
+        totalUsers: (profilesResult.count || 0) + (legacyUsersResult.count || 0),
         totalReports: reportsResult.count || 0,
         totalLeads: leadsResult.count || 0,
         newLeadsToday: newLeadsResult.count || 0,
-        usersToday: newUsersResult.count || 0,
+        usersToday: newProfilesResult.count || 0,
       };
     },
   });
