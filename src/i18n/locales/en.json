@@ -445,6 +445,29 @@
     "invalidPhone": "Please enter a valid phone number",
     "error": "Registration failed. Please try again."
   },
+  "auth": {
+    "title": "Get Your Free Solar Report",
+    "description": "Sign in or create an account to get your personalized solar feasibility report",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "orContinueWith": "or continue with email",
+    "signUp": "Sign Up",
+    "signIn": "Sign In",
+    "name": "Full Name",
+    "namePlaceholder": "Enter your full name",
+    "email": "Email Address",
+    "emailPlaceholder": "your@email.com",
+    "phone": "Mobile Number",
+    "phonePlaceholder": "+20 XXX XXX XXXX",
+    "optional": "optional",
+    "password": "Password",
+    "privacyNote": "Your contact information is used only to generate your solar report and provide relevant service updates.",
+    "createAccount": "Create Account",
+    "creatingAccount": "Creating account...",
+    "signingIn": "Signing in...",
+    "checkEmail": "Please check your email to verify your account.",
+    "oauthError": "Failed to sign in. Please try again."
+  },
   "limitReached": {
     "title": "Free Report Used",
     "description": "You've already generated your free solar report. Contact us to get more reports.",
@@ -508,7 +531,9 @@
       "noUsers": "No users found",
       "limitUpdated": "Limit Updated",
       "limitUpdatedDesc": "User report limit has been updated",
-      "limitUpdateError": "Failed to update limit"
+      "limitUpdateError": "Failed to update limit",
+      "authenticated": "Authenticated Users",
+      "legacy": "Legacy Users"
     },
     "reports": {
       "title": "Reports History",
