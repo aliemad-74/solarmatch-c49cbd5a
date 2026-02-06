@@ -74,6 +74,17 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {user && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account" className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {t('header.myAccount')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 {isAdmin && (
                   <>
                     <DropdownMenuItem asChild>
@@ -133,6 +144,18 @@ const Header = () => {
                     {link.label}
                   </Link>
                 ))}
+                
+                {/* Account Link - Mobile */}
+                {user && (
+                  <Link
+                    to="/account"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-lg transition-colors text-muted-foreground hover:text-foreground flex items-center gap-2"
+                  >
+                    <User className="w-5 h-5" />
+                    {t('header.myAccount')}
+                  </Link>
+                )}
                 
                 {/* Admin Dashboard Link - Mobile */}
                 {isAdmin && (
