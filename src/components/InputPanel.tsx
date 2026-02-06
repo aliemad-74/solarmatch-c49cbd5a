@@ -96,13 +96,6 @@ const InputPanel = ({
   const effectiveMonthlyConsumption = buildingMode 
     ? numberOfUnits * avgUnitConsumption 
     : monthlyConsumption;
-  
-  // Live calculations following the exact formula
-  const usableArea = rooftopArea * building.usableFraction;
-  const kWMax = usableArea / pv.areaPerKW;
-  const kWInstalled = Math.floor(kWMax * 0.95);
-  const totalCost = kWInstalled * selectedPackage.costPerKW;
-  const energyYear = kWInstalled * SPECIFIC_YIELD;
 
   // Only use real climate data if available (not default fallback)
   const hasRealClimateData = climateData !== null && climateData !== undefined;
@@ -482,41 +475,6 @@ const InputPanel = ({
                 </p>
               </div>
             )}
-          </div>
-
-          {/* Live Preview - Following exact formula */}
-          <div className="bg-muted/30 rounded-xl p-4 mb-6">
-            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              {t('input.livePreview')}
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-              <div>
-                <p className="text-xl font-bold text-foreground">{rooftopArea} m²</p>
-                <p className="text-xs text-muted-foreground">{t('input.totalRoof')}</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-solar-green">{usableArea.toFixed(0)} m²</p>
-                <p className="text-xs text-muted-foreground">{t('input.usable')} ({Math.round(building.usableFraction * 100)}%)</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-muted-foreground">{kWMax.toFixed(1)} kW</p>
-                <p className="text-xs text-muted-foreground">{t('input.kwMax')}</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-primary">{kWInstalled} kW</p>
-                <p className="text-xs text-muted-foreground">{t('input.kwInstalled')} (×0.95)</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-solar-gold">{totalCost.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">{t('input.totalCost')}</p>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-border text-center">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{kWInstalled} kW</span> × <span className="font-medium text-foreground">{selectedPackage.costPerKW.toLocaleString()} {t('common.EGP')}/kW</span> = <span className="font-bold text-primary">{totalCost.toLocaleString()} {t('common.EGP')}</span>
-              </p>
-            </div>
           </div>
 
           {/* Calculate Button */}
