@@ -31,8 +31,9 @@ interface AuthModalProps {
 const signUpSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(200),
   email: z.string().email('Invalid email address').max(255),
-  phone: z.string().regex(/^[0-9+\-\(\) ]{7,20}$/, 'Invalid phone number').optional().or(z.literal('')),
-  password: z.string().min(6, 'Password must be at least 6 characters')
+  phone: z.string().regex(/^[0-9+\-\(\) ]{7,20}$/, 'Invalid phone number'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  userType: z.enum(['individual', 'business'])
 });
 
 const signInSchema = z.object({
@@ -54,7 +55,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     name: '',
     email: '',
     phone: '',
-    password: ''
+    password: '',
+    userType: 'individual' as 'individual' | 'business'
   });
 
   const [signInData, setSignInData] = useState({
@@ -124,7 +126,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
         signUpData.email, 
         signUpData.password, 
         signUpData.name,
-        signUpData.phone || undefined
+        signUpData.phone,
+        signUpData.userType
       );
       
       if (error) {
@@ -397,6 +400,33 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
 
           <TabsContent value="signup" className="space-y-3 mt-3">
             <form onSubmit={handleSignUp} className="space-y-3">
+              {/* User Type Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm">{t('auth.userType')}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={signUpData.userType === 'individual' ? 'default' : 'outline'}
+                    size="sm"
+                    className={`h-9 ${signUpData.userType === 'individual' ? 'bg-primary' : ''}`}
+                    onClick={() => setSignUpData({ ...signUpData, userType: 'individual' })}
+                    disabled={isDisabled}
+                  >
+                    {t('auth.individual')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={signUpData.userType === 'business' ? 'default' : 'outline'}
+                    size="sm"
+                    className={`h-9 ${signUpData.userType === 'business' ? 'bg-primary' : ''}`}
+                    onClick={() => setSignUpData({ ...signUpData, userType: 'business' })}
+                    disabled={isDisabled}
+                  >
+                    {t('auth.business')}
+                  </Button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="signup-name" className="text-sm">{t('auth.name')}</Label>
@@ -413,7 +443,7 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="signup-phone" className="text-sm">{t('auth.phone')} <span className="text-muted-foreground text-xs">({t('auth.optional')})</span></Label>
+                  <Label htmlFor="signup-phone" className="text-sm">{t('auth.phone')}</Label>
                   <Input
                     id="signup-phone"
                     type="tel"

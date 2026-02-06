@@ -24,7 +24,7 @@ interface UserAuthContextType {
   canGenerateReport: boolean;
   remainingReports: number;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUpWithEmail: (email: string, password: string, name: string, phone?: string) => Promise<{ error: string | null }>;
+  signUpWithEmail: (email: string, password: string, name: string, phone: string, userType: 'individual' | 'business') => Promise<{ error: string | null }>;
   signInWithOAuth: (provider: 'google' | 'apple') => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   recordReportGeneration: (locationName?: string, systemSizeKw?: number) => Promise<boolean>;
@@ -152,7 +152,8 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     email: string, 
     password: string, 
     name: string, 
-    phone?: string
+    phone: string,
+    userType: 'individual' | 'business'
   ): Promise<{ error: string | null }> => {
     try {
       const { error } = await supabase.auth.signUp({
@@ -163,6 +164,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
           data: {
             name,
             phone,
+            user_type: userType,
           },
         },
       });
