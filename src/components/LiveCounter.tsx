@@ -9,20 +9,19 @@ const LiveCounter = () => {
   const { data: stats } = useQuery({
     queryKey: ["public-stats"],
     queryFn: async () => {
-      const [reportsResult, usersResult, totalKwResult] = await Promise.all([
-        supabase.from("report_history").select("id", { count: "exact", head: true }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("report_history").select("system_size_kw"),
-      ]);
-
-      const totalKw = totalKwResult.data?.reduce((acc, row) => 
-        acc + (Number(row.system_size_kw) || 0), 0
-      ) || 0;
-
+      // Call the public stats function that bypasses RLS
+      const { data, error } = await supabase.rpc("get_public_stats");
+      
+      if (error) {
+        console.error("Error fetching public stats:", error);
+        return { reports: 0, totalKw: 0 };
+      }
+      
+      const result = data as { reports: number; totalKw: number } | null;
+      
       return {
-        reports: reportsResult.count || 0,
-        users: usersResult.count || 0,
-        totalKw: Math.round(totalKw),
+        reports: result?.reports || 0,
+        totalKw: result?.totalKw || 0,
       };
     },
     staleTime: 60000, // Cache for 1 minute
@@ -37,7 +36,7 @@ const LiveCounter = () => {
     },
     {
       icon: Users,
-      value: stats?.users || 0,
+      value: 39, // Static number as requested
       label: t("counter.happyUsers"),
       suffix: "+",
     },

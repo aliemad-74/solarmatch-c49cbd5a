@@ -250,6 +250,7 @@ export type Database = {
         Args: { p_email: string; p_ip_address: string }
         Returns: Json
       }
+      get_public_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
