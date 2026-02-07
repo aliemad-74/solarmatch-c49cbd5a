@@ -26,9 +26,21 @@ Deno.serve(async (req) => {
 
     const { email, password, secretKey } = await req.json();
 
-    // Simple secret key validation to prevent unauthorized admin creation
-    // In production, you should use a more secure method
-    const ADMIN_SECRET = Deno.env.get("ADMIN_SETUP_SECRET") || "create-first-admin-2024";
+    // Require ADMIN_SETUP_SECRET to be configured - no weak defaults
+    const ADMIN_SECRET = Deno.env.get("ADMIN_SETUP_SECRET");
+    
+    // Reject if secret is not configured or uses the old weak default
+    if (!ADMIN_SECRET || ADMIN_SECRET === "create-first-admin-2024") {
+      return new Response(
+        JSON.stringify({ 
+          error: "ADMIN_SETUP_SECRET must be configured with a strong secret. Please set it in your backend secrets." 
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
     
     if (secretKey !== ADMIN_SECRET) {
       return new Response(
