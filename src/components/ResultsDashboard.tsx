@@ -8,6 +8,7 @@ import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 import AIAdvisor from "./AIAdvisor";
 import IdealSizingCard from "./IdealSizingCard";
+import SystemComparison from "./SystemComparison";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { generateSolarReport } from "@/lib/pdfReport";
 import { useState } from "react";
@@ -325,6 +326,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             pvType={pvType}
             buildingType={buildingType}
           />
+        </div>
+
+        {/* System Comparison */}
+        <div className="mb-6">
+          <SystemComparison results={results} />
         </div>
 
         {/* Coverage Ratio & Calculation Breakdown */}

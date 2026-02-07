@@ -2,6 +2,7 @@ import { Sun, Menu, Settings, LogOut, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import LanguageToggle from "./LanguageToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -116,6 +117,7 @@ const Header = () => {
               {t('header.getStarted')}
             </Link>
           )}
+          <ThemeToggle />
           <LanguageToggle />
         </nav>
         

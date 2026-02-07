@@ -9,6 +9,8 @@ import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import LimitReachedModal from "@/components/LimitReachedModal";
 import Testimonials from "@/components/Testimonials";
+import OnboardingTour from "@/components/OnboardingTour";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
@@ -18,6 +20,11 @@ import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 const Index = () => {
   const { t, i18n } = useTranslation();
   const { user, profile, canGenerateReport, recordReportGeneration } = useUserAuth();
+  
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem("solarmatch_onboarding_completed");
+  });
   
   // Auth modal state
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -244,6 +251,14 @@ const Index = () => {
         open={showLimitReachedModal}
         onOpenChange={setShowLimitReachedModal}
       />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
+
+      {/* Onboarding Tour */}
+      {showOnboarding && (
+        <OnboardingTour onComplete={() => setShowOnboarding(false)} />
+      )}
     </div>
   );
 };

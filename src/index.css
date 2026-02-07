@@ -159,6 +159,10 @@
     -webkit-backdrop-filter: blur(12px);
   }
 
+  .dark .glass {
+    background: hsl(215 25% 14% / 0.8);
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }

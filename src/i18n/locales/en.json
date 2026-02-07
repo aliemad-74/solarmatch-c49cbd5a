@@ -686,5 +686,57 @@
     "contacted": "Contacted",
     "qualified": "Qualified",
     "closed": "Closed"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to SolarMatch!",
+      "description": "Calculate your solar potential in Egypt using real NASA climate data and current electricity tariffs"
+    },
+    "location": {
+      "title": "Select Your Location",
+      "description": "Click on the map or use GPS to pinpoint your building. We'll fetch solar irradiance data for your exact coordinates"
+    },
+    "configure": {
+      "title": "Configure Your System",
+      "description": "Enter your rooftop area, building type, and monthly consumption. Choose from economy, standard, or premium panel packages"
+    },
+    "results": {
+      "title": "View Detailed Results",
+      "description": "See energy production, savings projections, payback period, and CO₂ reduction with interactive charts"
+    },
+    "report": {
+      "title": "Download Your Report",
+      "description": "Get a professional PDF report, share results with others, or contact a solar expert for next steps"
+    },
+    "next": "Next",
+    "prev": "Back",
+    "skip": "Skip Tour",
+    "start": "Start Calculating"
+  },
+  "mobileNav": {
+    "home": "Home",
+    "map": "Map",
+    "results": "Results",
+    "account": "Account",
+    "login": "Login"
+  },
+  "comparison": {
+    "title": "System Comparison",
+    "metric": "Metric",
+    "current": "Current",
+    "totalCost": "Total Cost",
+    "yearlyEnergy": "Yearly Energy",
+    "yearlySavings": "Yearly Savings",
+    "paybackPeriod": "Payback Period",
+    "capacity": "Capacity",
+    "efficiency": "Efficiency",
+    "years": "years",
+    "summary": "Compare different packages to find the best fit for your budget and energy needs"
   }
 }
