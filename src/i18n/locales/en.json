@@ -738,5 +738,10 @@
     "efficiency": "Efficiency",
     "years": "years",
     "summary": "Compare different packages to find the best fit for your budget and energy needs"
+  },
+  "progress": {
+    "location": "Location",
+    "configure": "Configure",
+    "results": "Results"
   }
 }
