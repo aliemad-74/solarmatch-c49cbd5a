@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
@@ -11,11 +11,15 @@ import LimitReachedModal from "@/components/LimitReachedModal";
 import Testimonials from "@/components/Testimonials";
 import OnboardingTour from "@/components/OnboardingTour";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import ProgressIndicator from "@/components/ProgressIndicator";
+import ScrollReveal from "@/components/ScrollReveal";
+import ResultsSkeleton from "@/components/ResultsSkeleton";
 
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
+import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
 
 const Index = () => {
   const { t, i18n } = useTranslation();
@@ -30,25 +34,29 @@ const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
   const [pendingCalculation, setPendingCalculation] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+  
+  // Load persisted inputs
+  const persisted = loadPersistedInputs();
   
   // Manual inputs
-  const [rooftopArea, setRooftopArea] = useState<number>(100);
-  const [pvType, setPvType] = useState<PVType>("B_standard_mono");
-  const [buildingType, setBuildingType] = useState<BuildingType>("apartment");
-  const [costScenario, setCostScenario] = useState<CostScenario>("medium");
-  const [electricityPrice, setElectricityPrice] = useState<number>(1.95);
-  const [monthlyConsumption, setMonthlyConsumption] = useState<number>(500);
+  const [rooftopArea, setRooftopArea] = useState<number>(persisted.rooftopArea);
+  const [pvType, setPvType] = useState<PVType>(persisted.pvType as PVType);
+  const [buildingType, setBuildingType] = useState<BuildingType>(persisted.buildingType as BuildingType);
+  const [costScenario, setCostScenario] = useState<CostScenario>(persisted.costScenario as CostScenario);
+  const [electricityPrice, setElectricityPrice] = useState<number>(persisted.electricityPrice);
+  const [monthlyConsumption, setMonthlyConsumption] = useState<number>(persisted.monthlyConsumption);
   
   // Building Mode inputs
-  const [buildingMode, setBuildingMode] = useState<boolean>(false);
-  const [numberOfUnits, setNumberOfUnits] = useState<number>(10);
-  const [avgUnitConsumption, setAvgUnitConsumption] = useState<number>(300);
+  const [buildingMode, setBuildingMode] = useState<boolean>(persisted.buildingMode);
+  const [numberOfUnits, setNumberOfUnits] = useState<number>(persisted.numberOfUnits);
+  const [avgUnitConsumption, setAvgUnitConsumption] = useState<number>(persisted.avgUnitConsumption);
   
   // Farm Mode inputs
-  const [farmMode, setFarmMode] = useState<boolean>(false);
-  const [areaInFeddans, setAreaInFeddans] = useState<number>(5);
-  const [agriculturalActivity, setAgriculturalActivity] = useState<AgriculturalActivity>("drip_irrigation");
-  const [farmEquipmentConsumption, setFarmEquipmentConsumption] = useState<number>(10000);
+  const [farmMode, setFarmMode] = useState<boolean>(persisted.farmMode);
+  const [areaInFeddans, setAreaInFeddans] = useState<number>(persisted.areaInFeddans);
+  const [agriculturalActivity, setAgriculturalActivity] = useState<AgriculturalActivity>(persisted.agriculturalActivity as AgriculturalActivity);
+  const [farmEquipmentConsumption, setFarmEquipmentConsumption] = useState<number>(persisted.farmEquipmentConsumption);
   
   // Map/location state
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
@@ -57,6 +65,17 @@ const Index = () => {
   // Results
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
+
+  // Persist inputs whenever they change
+  useEffect(() => {
+    saveInputs({
+      rooftopArea, pvType, buildingType, costScenario, electricityPrice,
+      monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption,
+      farmMode, areaInFeddans, agriculturalActivity, farmEquipmentConsumption,
+    });
+  }, [rooftopArea, pvType, buildingType, costScenario, electricityPrice,
+      monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption,
+      farmMode, areaInFeddans, agriculturalActivity, farmEquipmentConsumption]);
 
   // Check for shared URL parameters on load
   useEffect(() => {
@@ -90,16 +109,11 @@ const Index = () => {
       setLocationName(params.locationName);
     }
 
-    // Auto-calculate after a short delay to allow state to settle
     setTimeout(() => {
       handleCalculate();
     }, 500);
   };
 
-  // Calculate effective monthly consumption
-  // Farm mode uses farm equipment consumption
-  // Building mode uses units × avg consumption
-  // Standard mode uses monthly consumption
   const effectiveMonthlyConsumption = farmMode 
     ? farmEquipmentConsumption
     : buildingMode 
@@ -115,6 +129,11 @@ const Index = () => {
   }, [user, profile, canGenerateReport, pendingCalculation]);
 
   const performCalculation = async () => {
+    setIsCalculating(true);
+    
+    // Small delay for skeleton to show
+    await new Promise(r => setTimeout(r, 800));
+    
     const calculation = calculateSolarFeasibility(
       rooftopArea, 
       climateData, 
@@ -129,8 +148,8 @@ const Index = () => {
     );
     setResults(calculation);
     setShowResults(true);
+    setIsCalculating(false);
 
-    // Record report generation
     if (user && profile) {
       await recordReportGeneration(locationName, calculation.kWInstalled);
     }
@@ -141,24 +160,20 @@ const Index = () => {
   };
 
   const handleCalculate = () => {
-    // Check if user is authenticated
     if (!user || !profile) {
       setShowAuthModal(true);
       setPendingCalculation(true);
       return;
     }
 
-    // Check if user can generate more reports
     if (!canGenerateReport) {
       setShowLimitReachedModal(true);
       return;
     }
 
-    // Proceed with calculation
     performCalculation();
   };
 
-  // Get shareable params for the share dialog
   const getShareableParams = (): ShareableParams => ({
     rooftopArea,
     pvType,
@@ -174,88 +189,103 @@ const Index = () => {
     locationName,
   });
 
+  // Progress tracking
+  const hasLocation = !!locationName || !!climateData;
+  const hasConfigured = rooftopArea > 0 && monthlyConsumption > 0;
+
   return (
     <div className="min-h-screen bg-background" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       
       <main>
-        <MapSection
-          onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
-          onClimateDataFetched={setClimateData}
-          onLocationChange={setLocationName}
+        {/* Progress Indicator */}
+        <ProgressIndicator
+          hasLocation={hasLocation}
+          hasConfigured={hasConfigured}
+          hasResults={showResults}
         />
 
-        <InputPanel
-          rooftopArea={rooftopArea}
-          setRooftopArea={setRooftopArea}
-          pvType={pvType}
-          setPvType={setPvType}
-          buildingType={buildingType}
-          setBuildingType={setBuildingType}
-          costScenario={costScenario}
-          setCostScenario={setCostScenario}
-          electricityPrice={electricityPrice}
-          setElectricityPrice={setElectricityPrice}
-          monthlyConsumption={monthlyConsumption}
-          setMonthlyConsumption={setMonthlyConsumption}
-          buildingMode={buildingMode}
-          setBuildingMode={setBuildingMode}
-          numberOfUnits={numberOfUnits}
-          setNumberOfUnits={setNumberOfUnits}
-          avgUnitConsumption={avgUnitConsumption}
-          setAvgUnitConsumption={setAvgUnitConsumption}
-          farmMode={farmMode}
-          setFarmMode={setFarmMode}
-          areaInFeddans={areaInFeddans}
-          setAreaInFeddans={setAreaInFeddans}
-          agriculturalActivity={agriculturalActivity}
-          setAgriculturalActivity={setAgriculturalActivity}
-          farmEquipmentConsumption={farmEquipmentConsumption}
-          setFarmEquipmentConsumption={setFarmEquipmentConsumption}
-          onCalculate={handleCalculate}
-          locationName={locationName}
-          climateData={climateData}
-        />
+        <ScrollReveal>
+          <MapSection
+            onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
+            onClimateDataFetched={setClimateData}
+            onLocationChange={setLocationName}
+          />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.1}>
+          <InputPanel
+            rooftopArea={rooftopArea}
+            setRooftopArea={setRooftopArea}
+            pvType={pvType}
+            setPvType={setPvType}
+            buildingType={buildingType}
+            setBuildingType={setBuildingType}
+            costScenario={costScenario}
+            setCostScenario={setCostScenario}
+            electricityPrice={electricityPrice}
+            setElectricityPrice={setElectricityPrice}
+            monthlyConsumption={monthlyConsumption}
+            setMonthlyConsumption={setMonthlyConsumption}
+            buildingMode={buildingMode}
+            setBuildingMode={setBuildingMode}
+            numberOfUnits={numberOfUnits}
+            setNumberOfUnits={setNumberOfUnits}
+            avgUnitConsumption={avgUnitConsumption}
+            setAvgUnitConsumption={setAvgUnitConsumption}
+            farmMode={farmMode}
+            setFarmMode={setFarmMode}
+            areaInFeddans={areaInFeddans}
+            setAreaInFeddans={setAreaInFeddans}
+            agriculturalActivity={agriculturalActivity}
+            setAgriculturalActivity={setAgriculturalActivity}
+            farmEquipmentConsumption={farmEquipmentConsumption}
+            setFarmEquipmentConsumption={setFarmEquipmentConsumption}
+            onCalculate={handleCalculate}
+            locationName={locationName}
+            climateData={climateData}
+          />
+        </ScrollReveal>
 
         <div id="results">
-          <ResultsDashboard 
-            results={results}
-            isVisible={showResults}
-            locationName={locationName}
-            shareableParams={getShareableParams()}
-            monthlyConsumption={effectiveMonthlyConsumption}
-            pvType={pvType}
-            buildingType={buildingType}
-          />
+          {isCalculating && <ResultsSkeleton />}
+          <ScrollReveal>
+            <ResultsDashboard 
+              results={results}
+              isVisible={showResults && !isCalculating}
+              locationName={locationName}
+              shareableParams={getShareableParams()}
+              monthlyConsumption={effectiveMonthlyConsumption}
+              pvType={pvType}
+              buildingType={buildingType}
+            />
+          </ScrollReveal>
         </div>
 
-        {/* Testimonials Section */}
-        <Testimonials />
+        <ScrollReveal>
+          <Testimonials />
+        </ScrollReveal>
 
-        <FAQSection />
+        <ScrollReveal>
+          <FAQSection />
+        </ScrollReveal>
       </main>
 
       <Footer />
 
-      {/* Auth Modal */}
       <AuthModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
-        onSuccess={() => {
-          // Will trigger calculation via useEffect
-        }}
+        onSuccess={() => {}}
       />
 
-      {/* Limit Reached Modal */}
       <LimitReachedModal
         open={showLimitReachedModal}
         onOpenChange={setShowLimitReachedModal}
       />
 
-      {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
 
-      {/* Onboarding Tour */}
       {showOnboarding && (
         <OnboardingTour onComplete={() => setShowOnboarding(false)} />
       )}
