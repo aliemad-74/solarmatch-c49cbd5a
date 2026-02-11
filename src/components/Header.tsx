@@ -109,14 +109,7 @@ const Header = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <Link
-              to="/"
-              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              {t('header.getStarted')}
-            </Link>
-          )}
+          ) : null}
           <ThemeToggle />
           <LanguageToggle />
         </nav>
@@ -184,15 +177,7 @@ const Header = () => {
                     <LogOut className="w-5 h-5 me-2" />
                     {t('header.signOut')}
                   </Button>
-                ) : (
-                  <Link
-                    to="/"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-lg font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    {t('header.getStarted')}
-                  </Link>
-                )}
+                ) : null}
               </nav>
             </SheetContent>
           </Sheet>
