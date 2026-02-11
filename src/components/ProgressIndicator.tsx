@@ -17,17 +17,16 @@ const ProgressIndicator = ({ hasLocation, hasConfigured, hasResults }: ProgressI
     { key: "results", icon: BarChart3, label: t("progress.results"), done: hasResults },
   ];
 
-  // Current active step
   const activeIndex = hasResults ? 3 : hasConfigured ? 2 : hasLocation ? 1 : 0;
 
   return (
-    <div className="container mx-auto px-4 py-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="container mx-auto px-4 pt-2 pb-0">
+      <div className="max-w-md mx-auto">
         <div className="flex items-center justify-between relative">
           {/* Connection line */}
-          <div className="absolute top-5 left-0 right-0 h-0.5 bg-border mx-10" />
+          <div className="absolute top-3 left-0 right-0 h-px bg-border mx-8" />
           <div
-            className="absolute top-5 left-0 h-0.5 bg-primary mx-10 transition-all duration-700"
+            className="absolute top-3 left-0 h-px bg-primary mx-8 transition-all duration-700"
             style={{ width: `${Math.min((activeIndex / (steps.length - 1)) * 100, 100)}%` }}
           />
 
@@ -39,19 +38,19 @@ const ProgressIndicator = ({ hasLocation, hasConfigured, hasResults }: ProgressI
               <div key={step.key} className="flex flex-col items-center relative z-10">
                 <div
                   className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                    "w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-500",
                     isDone
                       ? "bg-primary border-primary text-primary-foreground"
                       : isActive
-                        ? "bg-primary/10 border-primary text-primary animate-pulse"
+                        ? "bg-primary/10 border-primary text-primary"
                         : "bg-card border-border text-muted-foreground"
                   )}
                 >
-                  {isDone ? <Check className="w-4 h-4" /> : <step.icon className="w-4 h-4" />}
+                  {isDone ? <Check className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
                 </div>
                 <span
                   className={cn(
-                    "text-xs mt-2 font-medium transition-colors",
+                    "text-[10px] mt-1 font-medium transition-colors",
                     isDone || isActive ? "text-primary" : "text-muted-foreground"
                   )}
                 >
