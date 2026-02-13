@@ -8,7 +8,8 @@
     "adminDashboard": "Dashboard",
     "signOut": "Sign Out",
     "account": "Account",
-    "myAccount": "My Account"
+    "myAccount": "My Account",
+    "login": "Login / Sign Up"
   },
   "hero": {
     "title": "Calculate Your Solar Potential",

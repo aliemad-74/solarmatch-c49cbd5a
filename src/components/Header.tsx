@@ -1,4 +1,4 @@
-import { Sun, Menu, Settings, LogOut, User } from "lucide-react";
+import { Sun, Menu, Settings, LogOut, User, LogIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import LanguageToggle from "./LanguageToggle";
@@ -19,11 +19,13 @@ import {
 import { useState } from "react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import AuthModal from "./AuthModal";
 
 const Header = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { isAdmin, admin, signOut: adminSignOut } = useAdminAuth();
   const { user, signOut: userSignOut, profile } = useUserAuth();
 
@@ -35,6 +37,7 @@ const Header = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
+    <>
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50 print:hidden">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
@@ -109,7 +112,17 @@ const Header = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : null}
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAuthModal(true)}
+              className="gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              {t('header.login')}
+            </Button>
+          )}
           <ThemeToggle />
           <LanguageToggle />
         </nav>
@@ -177,13 +190,32 @@ const Header = () => {
                     <LogOut className="w-5 h-5 me-2" />
                     {t('header.signOut')}
                   </Button>
-                ) : null}
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAuthModal(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="gap-2 justify-start"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    {t('header.login')}
+                  </Button>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
         </div>
       </div>
     </header>
+
+    <AuthModal
+      open={showAuthModal}
+      onOpenChange={setShowAuthModal}
+      onSuccess={() => {}}
+    />
+    </>
   );
 };
 
