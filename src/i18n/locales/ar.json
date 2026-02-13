@@ -8,7 +8,8 @@
     "adminDashboard": "لوحة التحكم",
     "signOut": "تسجيل الخروج",
     "account": "الحساب",
-    "myAccount": "حسابي"
+    "myAccount": "حسابي",
+    "login": "دخول / تسجيل"
   },
   "hero": {
     "title": "احسب إمكانات الطاقة الشمسية لديك",

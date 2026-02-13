@@ -13,6 +13,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import ScrollReveal from "@/components/ScrollReveal";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
+import LiveReportCounter from "@/components/LiveReportCounter";
 
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
@@ -199,6 +200,8 @@ const Index = () => {
           hasConfigured={hasConfigured}
           hasResults={showResults}
         />
+
+        <LiveReportCounter />
 
         <ScrollReveal>
           <MapSection
