@@ -66,13 +66,27 @@ export async function generateSolarReport(results: SolarCalculation, locationNam
   // EXECUTIVE SUMMARY BOX
   // ============================================
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(margin, yPos - 5, pageWidth - margin * 2, 35, 3, 3, "F");
+  doc.roundedRect(margin, yPos - 5, pageWidth - margin * 2, 48, 3, 3, "F");
   doc.setDrawColor(20, 184, 166);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, yPos - 5, pageWidth - margin * 2, 35, 3, 3, "S");
+  doc.roundedRect(margin, yPos - 5, pageWidth - margin * 2, 48, 3, 3, "S");
 
   addText("EXECUTIVE SUMMARY", margin + 5, yPos + 3, { fontSize: 11, fontStyle: "bold", color: [20, 184, 166] });
   
+  // Feasibility status
+  const isSuitable = results.coverageRatio >= 0.7 && results.paybackYears <= 10;
+  const isConditional = results.coverageRatio >= 0.3 && results.paybackYears <= 15;
+  const statusText = isSuitable ? "✓ SUITABLE FOR SOLAR" : isConditional ? "⚠ CONDITIONALLY SUITABLE" : "✗ NOT RECOMMENDED";
+  const statusColor: [number, number, number] = isSuitable ? [34, 197, 94] : isConditional ? [245, 158, 11] : [239, 68, 68];
+  addText(statusText, margin + 5, yPos + 12, { fontSize: 10, fontStyle: "bold", color: statusColor });
+
+  const justification = isSuitable 
+    ? `System pays back in ${formatNumber(results.paybackYears, 1)} years with ${formatCurrency(results.savingsYear)} annual savings.`
+    : isConditional
+      ? `Partial coverage (${formatNumber(results.coverageRatio * 100, 0)}%) — a smaller system may still be worthwhile.`
+      : `Insufficient return based on current roof area and consumption levels.`;
+  addText(justification, margin + 5, yPos + 19, { fontSize: 8, color: [100, 100, 100] });
+
   const summaryItems = [
     { label: "System Size", value: `${results.kWInstalled} kW` },
     { label: "Annual Production", value: `${formatNumber(results.energyYear, 0)} kWh` },
@@ -83,11 +97,11 @@ export async function generateSolarReport(results: SolarCalculation, locationNam
   const itemWidth = (pageWidth - margin * 2 - 10) / 4;
   summaryItems.forEach((item, i) => {
     const xPos = margin + 5 + i * itemWidth;
-    addText(item.label, xPos, yPos + 15, { fontSize: 8, color: [100, 100, 100] });
-    addText(item.value, xPos, yPos + 23, { fontSize: 12, fontStyle: "bold", color: [30, 30, 30] });
+    addText(item.label, xPos, yPos + 30, { fontSize: 8, color: [100, 100, 100] });
+    addText(item.value, xPos, yPos + 38, { fontSize: 12, fontStyle: "bold", color: [30, 30, 30] });
   });
 
-  yPos += 42;
+  yPos += 55;
 
   // ============================================
   // LOCATION INFO WITH ICON

@@ -1,4 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -69,6 +69,22 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   const coveragePercent = Math.min(results.coverageRatio * 100, 200);
   const scenario = costScenarios[results.costScenario];
 
+  // Determine feasibility status
+  const feasibilityStatus = results.coverageRatio >= 0.7 && results.paybackYears <= 10
+    ? 'suitable'
+    : results.coverageRatio >= 0.3 && results.paybackYears <= 15
+      ? 'conditional'
+      : 'notSuitable';
+
+  const feasibilityConfig = {
+    suitable: { icon: CheckCircle2, color: 'text-solar-green', bg: 'bg-solar-green/10 border-solar-green/30', iconColor: 'text-solar-green' },
+    conditional: { icon: AlertCircle, color: 'text-solar-gold', bg: 'bg-solar-gold/10 border-solar-gold/30', iconColor: 'text-solar-gold' },
+    notSuitable: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30', iconColor: 'text-destructive' },
+  };
+
+  const fc = feasibilityConfig[feasibilityStatus];
+  const FeasibilityIcon = fc.icon;
+
   return (
     <section className="container mx-auto px-4 py-12 print:py-4">
       <div className="max-w-6xl mx-auto">
@@ -79,6 +95,39 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           <p className="text-muted-foreground">
             {t('results.subtitle')}
           </p>
+        </div>
+
+        {/* ==================== LAYER 1: Decision Summary ==================== */}
+        <div className={`mb-8 p-6 rounded-2xl border-2 ${fc.bg} animate-fade-in`}>
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-card">
+              <FeasibilityIcon className={`w-8 h-8 ${fc.iconColor}`} />
+            </div>
+            <div className="flex-1">
+              <h4 className={`font-display text-xl font-bold ${fc.color} mb-1`}>
+                {t(`results.feasibility.${feasibilityStatus}`)}
+              </h4>
+              <p className="text-muted-foreground">
+                {t(`results.feasibility.${feasibilityStatus}Desc`, {
+                  years: formatNumber(results.paybackYears, 1),
+                  coverage: formatNumber(results.coverageRatio * 100, 0),
+                })}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                <span className="font-semibold text-foreground">
+                  {t('results.yearlySavings')}: {formatCurrency(results.savingsYear)}
+                </span>
+                <span className="text-muted-foreground">•</span>
+                <span className="font-semibold text-foreground">
+                  {t('results.paybackPeriod')}: {formatNumber(results.paybackYears, 1)} {t('common.years')}
+                </span>
+                <span className="text-muted-foreground">•</span>
+                <span className="font-semibold text-foreground">
+                  {t('results.installedCapacity')}: {results.kWInstalled} {t('common.kW')}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Warnings */}
@@ -508,8 +557,14 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         </div>
 
+        {/* Disclaimer */}
+        <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
+          <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+          <p className="text-xs text-muted-foreground">{t('results.disclaimer')}</p>
+        </div>
+
         {/* Summary Card */}
-        <div className="mt-8 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 animate-slide-up print:mt-4" style={{ animationDelay: "400ms" }}>
+        <div className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 animate-slide-up print:mt-4" style={{ animationDelay: "400ms" }}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h4 className="font-display text-xl font-semibold text-foreground mb-2">

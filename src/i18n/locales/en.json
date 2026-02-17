@@ -12,8 +12,9 @@
     "login": "Login / Sign Up"
   },
   "hero": {
-    "title": "Calculate Your Solar Potential",
-    "subtitle": "Get accurate solar feasibility estimates using NASA climate data and Egypt's electricity tariffs"
+    "title": "Check Your Solar Feasibility",
+    "subtitle": "Enter your location, roof area, and electricity usage — get a full technical and financial recommendation in seconds.",
+    "expectation": "You'll provide your roof size and energy bill details. We'll return system sizing, cost estimates, savings projections, and a clear recommendation."
   },
   "counter": {
     "reportsGenerated": "Reports Generated",
@@ -153,7 +154,7 @@
     "cta": {
       "title": "Ready to Calculate?",
       "description": "Get your personalized solar feasibility report in under a minute",
-      "button": "Start Calculator"
+      "button": "Check Solar Feasibility"
     }
   },
   "about": {
@@ -206,11 +207,11 @@
     "cta": {
       "title": "Try It Yourself",
       "description": "See what solar could do for your property",
-      "button": "Start Calculator"
+      "button": "Check Solar Feasibility"
     }
   },
   "map": {
-    "title": "Select Your Location",
+    "title": "Step 1: Select Your Location",
     "subtitle": "Select your location and draw your rooftop to calculate solar feasibility with real NASA climate data",
     "drawTip": "Use the polygon tool to draw your rooftop for accurate measurements",
     "areaCalculated": "Area calculated: {{area}} m²",
@@ -229,21 +230,28 @@
     "gpsNotSupported": "GPS is not supported in your browser"
   },
   "input": {
-    "title": "System Configuration",
+    "title": "Step 2: System Configuration",
     "rooftopArea": "Rooftop Area (m²)",
     "rooftopAreaHint": "Draw on map above or enter manually",
+    "rooftopAreaTooltip": "Measure from your roof or building plan. If unsure, estimate the length × width of your rooftop.",
     "location": "Location",
     "selectLocation": "Select location on the map",
-    "buildingType": "Building Type (determines usable roof %)",
+    "buildingType": "Building Type",
+    "buildingTypeTooltip": "This determines usable roof percentage. Residential homes have more obstacles (water tanks, stairways) than commercial roofs.",
     "systemPackage": "System Package (Panel Type + Cost)",
+    "systemPackageTooltip": "Economy is budget-friendly but needs more space. Premium is most efficient per m². Choose Standard if unsure.",
     "electricityPrice": "Electricity Price (EGP/kWh)",
+    "electricityPriceTooltip": "Check your latest electricity bill for your per-kWh rate. The slider covers Egypt's residential tariff range.",
     "buildingMode": "Building Mode",
     "multiUnit": "Multi-unit",
     "singleConsumption": "Single consumption",
     "numberOfUnits": "Number of Units (Apartments)",
+    "numberOfUnitsTooltip": "Count the apartments or units sharing this roof.",
     "avgConsumption": "Avg. Consumption per Unit (kWh/month)",
+    "avgConsumptionTooltip": "Check one unit's electricity bill. A typical Egyptian apartment uses 200-500 kWh/month.",
     "totalBuildingConsumption": "Total Building Consumption",
     "monthlyConsumption": "Monthly Consumption (kWh)",
+    "monthlyConsumptionTooltip": "Find this on your electricity bill under 'total kWh consumed'. If unsure, 300-500 kWh is typical for Egyptian homes.",
     "checkBill": "Check your electricity bill for average usage",
     "livePreview": "Live Calculation Preview",
     "totalRoof": "Total Roof",
@@ -251,7 +259,7 @@
     "kwMax": "kW Max",
     "kwInstalled": "kW Installed",
     "totalCost": "Total Cost (EGP)",
-    "calculate": "Calculate Solar Potential"
+    "calculate": "Get Solar Recommendation"
   },
   "buildingTypes": {
     "residential": "Residential House",
@@ -287,6 +295,18 @@
     "title": "Your Solar",
     "titleHighlight": "Feasibility Report",
     "subtitle": "Based on your inputs and local climate data",
+    "disclaimer": "Results are estimates based on current tariffs and assumed consumption patterns. Actual performance may vary.",
+    "feasibility": {
+      "suitable": "Solar Is Suitable",
+      "suitableDesc": "Your property is well-suited for solar. Expected payback within {{years}} years with significant long-term savings.",
+      "conditional": "Conditionally Suitable",
+      "conditionalDesc": "Solar is feasible but with limited coverage ({{coverage}}%). A smaller system may still be worthwhile.",
+      "notSuitable": "Not Recommended",
+      "notSuitableDesc": "Based on your roof area and consumption, solar may not provide sufficient return. Consider expanding usable area."
+    },
+    "layerDecision": "Decision Summary",
+    "layerMetrics": "Key Metrics",
+    "layerTechnical": "Technical Details",
     "warnings": "Calculation Warnings",
     "buildingModeAnalysis": "Building Mode Analysis",
     "totalUnits": "Total Units",
@@ -330,6 +350,10 @@
     "shareResults": "Share Results",
     "emailReport": "Email Report",
     "printReport": "Print Report"
+  },
+  "loading": {
+    "analyzing": "Analyzing your energy data…",
+    "subtitle": "Calculating system sizing, savings, and feasibility"
   },
   "roi": {
     "title": "25-Year ROI Timeline",

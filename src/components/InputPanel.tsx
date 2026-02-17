@@ -1,7 +1,8 @@
-import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb } from "lucide-react";
+import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -166,6 +167,7 @@ const InputPanel = ({
               <Label htmlFor="rooftop-area" className="text-sm font-medium text-foreground flex items-center gap-2">
                 <Home className="w-4 h-4 text-muted-foreground" />
                 {t('input.rooftopArea')}
+                <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.rooftopAreaTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
               </Label>
               <Input
                 id="rooftop-area"
@@ -211,6 +213,7 @@ const InputPanel = ({
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Building2 className="w-4 h-4 text-muted-foreground" />
               {t('input.buildingType')}
+              <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.buildingTypeTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {(Object.entries(buildingTypes) as [BuildingType, typeof buildingTypes[BuildingType]][])
@@ -237,6 +240,7 @@ const InputPanel = ({
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Cpu className="w-4 h-4 text-muted-foreground" />
               {t('input.systemPackage')}
+              <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.systemPackageTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
             </Label>
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -270,6 +274,7 @@ const InputPanel = ({
               <span className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-muted-foreground" />
                 {t('input.electricityPrice')}
+                <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.electricityPriceTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
               </span>
               <span className="text-lg font-semibold text-primary">{electricityPrice.toFixed(2)} {t('common.EGP')}</span>
             </Label>
@@ -458,9 +463,10 @@ const InputPanel = ({
             ) : (
               /* Standard Mode: Single Consumption Input */
               <div className="space-y-3">
-                <Label htmlFor="monthly-consumption" className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Label htmlFor="monthly-consumption" className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Gauge className="w-4 h-4 text-muted-foreground" />
                   {t('input.monthlyConsumption')}
+                  <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.monthlyConsumptionTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
                 </Label>
                 <Input
                   id="monthly-consumption"
@@ -617,6 +623,7 @@ const InputPanel = ({
           >
             <Zap className="w-5 h-5 me-2" />
             {t('input.calculate')}
+            <span className="text-xs opacity-80 ms-1">(3/3)</span>
           </Button>
         </div>
 
