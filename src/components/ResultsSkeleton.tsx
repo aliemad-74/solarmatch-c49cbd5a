@@ -1,13 +1,22 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
+import { Sun } from "lucide-react";
 
 const ResultsSkeleton = () => {
+  const { t } = useTranslation();
+
   return (
     <section className="container mx-auto px-4 py-12">
       <div className="max-w-6xl mx-auto">
-        {/* Title skeleton */}
+        {/* Loading message */}
         <div className="text-center mb-10">
-          <Skeleton className="h-8 w-64 mx-auto mb-2" />
-          <Skeleton className="h-4 w-48 mx-auto" />
+          <div className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
+            <Sun className="w-6 h-6 text-primary animate-spin" style={{ animationDuration: '3s' }} />
+            <div>
+              <p className="text-lg font-semibold text-foreground">{t('loading.analyzing')}</p>
+              <p className="text-sm text-muted-foreground">{t('loading.subtitle')}</p>
+            </div>
+          </div>
         </div>
 
         {/* Metric cards skeleton */}
