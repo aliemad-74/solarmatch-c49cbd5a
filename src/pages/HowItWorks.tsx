@@ -14,7 +14,12 @@ import {
   TrendingUp,
   ArrowRight,
   Database,
-  Leaf
+  Leaf,
+  GitBranch,
+  ShieldAlert,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 
 const HowItWorks = () => {
@@ -194,6 +199,90 @@ const HowItWorks = () => {
               </Button>
             </Link>
           </div>
+        </section>
+
+        {/* Decision Flow Section */}
+        <section className="container mx-auto px-4 mt-20">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <GitBranch className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-display text-xl font-bold">{t('howItWorks.decisionFlow.title')}</h2>
+                <p className="text-sm text-muted-foreground">{t('howItWorks.decisionFlow.subtitle')}</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                {
+                  icon: CheckCircle2,
+                  color: "text-solar-green bg-solar-green/10",
+                  label: t('howItWorks.decisionFlow.suitable.label'),
+                  desc: t('howItWorks.decisionFlow.suitable.desc'),
+                },
+                {
+                  icon: AlertCircle,
+                  color: "text-solar-gold bg-solar-gold/10",
+                  label: t('howItWorks.decisionFlow.conditional.label'),
+                  desc: t('howItWorks.decisionFlow.conditional.desc'),
+                },
+                {
+                  icon: XCircle,
+                  color: "text-destructive bg-destructive/10",
+                  label: t('howItWorks.decisionFlow.notSuitable.label'),
+                  desc: t('howItWorks.decisionFlow.notSuitable.desc'),
+                },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-4 p-4 bg-background rounded-xl border">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{item.label}</p>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3 ps-1">{t('howItWorks.decisionFlow.note')}</p>
+          </div>
+        </section>
+
+        {/* Scope & Limitations */}
+        <section className="container mx-auto px-4 mt-16 mb-16">
+          <Card className="max-w-3xl mx-auto border-solar-gold/30">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-solar-gold/10 flex items-center justify-center">
+                  <ShieldAlert className="w-5 h-5 text-solar-gold" />
+                </div>
+                <CardTitle>{t('howItWorks.scope.title')}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-2">{t('howItWorks.scope.designedFor')}</p>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {(t('howItWorks.scope.designedForList', { returnObjects: true }) as string[]).map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-solar-green mt-0.5">✓</span> {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="border-t pt-4">
+                <p className="text-sm font-semibold text-foreground mb-2">{t('howItWorks.scope.outsideScope')}</p>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {(t('howItWorks.scope.outsideScopeList', { returnObjects: true }) as string[]).map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-destructive mt-0.5">✗</span> {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
         </section>
       </main>
 
