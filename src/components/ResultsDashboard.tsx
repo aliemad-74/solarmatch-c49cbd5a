@@ -1,4 +1,5 @@
 import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info } from "lucide-react";
+import DecisionExplanation from "./DecisionExplanation";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -555,6 +556,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
+
+        {/* Decision Explanation Layer */}
+        <div className="mt-6 mb-4 print:hidden">
+          <DecisionExplanation results={results} monthlyConsumption={monthlyConsumption} />
         </div>
 
         {/* Disclaimer */}

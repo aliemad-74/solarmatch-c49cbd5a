@@ -155,6 +155,41 @@
       "title": "Ready to Calculate?",
       "description": "Get your personalized solar feasibility report in under a minute",
       "button": "Check Solar Feasibility"
+    },
+    "decisionFlow": {
+      "title": "How Feasibility Is Determined",
+      "subtitle": "The recommendation is based on two primary metrics: coverage ratio and payback period",
+      "suitable": {
+        "label": "Suitable — Coverage ≥70% and Payback ≤10 years",
+        "desc": "System generates enough energy to meaningfully offset consumption and investment is recovered within a reasonable timeframe."
+      },
+      "conditional": {
+        "label": "Conditionally Suitable — Coverage ≥30% or Payback ≤15 years",
+        "desc": "System offers partial benefit. May still be worthwhile depending on electricity price trajectory and environmental goals."
+      },
+      "notSuitable": {
+        "label": "Not Recommended — Coverage <30% or Payback >15 years",
+        "desc": "Limited roof area or low consumption relative to system cost makes solar financially unattractive under current conditions."
+      },
+      "note": "These thresholds reflect Egypt's market conditions and are used as directional guidance, not absolute rules."
+    },
+    "scope": {
+      "title": "System Scope & Limitations",
+      "designedFor": "Designed for:",
+      "designedForList": [
+        "Residential, commercial, industrial, and agricultural buildings in Egypt",
+        "Systems up to ~500 kW (rooftop-scale)",
+        "Grid-connected and off-grid assessment",
+        "Standard fixed-tilt rooftop installations"
+      ],
+      "outsideScope": "Outside this system's scope:",
+      "outsideScopeList": [
+        "Battery/storage sizing and costing",
+        "Installation permitting or contractor selection",
+        "Tracking (single/dual-axis) solar systems",
+        "Export tariffs or net metering calculations",
+        "Systems outside Egypt's geography or tariff structure"
+      ]
     }
   },
   "about": {

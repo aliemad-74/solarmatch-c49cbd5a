@@ -1,4 +1,5 @@
 import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb, HelpCircle } from "lucide-react";
+import InputSanityWarnings from "./InputSanityWarnings";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -614,6 +615,19 @@ const InputPanel = ({
               </CollapsibleContent>
             </Collapsible>
           )}
+
+          {/* Input Sanity Warnings */}
+          <InputSanityWarnings
+            rooftopArea={rooftopArea}
+            monthlyConsumption={monthlyConsumption}
+            electricityPrice={electricityPrice}
+            buildingMode={buildingMode}
+            numberOfUnits={numberOfUnits}
+            avgUnitConsumption={avgUnitConsumption}
+            farmMode={farmMode}
+            farmEquipmentConsumption={farmEquipmentConsumption}
+            areaInFeddans={areaInFeddans}
+          />
 
           {/* Calculate Button */}
           <Button
