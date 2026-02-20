@@ -331,6 +331,11 @@
     "titleHighlight": "Feasibility Report",
     "subtitle": "Based on your inputs and local climate data",
     "disclaimer": "Results are estimates based on current tariffs and assumed consumption patterns. Actual performance may vary.",
+    "verdict": {
+      "suitable": "Suitable for Solar Installation",
+      "conditional": "Conditionally Suitable",
+      "notSuitable": "Not Suitable at This Time"
+    },
     "feasibility": {
       "suitable": "Solar Is Suitable",
       "suitableDesc": "Your property is well-suited for solar. Expected payback within {{years}} years with significant long-term savings.",
@@ -339,6 +344,8 @@
       "notSuitable": "Not Recommended",
       "notSuitableDesc": "Based on your roof area and consumption, solar may not provide sufficient return. Consider expanding usable area."
     },
+    "uncertaintyDisclaimer": "Actual performance may vary due to behavioral and market changes. Values shown are estimates.",
+    "estimateLabel": "~ estimate / year",
     "layerDecision": "Decision Summary",
     "layerMetrics": "Key Metrics",
     "layerTechnical": "Technical Details",
