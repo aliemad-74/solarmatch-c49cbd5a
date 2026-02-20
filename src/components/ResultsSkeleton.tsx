@@ -1,20 +1,65 @@
+import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
-import { Sun } from "lucide-react";
+import { Sun, MapPin, Cpu, DollarSign, CheckCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+
+const STEP_DURATION = 1250; // 5s / 4 steps
 
 const ResultsSkeleton = () => {
   const { t } = useTranslation();
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    { icon: MapPin, label: t("loading.step1") },
+    { icon: Cpu, label: t("loading.step2") },
+    { icon: DollarSign, label: t("loading.step3") },
+    { icon: CheckCircle, label: t("loading.step4") },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
+    }, STEP_DURATION);
+    return () => clearInterval(interval);
+  }, [steps.length]);
+
+  const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
     <section className="container mx-auto px-4 py-12">
       <div className="max-w-6xl mx-auto">
-        {/* Loading message */}
+        {/* Loading message with steps */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
-            <Sun className="w-6 h-6 text-primary animate-spin" style={{ animationDuration: '3s' }} />
-            <div>
-              <p className="text-lg font-semibold text-foreground">{t('loading.analyzing')}</p>
-              <p className="text-sm text-muted-foreground">{t('loading.subtitle')}</p>
+          <div className="inline-flex flex-col items-center gap-4 px-8 py-6 rounded-2xl bg-primary/10 border border-primary/20">
+            <Sun className="w-8 h-8 text-primary animate-spin" style={{ animationDuration: '3s' }} />
+            
+            <div className="w-64">
+              <Progress value={progress} className="h-2 mb-3" />
+            </div>
+
+            <div className="space-y-2">
+              {steps.map((step, i) => {
+                const StepIcon = step.icon;
+                const isActive = i === currentStep;
+                const isDone = i < currentStep;
+
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 transition-all duration-500 ${
+                      isActive
+                        ? "text-primary font-semibold scale-105"
+                        : isDone
+                          ? "text-primary/50 line-through"
+                          : "text-muted-foreground/40"
+                    }`}
+                  >
+                    <StepIcon className="w-4 h-4 shrink-0" />
+                    <span className="text-sm">{step.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -395,7 +395,11 @@
   },
   "loading": {
     "analyzing": "Analyzing your energy data…",
-    "subtitle": "Calculating system sizing, savings, and feasibility"
+    "subtitle": "Calculating system sizing, savings, and feasibility",
+    "step1": "Reading location & climate data…",
+    "step2": "Calculating optimal system size…",
+    "step3": "Estimating costs & savings…",
+    "step4": "Preparing your recommendation…"
   },
   "roi": {
     "title": "25-Year ROI Timeline",
