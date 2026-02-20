@@ -211,7 +211,14 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
   const isDisabled = isSubmitting || isOAuthLoading !== null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        setIsOAuthLoading(null);
+        setIsSubmitting(false);
+        setError(null);
+      }
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
         <DialogHeader className="text-center sm:text-center">
           <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-solar-gold/20 flex items-center justify-center">
