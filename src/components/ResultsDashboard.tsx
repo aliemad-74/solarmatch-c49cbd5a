@@ -131,16 +131,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         </div>
 
-        {/* Decision Explanation — immediately after verdict */}
-        <div className="mb-8 print:hidden">
-          <DecisionExplanation
-            results={results}
-            monthlyConsumption={monthlyConsumption}
-            rooftopArea={results.usableArea ? Math.round(results.usableArea / 0.65) : undefined}
-            pvType={pvType}
-            buildingType={buildingType}
-          />
-        </div>
+        {/* Decision Explanation moved below charts for cleaner flow */}
 
         {/* Warnings */}
         {results.warnings.length > 0 && (
@@ -309,22 +300,22 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             icon={<TrendingUp className="w-6 h-6" />}
             title={t('results.yearlySavings')}
             value={formatCurrency(results.savingsYear)}
-            subtitle={`± 10% · ${formatCurrency(results.savingsYear * 0.9)}–${formatCurrency(results.savingsYear * 1.1)}`}
+            subtitle={`${formatCurrency(results.savingsYear / 12)} / ${t('common.month')}`}
             highlight
             delay={200}
           />
           <ResultCard
             icon={<Calendar className="w-6 h-6" />}
             title={t('results.paybackPeriod')}
-            value={`${formatNumber(results.paybackYears)} years`}
-            subtitle={`± 15% · ${formatNumber(results.paybackYears * 0.85, 1)}–${formatNumber(results.paybackYears * 1.15, 1)} ${t('common.years')}`}
+            value={`${formatNumber(results.paybackYears)} ${t('common.years')}`}
+            subtitle={`${t('results.systemLifetime')}: 25 ${t('common.years')}`}
             delay={300}
           />
           <ResultCard
             icon={<Leaf className="w-6 h-6" />}
             title={t('results.co2Reduction')}
-            value={`~ ${formatNumber(results.co2Saved)} tons`}
-            subtitle={t('results.estimateLabel')}
+            value={`${formatNumber(results.co2Saved)} ${t('common.tons')}`}
+            subtitle={t('results.perYear')}
             highlight
             delay={400}
           />
@@ -575,7 +566,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         </div>
 
-        {/* Decision Explanation moved to after verdict banner */}
+        {/* Decision Explanation — after charts, before disclaimer */}
+        <div className="mt-8 mb-4 print:hidden">
+          <DecisionExplanation
+            results={results}
+            monthlyConsumption={monthlyConsumption}
+            rooftopArea={results.usableArea ? Math.round(results.usableArea / 0.65) : undefined}
+            pvType={pvType}
+            buildingType={buildingType}
+          />
+        </div>
 
         {/* Disclaimer */}
         <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
