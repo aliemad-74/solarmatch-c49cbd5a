@@ -76,8 +76,12 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     
     if (error) {
       setError(error);
-      setIsOAuthLoading(null);
+    } else {
+      // OAuth succeeded inline (no redirect) — close modal
+      onSuccess();
+      onOpenChange(false);
     }
+    setIsOAuthLoading(null);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
