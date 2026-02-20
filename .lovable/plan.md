@@ -1,296 +1,142 @@
 
-# خطة التنفيذ الفوري لتطوير SolarMatch
-## كل ما يمكن تنفيذه الآن بدون API خارجي
+
+# Engineering Transparency Upgrade Plan
+
+## Summary
+
+Most of the transparency infrastructure already exists. This plan closes the remaining gaps by upgrading the existing `DecisionExplanation` component and adjusting the `ResultsDashboard` layout -- without touching any calculation logic.
 
 ---
 
-## نظرة عامة
+## Changes Overview
 
-هذه الخطة تتضمن **12 ميزة** يمكن تنفيذها فورًا باستخدام الموارد المتاحة حاليًا (Supabase Auth، قاعدة البيانات الحالية، React/TypeScript).
+### 1. Move DecisionExplanation Right After Verdict
 
----
+**File:** `src/components/ResultsDashboard.tsx`
 
-## الجزء الأول: تحسينات المصادقة والحسابات
-
-### 1. صفحة "نسيت كلمة المرور" (Forgot Password)
-
-**الهدف**: السماح للمستخدمين باستعادة كلمات مرورهم
-
-**التنفيذ**:
-- إنشاء صفحة جديدة `src/pages/ForgotPassword.tsx`
-- إضافة رابط "نسيت كلمة المرور؟" في AuthModal
-- استخدام `supabase.auth.resetPasswordForEmail(email)`
-- إنشاء صفحة `src/pages/ResetPassword.tsx` لإدخال كلمة المرور الجديدة
-
-**الملفات المتأثرة**:
-- `src/pages/ForgotPassword.tsx` (جديد)
-- `src/pages/ResetPassword.tsx` (جديد)
-- `src/components/AuthModal.tsx` (إضافة رابط)
-- `src/App.tsx` (إضافة Routes)
-- `src/i18n/locales/en.json` و `ar.json` (ترجمات)
+Currently the `DecisionExplanation` component sits at line 562 -- after charts, AI advisor, and system comparison. Move it to immediately after the Layer 1 verdict banner (after line 132), so the decision reasoning appears before any numbers or charts.
 
 ---
 
-### 2. صفحة "حسابي" (My Account Dashboard)
+### 2. Explicit Verdict Text
 
-**الهدف**: عرض بيانات المستخدم وتقاريره السابقة
+**File:** `src/components/ResultsDashboard.tsx` + translation files
 
-**التنفيذ**:
-- إنشاء صفحة `src/pages/Account.tsx`
-- عرض معلومات الحساب (الاسم، الإيميل، الهاتف، نوع الحساب)
-- عرض التقارير السابقة من جدول `report_history`
-- عرض عدد التقارير المتبقية
+Replace the current feasibility labels with explicit verdict phrases:
+- "Suitable for Solar Installation" / "مناسب للتركيب الشمسي"
+- "Conditionally Suitable" / "مناسب بشروط"
+- "Not Suitable at This Time" / "غير مناسب حالياً"
 
-**الملفات المتأثرة**:
-- `src/pages/Account.tsx` (جديد)
-- `src/App.tsx` (إضافة Route)
-- `src/components/Header.tsx` (إضافة رابط "حسابي")
-- الترجمات
+Update the `results.feasibility.suitable`, `conditional`, and `notSuitable` translation keys.
 
 ---
 
-## الجزء الثاني: تحسينات لوحة تحكم الأدمن
+### 3. Causal Ranked Factors (Upgrade DecisionExplanation)
 
-### 3. عرض نوع الحساب (فرد/شركة) في جدول المستخدمين
+**File:** `src/components/DecisionExplanation.tsx`
 
-**الهدف**: تمييز المستخدمين حسب نوع الحساب
+Replace the current 4 unranked driver cards with a ranked top-3 causal explanation:
+- Compute an impact score for each factor (coverage ratio weight, payback weight, usable area weight, consumption weight) based on thresholds.
+- Sort by score descending, take top 3.
+- For each, show rank (1/2/3), a causal sentence explaining *how* it affected the outcome, and a direction indicator (positive/negative push).
 
-**التنفيذ**:
-- إضافة عمود "نوع الحساب" في `UsersTable.tsx`
-- عرض Badge مختلف للأفراد والشركات
-
-**الملفات المتأثرة**:
-- `src/components/admin/UsersTable.tsx`
-- الترجمات
-
----
-
-### 4. تصدير البيانات إلى CSV
-
-**الهدف**: تمكين الأدمن من تصدير المستخدمين والتقارير والـ Leads
-
-**التنفيذ**:
-- إنشاء utility function `src/lib/exportUtils.ts`
-- إضافة زر "تصدير CSV" في كل جدول
-
-**الملفات المتأثرة**:
-- `src/lib/exportUtils.ts` (جديد)
-- `src/components/admin/UsersTable.tsx`
-- `src/components/admin/LeadsTable.tsx`
-- `src/components/admin/ReportsTable.tsx`
-- الترجمات
+Example output:
+> 1. **Primary:** High coverage ratio (92%) strongly supports feasibility.
+> 2. **Secondary:** Short payback period (5.2 years) confirms financial viability.
+> 3. **Minor:** Usable area (75 m2) was sufficient but did not constrain the system.
 
 ---
 
-### 5. إحصائيات إضافية في الداشبورد
+### 4. Grouped Assumptions Panel
 
-**الهدف**: عرض إحصائيات أكثر تفصيلاً
+**File:** `src/components/DecisionExplanation.tsx`
 
-**التنفيذ**:
-- إضافة: المستخدمون الجدد اليوم، متوسط حجم النظام، إجمالي kW
-- تحسين StatsCards لعرض المزيد
+Reorganize the existing 8 assumptions into 3 categories:
+- **Energy**: Specific yield, irradiance data, performance ratio, panel degradation, CO2 factor
+- **Financial**: Tariff stability, cost per kW held constant
+- **Operational**: System lifetime, consumption held constant
 
-**الملفات المتأثرة**:
-- `src/pages/admin/AdminDashboard.tsx`
-- `src/components/admin/StatsCards.tsx`
-- الترجمات
+Each category gets a subheading. Panel remains collapsed by default inside the Advanced View.
 
 ---
 
-### 6. فلترة حسب التاريخ في الجداول
+### 5. Input-to-Decision Traceability (Advanced View Only)
 
-**الهدف**: تمكين الفلترة حسب نطاق زمني
+**File:** `src/components/DecisionExplanation.tsx`
 
-**التنفيذ**:
-- إضافة Date Range Picker في جداول الأدمن
-- فلترة النتائج حسب التاريخ المحدد
+Add a new collapsible section inside Advanced View: "Input Impact Trace". For each major input (rooftop area, monthly consumption, PV type, building type, electricity price), show:
+- Input name and value entered
+- Impact level badge: High / Medium / Low
 
-**الملفات المتأثرة**:
-- `src/components/admin/UsersTable.tsx`
-- `src/components/admin/LeadsTable.tsx`
-- `src/components/admin/ReportsTable.tsx`
-- الترجمات
+Impact is derived from the same ranking logic as the causal factors -- no new formulas.
 
 ---
 
-## الجزء الثالث: تحسينات الواجهة والتجربة
+### 6. Three Named Sensitivity Scenarios
 
-### 7. تحسين صفحة الهبوط (Landing Page Enhancements)
+**File:** `src/components/DecisionExplanation.tsx`
 
-**الهدف**: إضافة عداد حي للتقارير وتحسين Hero Section
+Replace the current 4-row sensitivity table with 3 named scenarios:
 
-**التنفيذ**:
-- إضافة عداد "X+ تقرير تم توليده"
-- تحسين التصميم مع animations
+| Scenario | Consumption | System Cost | Payback Range |
+|---|---|---|---|
+| Conservative | +20% | +15% | payback x 1.15 |
+| Typical (Current) | baseline | baseline | baseline |
+| Optimistic | -20% | -15% | payback x 0.85 |
 
-**الملفات المتأثرة**:
-- `src/pages/Index.tsx`
-- `src/components/HeroSection.tsx` (جديد أو ضمن Index)
-- الترجمات
-
----
-
-### 8. شهادات العملاء (Testimonials Section)
-
-**الهدف**: إضافة قسم شهادات وهمية للعرض
-
-**التنفيذ**:
-- إنشاء مكون `src/components/Testimonials.tsx`
-- إضافة 3-4 شهادات مع صور placeholder
-
-**الملفات المتأثرة**:
-- `src/components/Testimonials.tsx` (جديد)
-- `src/pages/Index.tsx`
-- الترجمات
+Present as ranges, not exact recalculations. Keep "Note: These are indicative estimates" disclaimer.
 
 ---
 
-### 9. تحسين تجربة الموبايل
+### 7. Uncertainty Indicators on Metric Cards
 
-**الهدف**: تحسين العرض على الأجهزة الصغيرة
+**File:** `src/components/ResultsDashboard.tsx`
 
-**التنفيذ**:
-- تحسين حجم الأزرار والمسافات
-- تحسين جداول الأدمن للعرض الجانبي (horizontal scroll)
-- تحسين الخريطة على الموبايل
+Add a subtle "~ estimate" indicator or +/- range on key metric cards:
+- Yearly savings: show +/-10% range
+- Payback period: show +/-15% range
+- CO2 saved: show "~ estimate" label
 
-**الملفات المتأثرة**:
-- ملفات CSS والمكونات المختلفة
-
----
-
-## الجزء الرابع: تحسينات SEO والأداء
-
-### 10. تحسين Meta Tags الديناميكية
-
-**الهدف**: تحسين ظهور الموقع في محركات البحث
-
-**التنفيذ**:
-- إضافة React Helmet أو استخدام document.title
-- تحديث Open Graph tags
-- إضافة meta descriptions
-
-**الملفات المتأثرة**:
-- `index.html`
-- إضافة مكون `src/components/SEOHead.tsx`
+Add a one-line disclaimer below the metrics grid:
+"Actual performance may vary due to behavioral and market changes."
 
 ---
 
-### 11. إضافة صفحة 404 محسّنة
+### 8. Translation Updates
 
-**الهدف**: تحسين صفحة "الصفحة غير موجودة"
+**Files:** `src/i18n/locales/en.json`, `src/i18n/locales/ar.json`
 
-**التنفيذ**:
-- تحسين تصميم NotFound.tsx
-- إضافة روابط مفيدة
-
-**الملفات المتأثرة**:
-- `src/pages/NotFound.tsx`
-
----
-
-### 12. Loading States محسّنة
-
-**الهدف**: تحسين تجربة الانتظار
-
-**التنفيذ**:
-- إضافة Skeleton loaders أفضل
-- تحسين حالات التحميل
-
-**الملفات المتأثرة**:
-- مكونات متعددة
+Add new keys for:
+- Explicit verdict text (3 keys)
+- Ranked factor labels (primary, secondary, minor)
+- Category headings (Energy, Financial, Operational)
+- Input trace section title
+- Scenario names (Conservative, Typical, Optimistic)
+- Uncertainty disclaimer text
+- Estimate indicator label
 
 ---
 
-## ملخص الملفات الجديدة
+## Files Modified
 
-| الملف | الوصف |
-|-------|-------|
-| `src/pages/ForgotPassword.tsx` | صفحة طلب استعادة كلمة المرور |
-| `src/pages/ResetPassword.tsx` | صفحة إدخال كلمة المرور الجديدة |
-| `src/pages/Account.tsx` | صفحة حسابي |
-| `src/lib/exportUtils.ts` | وظائف تصدير CSV |
-| `src/components/Testimonials.tsx` | قسم شهادات العملاء |
-| `src/components/SEOHead.tsx` | مكون Meta Tags |
+| File | Change Type |
+|---|---|
+| `src/components/DecisionExplanation.tsx` | Major upgrade: ranked factors, grouped assumptions, 3 scenarios, input trace |
+| `src/components/ResultsDashboard.tsx` | Move DecisionExplanation position, add uncertainty ranges on cards, explicit verdict text |
+| `src/i18n/locales/en.json` | New translation keys |
+| `src/i18n/locales/ar.json` | New translation keys |
 
----
+## Files NOT Modified
 
-## ملخص التعديلات على الملفات الحالية
+- `src/lib/solarData.ts` -- no calculation changes
+- `src/lib/egyptTariffs.ts` -- no tariff changes
+- `src/pages/HowItWorks.tsx` -- already has decision flow and scope sections
+- No new files created
 
-| الملف | التعديل |
-|-------|---------|
-| `src/App.tsx` | إضافة Routes جديدة |
-| `src/components/AuthModal.tsx` | إضافة رابط "نسيت كلمة المرور" |
-| `src/components/Header.tsx` | إضافة رابط "حسابي" |
-| `src/components/admin/UsersTable.tsx` | عمود نوع الحساب + تصدير CSV + فلترة تاريخ |
-| `src/components/admin/LeadsTable.tsx` | تصدير CSV + فلترة تاريخ |
-| `src/components/admin/ReportsTable.tsx` | تصدير CSV + فلترة تاريخ |
-| `src/components/admin/StatsCards.tsx` | إحصائيات إضافية |
-| `src/pages/admin/AdminDashboard.tsx` | بيانات إضافية |
-| `src/pages/Index.tsx` | عداد التقارير + Testimonials |
-| `src/pages/NotFound.tsx` | تحسين التصميم |
-| `src/i18n/locales/en.json` | ترجمات جديدة |
-| `src/i18n/locales/ar.json` | ترجمات جديدة |
-| `index.html` | Meta tags محسّنة |
+## Technical Notes
 
----
+- All impact scoring uses existing outputs (`coverageRatio`, `paybackYears`, `usableArea`, `monthlyConsumption`) with threshold-based classification -- no new formulas.
+- Sensitivity scenarios use simple multipliers on existing `paybackYears` and `savingsYear` values -- deterministic, no recalculation.
+- The Advanced View toggle already exists and will continue to gate: assumptions, input trace, sensitivity, and scope sections.
+- Basic View remains unchanged: verdict, causal explanation, financial context, and key drivers visible by default.
 
-## الترتيب المقترح للتنفيذ
-
-**المجموعة 1** (الأكثر أهمية):
-1. صفحة "نسيت كلمة المرور"
-2. صفحة "حسابي"
-3. عرض نوع الحساب في الأدمن
-
-**المجموعة 2** (مفيدة جداً):
-4. تصدير CSV
-5. فلترة التاريخ
-6. إحصائيات إضافية
-
-**المجموعة 3** (تحسينات):
-7. تحسين Landing Page
-8. شهادات العملاء
-9. تحسين الموبايل
-10. SEO
-11. صفحة 404
-12. Loading States
-
----
-
-## التفاصيل التقنية
-
-### استخدام Supabase Auth للـ Password Reset
-
-```text
-// طلب إعادة تعيين
-supabase.auth.resetPasswordForEmail(email, {
-  redirectTo: `${window.location.origin}/reset-password`
-})
-
-// تحديث كلمة المرور
-supabase.auth.updateUser({ password: newPassword })
-```
-
-### تصدير CSV
-
-```text
-function exportToCSV(data, filename) {
-  const headers = Object.keys(data[0]).join(',')
-  const rows = data.map(row => Object.values(row).join(','))
-  const csv = [headers, ...rows].join('\n')
-  // Download logic
-}
-```
-
----
-
-## النتيجة المتوقعة
-
-بعد تنفيذ هذه الخطة ستحصل على:
-- نظام مصادقة كامل مع استعادة كلمة المرور
-- صفحة حساب شخصي للمستخدمين
-- لوحة تحكم أدمن متقدمة مع فلترة وتصدير
-- واجهة مستخدم محسّنة على جميع الأجهزة
-- SEO محسّن للموقع
-
-**هل توافق على البدء بالتنفيذ؟**
