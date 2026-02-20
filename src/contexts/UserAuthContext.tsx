@@ -87,49 +87,62 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+    let isMounted = true;
 
-      if (currentSession?.user) {
-        // Record registration for new signups
-        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          // Check if this is a new user (profile might not exist yet)
-          const createdAt = new Date(currentSession.user.created_at);
-          const now = new Date();
-          const isNewUser = (now.getTime() - createdAt.getTime()) < 60000; // Created within last minute
-          
-          if (isNewUser) {
-            recordRegistrationTracking(currentSession.user.id);
+    // Listener for ONGOING auth changes (does NOT control isLoading)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        if (!isMounted) return;
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          // Record registration for new signups
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            const createdAt = new Date(currentSession.user.created_at);
+            const now = new Date();
+            const isNewUser = (now.getTime() - createdAt.getTime()) < 60000;
+            if (isNewUser) {
+              recordRegistrationTracking(currentSession.user.id);
+            }
           }
+
+          // Fetch profile without blocking — do NOT touch isLoading here
+          setTimeout(() => {
+            fetchProfile(currentSession.user.id).then((profileData) => {
+              if (isMounted) setProfile(profileData);
+            });
+          }, 0);
+        } else {
+          setProfile(null);
         }
-        
-        // Use setTimeout to avoid race conditions
-        setTimeout(async () => {
-          const profileData = await fetchProfile(currentSession.user.id);
-          setProfile(profileData);
-          setIsLoading(false);
-        }, 0);
-      } else {
-        setProfile(null);
-        setIsLoading(false);
       }
-    });
+    );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
+    // INITIAL load (controls isLoading)
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (!isMounted) return;
 
-      if (existingSession?.user) {
-        const profileData = await fetchProfile(existingSession.user.id);
-        setProfile(profileData);
+        setSession(existingSession);
+        setUser(existingSession?.user ?? null);
+
+        if (existingSession?.user) {
+          const profileData = await fetchProfile(existingSession.user.id);
+          if (isMounted) setProfile(profileData);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-      setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithEmail = async (email: string, password: string): Promise<{ error: string | null }> => {
