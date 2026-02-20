@@ -114,19 +114,6 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   coverage: formatNumber(results.coverageRatio * 100, 0),
                 })}
               </p>
-              <div className="mt-3 flex flex-wrap gap-4 text-sm">
-                <span className="font-semibold text-foreground">
-                  {t('results.yearlySavings')}: {formatCurrency(results.savingsYear)}
-                </span>
-                <span className="text-muted-foreground">•</span>
-                <span className="font-semibold text-foreground">
-                  {t('results.paybackPeriod')}: {formatNumber(results.paybackYears, 1)} {t('common.years')}
-                </span>
-                <span className="text-muted-foreground">•</span>
-                <span className="font-semibold text-foreground">
-                  {t('results.installedCapacity')}: {results.kWInstalled} {t('common.kW')}
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -320,12 +307,6 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             delay={400}
           />
         </div>
-        {/* Uncertainty disclaimer */}
-        <div className="mb-10 print:mb-4">
-          <p className="text-xs text-muted-foreground text-center italic">
-            {t('results.uncertaintyDisclaimer')}
-          </p>
-        </div>
 
         {/* Connection Recommendation */}
         {results.connectionRecommendation && (
@@ -391,8 +372,8 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           <SystemComparison results={results} />
         </div>
 
-        {/* Coverage Ratio & Calculation Breakdown */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
+        {/* Coverage Ratio & Key Info */}
+        <div className="grid md:grid-cols-1 gap-6 mb-6">
           {/* Coverage Ratio */}
           <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "150ms" }}>
             <h4 className="font-display text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
@@ -423,44 +404,6 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                     ? t('results.goodCoverage')
                     : t('results.partialCoverage')}
               </span>
-            </div>
-          </div>
-
-          {/* Calculation Breakdown */}
-          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
-            <h4 className="font-display text-lg font-semibold text-foreground mb-4">{t('results.calculationBreakdown')}</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">1. {t('results.usableArea')}</span>
-                <span className="font-mono text-foreground">{formatNumber(results.usableArea, 0)} m²</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">2. kW Max</span>
-                <span className="font-mono text-foreground">{formatNumber(results.kWMax, 2)} kW</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">3. kW {t('results.installed')} (×0.95)</span>
-                <span className="font-mono font-bold text-primary">{results.kWInstalled} kW</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">4. Energy/Year</span>
-                <span className="font-mono text-foreground">{formatNumber(results.energyYear, 0)} kWh</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-border/50 bg-primary/5 -mx-2 px-2 rounded">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  5. {t('results.panelsNeeded')}
-                </span>
-                <span className="font-mono font-bold text-primary">{results.panelCount} × {results.panelWattage}W</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">6. {t('results.totalCost')}</span>
-                <span className="font-mono font-bold text-foreground">{formatCurrency(results.totalCost)}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">7. {t('results.payback')}</span>
-                <span className="font-mono text-foreground">{formatNumber(results.paybackYears, 1)} years</span>
-              </div>
             </div>
           </div>
         </div>

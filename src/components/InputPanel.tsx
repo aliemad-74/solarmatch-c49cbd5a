@@ -637,7 +637,6 @@ const InputPanel = ({
           >
             <Zap className="w-5 h-5 me-2" />
             {t('input.calculate')}
-            <span className="text-xs opacity-80 ms-1">(3/3)</span>
           </Button>
         </div>
 
