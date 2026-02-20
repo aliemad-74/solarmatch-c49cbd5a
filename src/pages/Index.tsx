@@ -128,7 +128,7 @@ const Index = () => {
     setIsCalculating(true);
     
     // Small delay for skeleton to show
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 5000));
     
     const calculation = calculateSolarFeasibility(
       rooftopArea, 
