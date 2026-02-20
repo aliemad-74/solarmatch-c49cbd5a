@@ -78,9 +78,9 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
       : 'notSuitable';
 
   const feasibilityConfig = {
-    suitable: { icon: CheckCircle2, color: 'text-solar-green', bg: 'bg-solar-green/10 border-solar-green/30', iconColor: 'text-solar-green' },
-    conditional: { icon: AlertCircle, color: 'text-solar-gold', bg: 'bg-solar-gold/10 border-solar-gold/30', iconColor: 'text-solar-gold' },
-    notSuitable: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30', iconColor: 'text-destructive' },
+    suitable: { icon: CheckCircle2, color: 'text-solar-green', bg: 'bg-solar-green/10 border-solar-green/30', iconColor: 'text-solar-green', verdict: t('results.verdict.suitable'), verdictAr: 'مناسب للتركيب الشمسي' },
+    conditional: { icon: AlertCircle, color: 'text-solar-gold', bg: 'bg-solar-gold/10 border-solar-gold/30', iconColor: 'text-solar-gold', verdict: t('results.verdict.conditional'), verdictAr: 'مناسب بشروط' },
+    notSuitable: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30', iconColor: 'text-destructive', verdict: t('results.verdict.notSuitable'), verdictAr: 'غير مناسب حالياً' },
   };
 
   const fc = feasibilityConfig[feasibilityStatus];
@@ -99,14 +99,14 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
         </div>
 
         {/* ==================== LAYER 1: Decision Summary ==================== */}
-        <div className={`mb-8 p-6 rounded-2xl border-2 ${fc.bg} animate-fade-in`}>
+        <div className={`mb-4 p-6 rounded-2xl border-2 ${fc.bg} animate-fade-in`}>
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-xl bg-card">
               <FeasibilityIcon className={`w-8 h-8 ${fc.iconColor}`} />
             </div>
             <div className="flex-1">
               <h4 className={`font-display text-xl font-bold ${fc.color} mb-1`}>
-                {t(`results.feasibility.${feasibilityStatus}`)}
+                {t(`results.verdict.${feasibilityStatus}`)}
               </h4>
               <p className="text-muted-foreground">
                 {t(`results.feasibility.${feasibilityStatus}Desc`, {
@@ -129,6 +129,17 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Decision Explanation — immediately after verdict */}
+        <div className="mb-8 print:hidden">
+          <DecisionExplanation
+            results={results}
+            monthlyConsumption={monthlyConsumption}
+            rooftopArea={results.usableArea ? Math.round(results.usableArea / 0.65) : undefined}
+            pvType={pvType}
+            buildingType={buildingType}
+          />
         </div>
 
         {/* Warnings */}
@@ -278,7 +289,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
         )}
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10 print:mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4 print:mb-4">
           <ResultCard
             icon={<Sun className="w-6 h-6" />}
             title={t('results.installedCapacity')}
@@ -298,7 +309,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             icon={<TrendingUp className="w-6 h-6" />}
             title={t('results.yearlySavings')}
             value={formatCurrency(results.savingsYear)}
-            subtitle={`${formatCurrency(results.savingsMonth)}/month`}
+            subtitle={`± 10% · ${formatCurrency(results.savingsYear * 0.9)}–${formatCurrency(results.savingsYear * 1.1)}`}
             highlight
             delay={200}
           />
@@ -306,17 +317,23 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             icon={<Calendar className="w-6 h-6" />}
             title={t('results.paybackPeriod')}
             value={`${formatNumber(results.paybackYears)} years`}
-            subtitle={t('results.returnOnInvestment')}
+            subtitle={`± 15% · ${formatNumber(results.paybackYears * 0.85, 1)}–${formatNumber(results.paybackYears * 1.15, 1)} ${t('common.years')}`}
             delay={300}
           />
           <ResultCard
             icon={<Leaf className="w-6 h-6" />}
             title={t('results.co2Reduction')}
-            value={`${formatNumber(results.co2Saved)} tons`}
-            subtitle={t('results.perYearSaved')}
+            value={`~ ${formatNumber(results.co2Saved)} tons`}
+            subtitle={t('results.estimateLabel')}
             highlight
             delay={400}
           />
+        </div>
+        {/* Uncertainty disclaimer */}
+        <div className="mb-10 print:mb-4">
+          <p className="text-xs text-muted-foreground text-center italic">
+            {t('results.uncertaintyDisclaimer')}
+          </p>
         </div>
 
         {/* Connection Recommendation */}
@@ -558,10 +575,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         </div>
 
-        {/* Decision Explanation Layer */}
-        <div className="mt-6 mb-4 print:hidden">
-          <DecisionExplanation results={results} monthlyConsumption={monthlyConsumption} />
-        </div>
+        {/* Decision Explanation moved to after verdict banner */}
 
         {/* Disclaimer */}
         <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
