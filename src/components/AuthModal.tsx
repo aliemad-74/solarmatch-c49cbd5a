@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -430,9 +431,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
 
               <div className="space-y-1">
                 <Label htmlFor="signup-password" className="text-sm">{t('auth.password')}</Label>
-                <Input
+                <PasswordInput
                   id="signup-password"
-                  type="password"
                   placeholder="••••••••"
                   value={signUpData.password}
                   onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
@@ -484,9 +484,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
 
               <div className="space-y-1">
                 <Label htmlFor="signin-password" className="text-sm">{t('auth.password')}</Label>
-                <Input
+                <PasswordInput
                   id="signin-password"
-                  type="password"
                   placeholder="••••••••"
                   value={signInData.password}
                   onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
