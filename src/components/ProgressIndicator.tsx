@@ -20,7 +20,7 @@ const ProgressIndicator = ({ hasLocation, hasConfigured, hasResults }: ProgressI
   const activeIndex = hasResults ? 3 : hasConfigured ? 2 : hasLocation ? 1 : 0;
 
   return (
-    <div className="container mx-auto px-4 pt-2 pb-0">
+    <div className="container mx-auto px-4 pt-4 md:pt-2 pb-0 mt-2 md:mt-0">
       <div className="max-w-md mx-auto">
         <div className="flex items-center justify-between relative">
           {/* Connection line */}
