@@ -203,6 +203,13 @@ const Index = () => {
 
         <LiveReportCounter />
 
+        {/* Product Role Clarification */}
+        <div className="container mx-auto px-4 py-4 text-center">
+          <p className="text-base md:text-lg text-muted-foreground">
+            {t('hero.productRole')}
+          </p>
+        </div>
+
         <ScrollReveal>
           <MapSection
             onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
