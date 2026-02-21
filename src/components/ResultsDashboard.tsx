@@ -1,4 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2 } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -191,7 +191,13 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             </div>
           </div>
 
-          {/* Max 2 high-level figures */}
+          {/* Approximate system cost */}
+          <div className="bg-card rounded-xl border border-border/50 p-4 text-center mb-4">
+            <p className="text-2xl md:text-3xl font-bold text-foreground">{formatCurrency(results.totalCost)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{isAr ? "التكلفة التقريبية للنظام" : "Approximate System Cost"}</p>
+          </div>
+
+          {/* Two high-level figures */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-card rounded-xl border border-border/50 p-4 text-center">
               <p className="text-2xl md:text-3xl font-bold text-foreground">{formatCurrency(results.savingsYear)}</p>
@@ -218,372 +224,387 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           )}
         </div>
 
-        {/* ==================== DETAILED SECTIONS (TABS) ==================== */}
-        <Tabs defaultValue="" className="print:hidden">
-          <TabsList className="w-full grid grid-cols-4 mb-6 h-auto">
-            <TabsTrigger value="electrical" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Zap className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
-              {isAr ? "النظام الكهربائي" : "Electrical & System"}
-            </TabsTrigger>
-            <TabsTrigger value="financial" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <DollarSign className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
-              {isAr ? "التحليل المالي" : "Financial Analysis"}
-            </TabsTrigger>
-            <TabsTrigger value="assumptions" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Settings2 className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
-              {isAr ? "الافتراضات" : "Assumptions"}
-            </TabsTrigger>
-            <TabsTrigger value="uncertainty" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <BarChart3 className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
-              {isAr ? "الحساسية" : "Uncertainty"}
-            </TabsTrigger>
-          </TabsList>
+        {/* ==================== DETAILED SECTIONS (ACCORDIONS) ==================== */}
+        <div className="space-y-3 print:hidden">
 
-          {/* ==================== TAB 1: ELECTRICAL & SYSTEM DETAILS ==================== */}
-          <TabsContent value="electrical" className="animate-fade-in space-y-6">
-            <h4 className="font-display text-lg font-semibold text-foreground">
-              {isAr ? "تفاصيل النظام الكهربائي" : "Electrical & System Details"}
-            </h4>
+          {/* ==================== ACCORDION 1: ELECTRICAL & SYSTEM DETAILS ==================== */}
+          <Collapsible>
+            <CollapsibleTrigger className="w-full flex items-center justify-between p-5 bg-card rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10">
+                  <Zap className="w-5 h-5 text-primary" />
+                </div>
+                <span className="font-display text-base md:text-lg font-semibold text-foreground">{isAr ? "تفاصيل النظام الكهربائي" : "Electrical & System Details"}</span>
+              </div>
+              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-4 animate-fade-in">
 
-            {/* System specs table */}
-            <div className="bg-card rounded-2xl border border-border/50 p-5">
-              <div className="space-y-3">
-                {[
-                  { label: isAr ? "السعة المركبة" : "Installed Capacity", value: `${results.kWInstalled} kW`, sub: `${isAr ? "الحد الأقصى" : "Max"}: ${formatNumber(results.kWMax)} kW` },
-                  { label: isAr ? "الإنتاج السنوي" : "Annual Production", value: `${formatNumber(results.energyYear, 0)} kWh`, sub: `${formatNumber(results.energyMonth, 0)} kWh/${isAr ? "شهر" : "month"}` },
-                  { label: isAr ? "عدد الألواح" : "Panels Required", value: `${results.panelCount}`, sub: "" },
-                  { label: isAr ? "المساحة القابلة للاستخدام" : "Usable Rooftop Area", value: `${formatNumber(results.usableArea, 0)} m²`, sub: "" },
-                  { label: isAr ? "خفض CO₂" : "CO₂ Reduction", value: `${formatNumber(results.co2Saved)} ${isAr ? "طن/سنة" : "tons/yr"}`, sub: "" },
-                ].map((row, i) => (
-                  <div key={i} className="flex justify-between items-center py-2 border-b border-border/40 last:border-0">
-                    <span className="text-sm text-muted-foreground">{row.label}</span>
-                    <div className="text-end">
-                      <span className="text-sm font-semibold text-foreground">{row.value}</span>
-                      {row.sub && <p className="text-xs text-muted-foreground">{row.sub}</p>}
+              {/* System specs table */}
+              <div className="bg-card rounded-2xl border border-border/50 p-5">
+                <div className="space-y-3">
+                  {[
+                    { label: isAr ? "السعة المركبة" : "Installed Capacity", value: `${results.kWInstalled} kW`, sub: `${isAr ? "الحد الأقصى" : "Max"}: ${formatNumber(results.kWMax)} kW` },
+                    { label: isAr ? "الإنتاج السنوي" : "Annual Production", value: `${formatNumber(results.energyYear, 0)} kWh`, sub: `${formatNumber(results.energyMonth, 0)} kWh/${isAr ? "شهر" : "month"}` },
+                    { label: isAr ? "عدد الألواح" : "Panels Required", value: `${results.panelCount}`, sub: "" },
+                    { label: isAr ? "المساحة القابلة للاستخدام" : "Usable Rooftop Area", value: `${formatNumber(results.usableArea, 0)} m²`, sub: "" },
+                    { label: isAr ? "خفض CO₂" : "CO₂ Reduction", value: `${formatNumber(results.co2Saved)} ${isAr ? "طن/سنة" : "tons/yr"}`, sub: "" },
+                  ].map((row, i) => (
+                    <div key={i} className="flex justify-between items-center py-2 border-b border-border/40 last:border-0">
+                      <span className="text-sm text-muted-foreground">{row.label}</span>
+                      <div className="text-end">
+                        <span className="text-sm font-semibold text-foreground">{row.value}</span>
+                        {row.sub && <p className="text-xs text-muted-foreground">{row.sub}</p>}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Coverage Ratio */}
-            <div className="bg-card rounded-2xl border border-border/50 p-5">
-              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Gauge className="w-4 h-4 text-primary" />
-                {isAr ? "نسبة التغطية" : "Coverage Ratio"}
-              </h5>
-              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-2">
-                <div className="absolute h-full bg-gradient-to-r from-primary to-solar-green rounded-full transition-all duration-1000" style={{ width: `${Math.min(coveragePercent, 100)}%` }} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-2xl font-bold text-foreground">{formatNumber(results.coverageRatio * 100, 0)}%</span>
-                <span className="text-xs text-muted-foreground">
-                  {results.coverageRatio >= 1 ? `✓ ${t('results.fullCoverage')}` : results.coverageRatio >= 0.7 ? t('results.goodCoverage') : t('results.partialCoverage')}
-                </span>
-              </div>
-            </div>
-
-            {/* Building Mode */}
-            {results.buildingMode && (
+              {/* Coverage Ratio */}
               <div className="bg-card rounded-2xl border border-border/50 p-5">
                 <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Building className="w-4 h-4 text-primary" />
-                  {t('results.buildingModeAnalysis')}
+                  <Gauge className="w-4 h-4 text-primary" />
+                  {isAr ? "نسبة التغطية" : "Coverage Ratio"}
                 </h5>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                  <div className="p-2 bg-muted/50 rounded-lg">
-                    <p className="text-lg font-bold text-foreground">{results.numberOfUnits}</p>
-                    <p className="text-[10px] text-muted-foreground">{t('results.totalUnits')}</p>
-                  </div>
-                  <div className="p-2 bg-muted/50 rounded-lg">
-                    <p className="text-lg font-bold text-foreground">{results.avgUnitConsumption}</p>
-                    <p className="text-[10px] text-muted-foreground">{t('results.kWhUnitMonth')}</p>
-                  </div>
-                  <div className="p-2 bg-muted/50 rounded-lg">
-                    <p className="text-lg font-bold text-primary">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
-                    <p className="text-[10px] text-muted-foreground">{t('results.totalKWhMonth')}</p>
-                  </div>
-                  <div className="p-2 bg-muted/50 rounded-lg">
-                    <p className="text-lg font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</p>
-                    <p className="text-[10px] text-muted-foreground">{t('results.unitsCovered')}</p>
-                  </div>
+                <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-2">
+                  <div className="absolute h-full bg-gradient-to-r from-primary to-solar-green rounded-full transition-all duration-1000" style={{ width: `${Math.min(coveragePercent, 100)}%` }} />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-2xl font-bold text-foreground">{formatNumber(results.coverageRatio * 100, 0)}%</span>
+                  <span className="text-xs text-muted-foreground">
+                    {results.coverageRatio >= 1 ? `✓ ${t('results.fullCoverage')}` : results.coverageRatio >= 0.7 ? t('results.goodCoverage') : t('results.partialCoverage')}
+                  </span>
                 </div>
               </div>
-            )}
 
-            {/* Connection Recommendation */}
-            {results.connectionRecommendation && (
-              <div className={`p-4 rounded-xl border ${
-                results.connectionRecommendation.icon === "offgrid" ? "bg-solar-green/10 border-solar-green/30"
-                : results.connectionRecommendation.icon === "hybrid" ? "bg-solar-gold/10 border-solar-gold/30"
-                : "bg-primary/10 border-primary/30"
-              }`}>
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${results.connectionRecommendation.icon === "offgrid" ? "bg-solar-green/20" : results.connectionRecommendation.icon === "hybrid" ? "bg-solar-gold/20" : "bg-primary/20"}`}>
-                    {results.connectionRecommendation.icon === "offgrid" ? <Unplug className="w-5 h-5 text-solar-green" /> : results.connectionRecommendation.icon === "hybrid" ? <Battery className="w-5 h-5 text-solar-gold" /> : <PlugZap className="w-5 h-5 text-primary" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{t('results.recommended')}: {results.connectionRecommendation.systemType}</p>
-                    <p className="text-xs text-muted-foreground">{results.connectionRecommendation.reason}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Monthly Production Chart */}
-            <div className="bg-card rounded-2xl border border-border/50 p-5">
-              <h5 className="text-sm font-semibold text-foreground mb-4">{t('results.monthlyProduction')}</h5>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
-                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [`${value.toLocaleString()} kWh`, "Production"]} />
-                    <Bar dataKey="production" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Input Impact Trace */}
-            <div className="bg-card rounded-2xl border border-border/50 p-5">
-              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Crosshair className="w-4 h-4 text-muted-foreground" />
-                {isAr ? "تأثير المدخلات" : "Input Impact"}
-              </h5>
-              <div className="space-y-2">
-                {inputTraces.map((trace, i) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0">
-                    <div>
-                      <p className="text-sm text-foreground">{trace.label}</p>
-                      <p className="text-xs text-muted-foreground">{trace.value}</p>
+              {/* Building Mode */}
+              {results.buildingMode && (
+                <div className="bg-card rounded-2xl border border-border/50 p-5">
+                  <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Building className="w-4 h-4 text-primary" />
+                    {t('results.buildingModeAnalysis')}
+                  </h5>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                    <div className="p-2 bg-muted/50 rounded-lg">
+                      <p className="text-lg font-bold text-foreground">{results.numberOfUnits}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('results.totalUnits')}</p>
                     </div>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${impactBadgeColors[trace.impact]}`}>
-                      {impactLabels[trace.impact]}
-                    </span>
+                    <div className="p-2 bg-muted/50 rounded-lg">
+                      <p className="text-lg font-bold text-foreground">{results.avgUnitConsumption}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('results.kWhUnitMonth')}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded-lg">
+                      <p className="text-lg font-bold text-primary">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('results.totalKWhMonth')}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded-lg">
+                      <p className="text-lg font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('results.unitsCovered')}</p>
+                    </div>
                   </div>
-                ))}
+                </div>
+              )}
+
+              {/* Connection Recommendation */}
+              {results.connectionRecommendation && (
+                <div className={`p-4 rounded-xl border ${
+                  results.connectionRecommendation.icon === "offgrid" ? "bg-solar-green/10 border-solar-green/30"
+                  : results.connectionRecommendation.icon === "hybrid" ? "bg-solar-gold/10 border-solar-gold/30"
+                  : "bg-primary/10 border-primary/30"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${results.connectionRecommendation.icon === "offgrid" ? "bg-solar-green/20" : results.connectionRecommendation.icon === "hybrid" ? "bg-solar-gold/20" : "bg-primary/20"}`}>
+                      {results.connectionRecommendation.icon === "offgrid" ? <Unplug className="w-5 h-5 text-solar-green" /> : results.connectionRecommendation.icon === "hybrid" ? <Battery className="w-5 h-5 text-solar-gold" /> : <PlugZap className="w-5 h-5 text-primary" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t('results.recommended')}: {results.connectionRecommendation.systemType}</p>
+                      <p className="text-xs text-muted-foreground">{results.connectionRecommendation.reason}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Monthly Production Chart */}
+              <div className="bg-card rounded-2xl border border-border/50 p-5">
+                <h5 className="text-sm font-semibold text-foreground mb-4">{t('results.monthlyProduction')}</h5>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [`${value.toLocaleString()} kWh`, "Production"]} />
+                      <Bar dataKey="production" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-            </div>
-          </TabsContent>
 
-          {/* ==================== TAB 2: FINANCIAL ANALYSIS ==================== */}
-          <TabsContent value="financial" className="animate-fade-in space-y-6">
-            <h4 className="font-display text-lg font-semibold text-foreground">
-              {isAr ? "التحليل المالي" : "Financial Analysis"}
-            </h4>
-
-            {/* Key financial metrics */}
-            <div className="bg-card rounded-2xl border border-border/50 p-5">
-              <div className="space-y-4">
-                <div className="flex justify-between items-start py-2 border-b border-border/40">
-                  <span className="text-sm text-muted-foreground">{isAr ? "تكلفة النظام المقدرة" : "Estimated System Cost"}</span>
-                  <div className="text-end">
-                    <span className="text-lg font-bold text-foreground">{formatCurrency(results.totalCost)}</span>
-                    <p className="text-xs text-muted-foreground">{isAr ? "حسب الباقة المختارة" : "Based on selected package"}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between items-start py-2 border-b border-border/40">
-                  <span className="text-sm text-muted-foreground">{isAr ? "التوفير السنوي" : "Annual Savings"}</span>
-                  <div className="text-end">
-                    <span className="text-lg font-bold text-foreground">{formatCurrency(results.savingsYear)}</span>
-                    <p className="text-xs text-muted-foreground">{formatCurrency(results.savingsYear / 12)} / {isAr ? "شهر" : "month"}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between items-start py-2 border-b border-border/40">
-                  <span className="text-sm text-muted-foreground">{isAr ? "فترة الاسترداد" : "Payback Period"}</span>
-                  <div className="text-end">
-                    <span className="text-lg font-bold text-foreground">{formatNumber(results.paybackYears, 1)} {isAr ? "سنة" : "years"}</span>
-                    <p className="text-xs text-muted-foreground">{paybackContext}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between items-start py-2">
-                  <span className="text-sm text-muted-foreground">{isAr ? "عمر النظام" : "System Lifetime"}</span>
-                  <span className="text-lg font-bold text-foreground">25 {isAr ? "سنة" : "years"}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Package Options */}
-            {results.packageOptions && results.packageOptions.length > 0 && (
-              <div>
+              {/* Input Impact Trace */}
+              <div className="bg-card rounded-2xl border border-border/50 p-5">
                 <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-primary" />
-                  {t('results.packageOptions')}
+                  <Crosshair className="w-4 h-4 text-muted-foreground" />
+                  {isAr ? "تأثير المدخلات" : "Input Impact"}
                 </h5>
-                <div className="grid md:grid-cols-3 gap-3">
-                  {results.packageOptions.map((option) => {
-                    const isSelected = option.packageKey === results.selectedPackage;
-                    const accent = { economy: "text-solar-green border-solar-green/30", standard: "text-primary border-primary/30", premium: "text-solar-gold border-solar-gold/30" };
-                    const a = accent[option.packageKey as keyof typeof accent] || accent.standard;
-                    return (
-                      <div key={option.packageKey} className={`p-4 rounded-xl border-2 bg-card ${isSelected ? a.replace("/30", "") : a} ${isSelected ? "shadow-md" : ""}`}>
-                        {isSelected && <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">{t('results.selected')}</span>}
-                        <p className={`font-semibold ${a.split(" ")[0]}`}>{option.package.name}</p>
-                        <p className="text-xs text-muted-foreground mb-2">{option.package.efficiency} • {option.package.areaPerKW} m²/kW</p>
-                        <div className="text-sm space-y-1">
-                          <div className="flex justify-between"><span className="text-muted-foreground">{t('results.totalCost')}</span><span className="font-mono font-semibold">{formatCurrency(option.totalCost)}</span></div>
-                          <div className="flex justify-between"><span className="text-muted-foreground">{t('results.payback')}</span><span className="font-mono">{formatNumber(option.paybackYears, 1)} {isAr ? "سنة" : "yrs"}</span></div>
-                        </div>
+                <div className="space-y-2">
+                  {inputTraces.map((trace, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0">
+                      <div>
+                        <p className="text-sm text-foreground">{trace.label}</p>
+                        <p className="text-xs text-muted-foreground">{trace.value}</p>
                       </div>
-                    );
-                  })}
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${impactBadgeColors[trace.impact]}`}>
+                        {impactLabels[trace.impact]}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
+            </CollapsibleContent>
+          </Collapsible>
 
-            {/* 25-Year ROI Timeline */}
-            <ROITimeline
-              initialCost={results.totalCost}
-              yearlyEnergy={results.energyYear}
-              electricityPrice={results.climateData?.location ? (results.savingsYear / results.energyYear) : 1.95}
-            />
-
-            {/* Cumulative Savings Chart */}
-            <div className="bg-card rounded-2xl border border-border/50 p-5">
-              <h5 className="text-sm font-semibold text-foreground mb-4">{t('results.cumulativeSavings')}</h5>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={cumulativeSavings}>
-                    <defs>
-                      <linearGradient id="savingsGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--solar-gold))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--solar-gold))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
-                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [formatCurrency(value), "Cumulative"]} />
-                    <Area type="monotone" dataKey="cumulative" stroke="hsl(var(--solar-gold))" strokeWidth={2} fill="url(#savingsGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+          {/* ==================== ACCORDION 2: FINANCIAL ANALYSIS ==================== */}
+          <Collapsible>
+            <CollapsibleTrigger className="w-full flex items-center justify-between p-5 bg-card rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-solar-gold/10">
+                  <DollarSign className="w-5 h-5 text-solar-gold" />
+                </div>
+                <span className="font-display text-base md:text-lg font-semibold text-foreground">{isAr ? "التحليل المالي" : "Financial Analysis"}</span>
               </div>
-            </div>
+              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-4 animate-fade-in">
 
-            {/* Why this conclusion */}
-            <div className="bg-card rounded-2xl border border-border/50 p-5">
-              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Info className="w-4 h-4 text-primary" />
-                {isAr ? "لماذا تم التوصل إلى هذا الاستنتاج" : "Why This Conclusion Was Reached"}
-              </h5>
-              <div className="space-y-2.5">
-                {rankedFactors.map((factor, i) => (
-                  <div key={factor.key} className="flex items-start gap-2.5">
-                    <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
-                      {factor.direction === "positive" ? <ArrowUp className="w-3.5 h-3.5 text-solar-green" /> : <ArrowDown className="w-3.5 h-3.5 text-destructive" />}
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{rankLabels[i]}</p>
-                      <p className="text-xs text-foreground leading-relaxed">{factor.causalSentence}</p>
+              {/* Key financial metrics */}
+              <div className="bg-card rounded-2xl border border-border/50 p-5">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start py-2 border-b border-border/40">
+                    <span className="text-sm text-muted-foreground">{isAr ? "تكلفة النظام المقدرة" : "Estimated System Cost"}</span>
+                    <div className="text-end">
+                      <span className="text-lg font-bold text-foreground">{formatCurrency(results.totalCost)}</span>
+                      <p className="text-xs text-muted-foreground">{isAr ? "حسب الباقة المختارة" : "Based on selected package"}</p>
                     </div>
                   </div>
-                ))}
+                  <div className="flex justify-between items-start py-2 border-b border-border/40">
+                    <span className="text-sm text-muted-foreground">{isAr ? "التوفير السنوي" : "Annual Savings"}</span>
+                    <div className="text-end">
+                      <span className="text-lg font-bold text-foreground">{formatCurrency(results.savingsYear)}</span>
+                      <p className="text-xs text-muted-foreground">{formatCurrency(results.savingsYear / 12)} / {isAr ? "شهر" : "month"}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-start py-2 border-b border-border/40">
+                    <span className="text-sm text-muted-foreground">{isAr ? "فترة الاسترداد" : "Payback Period"}</span>
+                    <div className="text-end">
+                      <span className="text-lg font-bold text-foreground">{formatNumber(results.paybackYears, 1)} {isAr ? "سنة" : "years"}</span>
+                      <p className="text-xs text-muted-foreground">{paybackContext}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-start py-2">
+                    <span className="text-sm text-muted-foreground">{isAr ? "عمر النظام" : "System Lifetime"}</span>
+                    <span className="text-lg font-bold text-foreground">25 {isAr ? "سنة" : "years"}</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </TabsContent>
 
-          {/* ==================== TAB 3: ASSUMPTIONS & CONDITIONS ==================== */}
-          <TabsContent value="assumptions" className="animate-fade-in space-y-6">
-            <h4 className="font-display text-lg font-semibold text-foreground">
-              {isAr ? "الافتراضات والشروط" : "Assumptions & Conditions"}
-            </h4>
+              {/* Package Options */}
+              {results.packageOptions && results.packageOptions.length > 0 && (
+                <div>
+                  <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-primary" />
+                    {t('results.packageOptions')}
+                  </h5>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {results.packageOptions.map((option) => {
+                      const isSelected = option.packageKey === results.selectedPackage;
+                      const accent = { economy: "text-solar-green border-solar-green/30", standard: "text-primary border-primary/30", premium: "text-solar-gold border-solar-gold/30" };
+                      const a = accent[option.packageKey as keyof typeof accent] || accent.standard;
+                      return (
+                        <div key={option.packageKey} className={`p-4 rounded-xl border-2 bg-card ${isSelected ? a.replace("/30", "") : a} ${isSelected ? "shadow-md" : ""}`}>
+                          {isSelected && <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">{t('results.selected')}</span>}
+                          <p className={`font-semibold ${a.split(" ")[0]}`}>{option.package.name}</p>
+                          <p className="text-xs text-muted-foreground mb-2">{option.package.efficiency} • {option.package.areaPerKW} m²/kW</p>
+                          <div className="text-sm space-y-1">
+                            <div className="flex justify-between"><span className="text-muted-foreground">{t('results.totalCost')}</span><span className="font-mono font-semibold">{formatCurrency(option.totalCost)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">{t('results.payback')}</span><span className="font-mono">{formatNumber(option.paybackYears, 1)} {isAr ? "سنة" : "yrs"}</span></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-            {assumptionGroups.map((group, gi) => (
-              <div key={gi} className="bg-card rounded-2xl border border-border/50 p-5">
-                <h5 className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{group.category}</h5>
-                <ul className="space-y-2">
-                  {group.items.map((a, i) => (
-                    <li key={i} className="flex justify-between py-1.5 border-b border-border/40 last:border-0 text-sm">
-                      <span className="text-muted-foreground">{a.label}</span>
-                      <span className="font-medium text-foreground text-end">{a.value}</span>
-                    </li>
+              {/* 25-Year ROI Timeline */}
+              <ROITimeline
+                initialCost={results.totalCost}
+                yearlyEnergy={results.energyYear}
+                electricityPrice={results.climateData?.location ? (results.savingsYear / results.energyYear) : 1.95}
+              />
+
+              {/* Cumulative Savings Chart */}
+              <div className="bg-card rounded-2xl border border-border/50 p-5">
+                <h5 className="text-sm font-semibold text-foreground mb-4">{t('results.cumulativeSavings')}</h5>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={cumulativeSavings}>
+                      <defs>
+                        <linearGradient id="savingsGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--solar-gold))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--solar-gold))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [formatCurrency(value), "Cumulative"]} />
+                      <Area type="monotone" dataKey="cumulative" stroke="hsl(var(--solar-gold))" strokeWidth={2} fill="url(#savingsGrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Why this conclusion */}
+              <div className="bg-card rounded-2xl border border-border/50 p-5">
+                <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-primary" />
+                  {isAr ? "لماذا تم التوصل إلى هذا الاستنتاج" : "Why This Conclusion Was Reached"}
+                </h5>
+                <div className="space-y-2.5">
+                  {rankedFactors.map((factor, i) => (
+                    <div key={factor.key} className="flex items-start gap-2.5">
+                      <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                        {factor.direction === "positive" ? <ArrowUp className="w-3.5 h-3.5 text-solar-green" /> : <ArrowDown className="w-3.5 h-3.5 text-destructive" />}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{rankLabels[i]}</p>
+                        <p className="text-xs text-foreground leading-relaxed">{factor.causalSentence}</p>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
-            ))}
+            </CollapsibleContent>
+          </Collapsible>
 
-            {/* Scope & Limitations */}
-            <div className="bg-muted/40 rounded-xl border border-border/50 p-5">
-              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-solar-gold" />
-                {isAr ? "النطاق والقيود" : "Scope and Limitations"}
-              </h5>
-              <div className="mb-3">
-                <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "مصمم لـ" : "Designed For"}</p>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  {(isAr ? [
-                    "المباني السكنية والتجارية والصناعية والزراعية في مصر.",
-                    "أنظمة الأسطح حتى ~500 ك.و.",
-                    "التقييم الأولي قبل الدراسات الميدانية.",
-                    "تركيبات الزاوية الثابتة القياسية.",
-                  ] : [
-                    "Residential, commercial, industrial, and agricultural buildings in Egypt.",
-                    "Rooftop systems up to ~500 kW.",
-                    "Preliminary assessment before detailed site studies.",
-                    "Standard fixed-tilt installations.",
-                  ]).map((item, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-solar-green mt-0.5">✓</span>{item}</li>)}
-                </ul>
+          {/* ==================== ACCORDION 3: ASSUMPTIONS & CONDITIONS ==================== */}
+          <Collapsible>
+            <CollapsibleTrigger className="w-full flex items-center justify-between p-5 bg-card rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-muted">
+                  <Settings2 className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="font-display text-base md:text-lg font-semibold text-foreground">{isAr ? "الافتراضات والشروط" : "Assumptions & Conditions"}</span>
               </div>
-              <div className="border-t border-border/50 pt-3">
-                <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "غير مصمم لـ" : "Not Designed For"}</p>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  {(isAr ? [
-                    "تصميم وتكلفة البطاريات أو التخزين.",
-                    "تصاريح التركيب أو اختيار المقاولين.",
-                    "أنظمة التتبع الشمسي.",
-                    "حسابات تعريفة التصدير أو العداد الصافي.",
-                    "المواقع خارج مصر.",
-                  ] : [
-                    "Battery or storage system sizing and costing.",
-                    "Installation permitting or contractor selection.",
-                    "Tracking (single/dual-axis) solar systems.",
-                    "Export tariffs or net metering calculations.",
-                    "Locations outside Egypt.",
-                  ]).map((item, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-destructive mt-0.5">✗</span>{item}</li>)}
-                </ul>
-              </div>
-            </div>
-          </TabsContent>
+              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-4 animate-fade-in">
 
-          {/* ==================== TAB 4: UNCERTAINTY & SENSITIVITY ==================== */}
-          <TabsContent value="uncertainty" className="animate-fade-in space-y-6">
-            <h4 className="font-display text-lg font-semibold text-foreground">
-              {isAr ? "عدم اليقين والحساسية" : "Uncertainty & Sensitivity"}
-            </h4>
-
-            <div className="space-y-3">
-              {scenarios.map((s, i) => (
-                <div key={i} className={`p-4 rounded-xl border ${s.color}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold">{s.name}</span>
-                    <span className="text-xs opacity-80">{s.desc}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs opacity-70">{isAr ? "فترة الاسترداد" : "Payback"}</p>
-                      <p className="font-mono font-semibold">{s.paybackRange}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs opacity-70">{isAr ? "التوفير السنوي" : "Annual Savings"}</p>
-                      <p className="font-mono font-semibold">{s.savingsRange}</p>
-                    </div>
-                  </div>
+              {assumptionGroups.map((group, gi) => (
+                <div key={gi} className="bg-card rounded-2xl border border-border/50 p-5">
+                  <h5 className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{group.category}</h5>
+                  <ul className="space-y-2">
+                    {group.items.map((a, i) => (
+                      <li key={i} className="flex justify-between py-1.5 border-b border-border/40 last:border-0 text-sm">
+                        <span className="text-muted-foreground">{a.label}</span>
+                        <span className="font-medium text-foreground text-end">{a.value}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ))}
-            </div>
 
-            <div className="bg-muted/40 rounded-xl border border-border/50 p-4">
-              <p className="text-xs text-muted-foreground">
-                {isAr
-                  ? "النتائج قد تختلف بسبب تغيرات في أنماط الاستهلاك، أسعار الكهرباء، أداء المعدات، أو ظروف الطقس. النطاقات أعلاه توضح التأثير المحتمل لهذه التغيرات."
-                  : "Results may vary due to changes in consumption patterns, electricity prices, equipment performance, or weather conditions. The ranges above illustrate the potential impact of these variations."}
-              </p>
-            </div>
-          </TabsContent>
-        </Tabs>
+              {/* Scope & Limitations */}
+              <div className="bg-muted/40 rounded-xl border border-border/50 p-5">
+                <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-solar-gold" />
+                  {isAr ? "النطاق والقيود" : "Scope and Limitations"}
+                </h5>
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "مصمم لـ" : "Designed For"}</p>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {(isAr ? [
+                      "المباني السكنية والتجارية والصناعية والزراعية في مصر.",
+                      "أنظمة الأسطح حتى ~500 ك.و.",
+                      "التقييم الأولي قبل الدراسات الميدانية.",
+                      "تركيبات الزاوية الثابتة القياسية.",
+                    ] : [
+                      "Residential, commercial, industrial, and agricultural buildings in Egypt.",
+                      "Rooftop systems up to ~500 kW.",
+                      "Preliminary assessment before detailed site studies.",
+                      "Standard fixed-tilt installations.",
+                    ]).map((item, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-solar-green mt-0.5">✓</span>{item}</li>)}
+                  </ul>
+                </div>
+                <div className="border-t border-border/50 pt-3">
+                  <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "غير مصمم لـ" : "Not Designed For"}</p>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {(isAr ? [
+                      "تصميم وتكلفة البطاريات أو التخزين.",
+                      "تصاريح التركيب أو اختيار المقاولين.",
+                      "أنظمة التتبع الشمسي.",
+                      "حسابات تعريفة التصدير أو العداد الصافي.",
+                      "المواقع خارج مصر.",
+                    ] : [
+                      "Battery or storage system sizing and costing.",
+                      "Installation permitting or contractor selection.",
+                      "Tracking (single/dual-axis) solar systems.",
+                      "Export tariffs or net metering calculations.",
+                      "Locations outside Egypt.",
+                    ]).map((item, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-destructive mt-0.5">✗</span>{item}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* ==================== ACCORDION 4: UNCERTAINTY & SENSITIVITY ==================== */}
+          <Collapsible>
+            <CollapsibleTrigger className="w-full flex items-center justify-between p-5 bg-card rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-solar-green/10">
+                  <BarChart3 className="w-5 h-5 text-solar-green" />
+                </div>
+                <span className="font-display text-base md:text-lg font-semibold text-foreground">{isAr ? "عدم اليقين والحساسية" : "Uncertainty & Sensitivity"}</span>
+              </div>
+              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-4 animate-fade-in">
+
+              <div className="space-y-3">
+                {scenarios.map((s, i) => (
+                  <div key={i} className={`p-4 rounded-xl border ${s.color}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold">{s.name}</span>
+                      <span className="text-xs opacity-80">{s.desc}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs opacity-70">{isAr ? "فترة الاسترداد" : "Payback"}</p>
+                        <p className="font-mono font-semibold">{s.paybackRange}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs opacity-70">{isAr ? "التوفير السنوي" : "Annual Savings"}</p>
+                        <p className="font-mono font-semibold">{s.savingsRange}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-muted/40 rounded-xl border border-border/50 p-4">
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "النتائج قد تختلف بسبب تغيرات في أنماط الاستهلاك، أسعار الكهرباء، أداء المعدات، أو ظروف الطقس. النطاقات أعلاه توضح التأثير المحتمل لهذه التغيرات."
+                    : "Results may vary due to changes in consumption patterns, electricity prices, equipment performance, or weather conditions. The ranges above illustrate the potential impact of these variations."}
+                </p>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+        </div>
 
         {/* Uncertainty Statement */}
         <div className="mt-6 flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
