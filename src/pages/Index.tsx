@@ -207,13 +207,15 @@ const Index = () => {
         <LiveReportCounter />
 
 
-        <ScrollReveal>
-          <MapSection
-            onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
-            onClimateDataFetched={setClimateData}
-            onLocationChange={setLocationName}
-          />
-        </ScrollReveal>
+        <div id="map-section">
+          <ScrollReveal>
+            <MapSection
+              onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
+              onClimateDataFetched={setClimateData}
+              onLocationChange={setLocationName}
+            />
+          </ScrollReveal>
+        </div>
 
         {/* Product Role Clarification */}
         <div className="container mx-auto px-4 py-3 flex justify-center">
@@ -225,6 +227,7 @@ const Index = () => {
           </div>
         </div>
 
+        <div id="config-section">
         <ScrollReveal delay={0.1}>
           <InputPanel
             rooftopArea={rooftopArea}
@@ -258,6 +261,7 @@ const Index = () => {
             climateData={climateData}
           />
         </ScrollReveal>
+        </div>
 
         <div id="results">
           {isCalculating && <ResultsSkeleton />}
