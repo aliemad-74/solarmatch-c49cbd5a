@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -179,6 +180,7 @@ const About = () => {
       </main>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };
