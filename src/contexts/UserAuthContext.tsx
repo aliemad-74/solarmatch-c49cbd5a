@@ -232,7 +232,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       await supabase
         .from('report_history')
         .insert({
-          user_id: profile.id, // Legacy column
+          user_id: user.id, // Legacy column — now same as auth_user_id
           auth_user_id: user.id, // New column
           location_name: locationName || null,
           system_size_kw: systemSizeKw || null,
