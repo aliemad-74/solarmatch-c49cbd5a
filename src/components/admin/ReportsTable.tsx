@@ -23,34 +23,35 @@ const ReportsTable = () => {
   const { data: reports, isLoading } = useQuery({
     queryKey: ["admin-reports"],
     queryFn: async () => {
-      // Fetch reports with profile data (new auth) and legacy app_users
-      const { data, error } = await supabase
+      // Fetch reports
+      const { data: reportData, error: reportError } = await supabase
         .from("report_history")
-        .select(`
-          *,
-          profiles:auth_user_id (
-            name,
-            email
-          ),
-          app_users:user_id (
-            name,
-            email
-          )
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (reportError) throw reportError;
+
+      // Fetch profiles to match auth_user_id
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, name, email");
+
+      const profileMap = new Map(
+        (profilesData || []).map((p: any) => [p.user_id, p])
+      );
+
+      return (reportData || []).map((report: any) => ({
+        ...report,
+        profile: profileMap.get(report.auth_user_id) || null,
+      }));
     },
   });
 
   const filteredReports = reports?.filter(
     (report: any) =>
       report.location_name?.toLowerCase().includes(search.toLowerCase()) ||
-      report.profiles?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      report.profiles?.email?.toLowerCase().includes(search.toLowerCase()) ||
-      report.app_users?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      report.app_users?.email?.toLowerCase().includes(search.toLowerCase())
+      report.profile?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      report.profile?.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   const dateLocale = i18n.language === "ar" ? ar : enUS;
@@ -101,10 +102,10 @@ const ReportsTable = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {report.profiles?.name || report.app_users?.name || "-"}
+                        {report.profile?.name || "-"}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {report.profiles?.email || report.app_users?.email || "-"}
+                        {report.profile?.email || "-"}
                       </p>
                     </div>
                   </TableCell>

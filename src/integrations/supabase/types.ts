@@ -210,15 +210,7 @@ export type Database = {
           system_size_kw?: number | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "report_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "app_users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_roles: {
         Row: {
