@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
@@ -32,6 +32,10 @@ const Index = () => {
   const [pendingCalculation, setPendingCalculation] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   
+  // Explicit user-interaction flags (not from defaults/persisted)
+  const [userSelectedLocation, setUserSelectedLocation] = useState(false);
+  const [userEditedConfig, setUserEditedConfig] = useState(false);
+  const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
   
@@ -185,9 +189,9 @@ const Index = () => {
     locationName,
   });
 
-  // Progress tracking
-  const hasLocation = !!locationName || !!climateData;
-  const hasConfigured = rooftopArea > 0 && monthlyConsumption > 0;
+  // Progress tracking — only from explicit user actions
+  const hasLocation = userSelectedLocation && (!!locationName || !!climateData);
+  const hasConfigured = userEditedConfig && rooftopArea > 0 && effectiveMonthlyConsumption > 0;
 
   return (
     <div className="min-h-screen bg-background" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
@@ -210,9 +214,16 @@ const Index = () => {
         <div id="map-section">
           <ScrollReveal>
             <MapSection
-              onAreaCalculated={(area) => setRooftopArea(Math.round(area))}
-              onClimateDataFetched={setClimateData}
-              onLocationChange={setLocationName}
+              onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setUserEditedConfig(true); }}
+              onClimateDataFetched={(data) => {
+                setClimateData(data);
+                if (initialLocationLoadRef.current) {
+                  initialLocationLoadRef.current = false;
+                } else {
+                  setUserSelectedLocation(true);
+                }
+              }}
+              onLocationChange={(name) => { setLocationName(name); }}
             />
           </ScrollReveal>
         </div>
@@ -231,17 +242,17 @@ const Index = () => {
         <ScrollReveal delay={0.1}>
           <InputPanel
             rooftopArea={rooftopArea}
-            setRooftopArea={setRooftopArea}
+            setRooftopArea={(v) => { setRooftopArea(v); setUserEditedConfig(true); }}
             pvType={pvType}
-            setPvType={setPvType}
+            setPvType={(v) => { setPvType(v); setUserEditedConfig(true); }}
             buildingType={buildingType}
-            setBuildingType={setBuildingType}
+            setBuildingType={(v) => { setBuildingType(v); setUserEditedConfig(true); }}
             costScenario={costScenario}
-            setCostScenario={setCostScenario}
+            setCostScenario={(v) => { setCostScenario(v); setUserEditedConfig(true); }}
             electricityPrice={electricityPrice}
-            setElectricityPrice={setElectricityPrice}
+            setElectricityPrice={(v) => { setElectricityPrice(v); setUserEditedConfig(true); }}
             monthlyConsumption={monthlyConsumption}
-            setMonthlyConsumption={setMonthlyConsumption}
+            setMonthlyConsumption={(v) => { setMonthlyConsumption(v); setUserEditedConfig(true); }}
             buildingMode={buildingMode}
             setBuildingMode={setBuildingMode}
             numberOfUnits={numberOfUnits}
