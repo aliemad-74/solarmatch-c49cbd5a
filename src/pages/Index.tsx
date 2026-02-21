@@ -203,15 +203,6 @@ const Index = () => {
 
         <LiveReportCounter />
 
-        {/* Product Role Clarification — subtle inline notice */}
-        <div className="container mx-auto px-4 pt-6 pb-2 flex justify-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/60 bg-muted/40 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0" />
-            <p className="text-xs md:text-sm text-muted-foreground/80 leading-snug">
-              {t('hero.productRole')}
-            </p>
-          </div>
-        </div>
 
         <ScrollReveal>
           <MapSection
@@ -220,6 +211,16 @@ const Index = () => {
             onLocationChange={setLocationName}
           />
         </ScrollReveal>
+
+        {/* Product Role Clarification */}
+        <div className="container mx-auto px-4 py-3 flex justify-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/60 bg-muted/40 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0" />
+            <p className="text-xs md:text-sm text-muted-foreground/80 leading-snug">
+              {t('hero.productRole')}
+            </p>
+          </div>
+        </div>
 
         <ScrollReveal delay={0.1}>
           <InputPanel
