@@ -1,5 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info } from "lucide-react";
-import DecisionExplanation from "./DecisionExplanation";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -13,6 +12,8 @@ import SystemComparison from "./SystemComparison";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { generateSolarReport } from "@/lib/pdfReport";
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -25,14 +26,14 @@ interface ResultsDashboardProps {
 }
 
 const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment" }: ResultsDashboardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   if (!results || !isVisible) return null;
 
   const handleDownloadReport = async () => {
     if (!results || isGeneratingPdf) return;
-    
     setIsGeneratingPdf(true);
     try {
       await generateSolarReport(results, locationName);
@@ -43,11 +44,9 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
-  // Prepare chart data
+  // Chart data
   const monthlyData = MONTH_NAMES.map((month, index) => ({
     month,
     production: Math.round(results.monthlyProduction[index]),
@@ -57,20 +56,15 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
     (acc, production, index) => {
       const monthSavings = production * (results.savingsYear / results.energyYear);
       const prevCumulative = acc.length > 0 ? acc[acc.length - 1].cumulative : 0;
-      acc.push({
-        month: MONTH_NAMES[index],
-        savings: Math.round(monthSavings),
-        cumulative: Math.round(prevCumulative + monthSavings),
-      });
+      acc.push({ month: MONTH_NAMES[index], savings: Math.round(monthSavings), cumulative: Math.round(prevCumulative + monthSavings) });
       return acc;
     },
     []
   );
 
   const coveragePercent = Math.min(results.coverageRatio * 100, 200);
-  const scenario = costScenarios[results.costScenario];
 
-  // Determine feasibility status
+  // Feasibility
   const feasibilityStatus = results.coverageRatio >= 0.7 && results.paybackYears <= 10
     ? 'suitable'
     : results.coverageRatio >= 0.3 && results.paybackYears <= 15
@@ -78,522 +72,559 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
       : 'notSuitable';
 
   const feasibilityConfig = {
-    suitable: { icon: CheckCircle2, color: 'text-solar-green', bg: 'bg-solar-green/10 border-solar-green/30', iconColor: 'text-solar-green', verdict: t('results.verdict.suitable'), verdictAr: 'مناسب للتركيب الشمسي' },
-    conditional: { icon: AlertCircle, color: 'text-solar-gold', bg: 'bg-solar-gold/10 border-solar-gold/30', iconColor: 'text-solar-gold', verdict: t('results.verdict.conditional'), verdictAr: 'مناسب بشروط' },
-    notSuitable: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30', iconColor: 'text-destructive', verdict: t('results.verdict.notSuitable'), verdictAr: 'غير مناسب حالياً' },
+    suitable: { icon: CheckCircle2, color: 'text-solar-green', bg: 'bg-solar-green/10 border-solar-green/30', iconColor: 'text-solar-green' },
+    conditional: { icon: AlertCircle, color: 'text-solar-gold', bg: 'bg-solar-gold/10 border-solar-gold/30', iconColor: 'text-solar-gold' },
+    notSuitable: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30', iconColor: 'text-destructive' },
   };
 
   const fc = feasibilityConfig[feasibilityStatus];
   const FeasibilityIcon = fc.icon;
 
+  // --- Ranked Causal Factors ---
+  const computeRankedFactors = () => {
+    const factors: { key: string; label: string; score: number; direction: "positive" | "negative"; causalSentence: string }[] = [];
+    const coveragePct = results.coverageRatio * 100;
+    const coverageScore = coveragePct >= 90 ? 10 : coveragePct >= 70 ? 8 : coveragePct >= 50 ? 5 : coveragePct >= 30 ? 3 : 1;
+    factors.push({
+      key: "coverage", label: isAr ? "نسبة التغطية" : "Coverage Ratio", score: coverageScore,
+      direction: coveragePct >= 50 ? "positive" : "negative",
+      causalSentence: coveragePct >= 50
+        ? (isAr ? `نسبة تغطية مرتفعة (${formatNumber(coveragePct, 0)}%) تدعم جدوى التركيب.` : `High coverage ratio (${formatNumber(coveragePct, 0)}%) supports installation feasibility.`)
+        : (isAr ? `نسبة تغطية منخفضة (${formatNumber(coveragePct, 0)}%) تحد من الجدوى المالية.` : `Low coverage ratio (${formatNumber(coveragePct, 0)}%) limits financial viability.`),
+    });
+    const paybackScore = results.paybackYears <= 5 ? 10 : results.paybackYears <= 7 ? 8 : results.paybackYears <= 10 ? 6 : results.paybackYears <= 13 ? 3 : 1;
+    factors.push({
+      key: "payback", label: isAr ? "فترة الاسترداد" : "Payback Period", score: paybackScore,
+      direction: results.paybackYears <= 10 ? "positive" : "negative",
+      causalSentence: results.paybackYears <= 10
+        ? (isAr ? `فترة استرداد قصيرة (${formatNumber(results.paybackYears, 1)} سنة) تؤكد الجدوى المالية.` : `Short payback (${formatNumber(results.paybackYears, 1)} years) confirms financial viability.`)
+        : (isAr ? `فترة استرداد طويلة (${formatNumber(results.paybackYears, 1)} سنة) تضعف المبرر المالي.` : `Long payback (${formatNumber(results.paybackYears, 1)} years) weakens the financial case.`),
+    });
+    const areaScore = results.usableArea >= 80 ? 9 : results.usableArea >= 50 ? 7 : results.usableArea >= 30 ? 4 : 2;
+    factors.push({
+      key: "area", label: isAr ? "المساحة القابلة للاستخدام" : "Usable Area", score: areaScore,
+      direction: results.usableArea >= 40 ? "positive" : "negative",
+      causalSentence: results.usableArea >= 40
+        ? (isAr ? `المساحة (${formatNumber(results.usableArea, 0)} م²) كافية لنظام ${results.kWInstalled} ك.و.` : `Usable area (${formatNumber(results.usableArea, 0)} m²) supports a ${results.kWInstalled} kW system.`)
+        : (isAr ? `المساحة (${formatNumber(results.usableArea, 0)} م²) تقيّد حجم النظام.` : `Usable area (${formatNumber(results.usableArea, 0)} m²) constrains system size.`),
+    });
+    return factors.sort((a, b) => b.score - a.score).slice(0, 3);
+  };
+
+  const rankedFactors = computeRankedFactors();
+  const rankLabels = isAr ? ["العامل الرئيسي", "العامل الثانوي", "العامل الثالث"] : ["Primary Factor", "Secondary Factor", "Minor Factor"];
+
+  // Financial context
+  const paybackContext = results.paybackYears <= 5
+    ? isAr ? "أقل من النطاق النموذجي في مصر (5-8 سنوات)" : "Below Egypt's typical range of 5-8 years"
+    : results.paybackYears <= 8
+    ? isAr ? "ضمن النطاق النموذجي في مصر (5-8 سنوات)" : "Within Egypt's typical range of 5-8 years"
+    : results.paybackYears <= 12
+    ? isAr ? "أعلى من النطاق النموذجي، ضمن 8-12 سنة" : "Above Egypt's typical range, within 8-12 years"
+    : isAr ? "يتجاوز 12 سنة، أعلى من نطاق التبرير النموذجي" : "Exceeds 12 years, above typical justification range";
+
+  // Sensitivity scenarios
+  const baseSavings = results.savingsYear;
+  const basePayback = results.paybackYears;
+  const scenarios = [
+    { name: isAr ? "متحفظ" : "Conservative", desc: isAr ? "استهلاك +20%، تكلفة +15%" : "Consumption +20%, Cost +15%", paybackRange: `${formatNumber(basePayback * 1.1, 1)}–${formatNumber(basePayback * 1.2, 1)} ${isAr ? "سنة" : "yrs"}`, savingsRange: `${formatCurrency(baseSavings * 0.9)}–${formatCurrency(baseSavings)}`, color: "text-destructive bg-destructive/10 border-destructive/30" },
+    { name: isAr ? "نموذجي" : "Typical", desc: isAr ? "القيم الأساسية" : "Baseline values", paybackRange: `${formatNumber(basePayback, 1)} ${isAr ? "سنة" : "yrs"}`, savingsRange: formatCurrency(baseSavings), color: "text-primary bg-primary/10 border-primary/30" },
+    { name: isAr ? "متفائل" : "Optimistic", desc: isAr ? "استهلاك -20%، تكلفة -15%" : "Consumption -20%, Cost -15%", paybackRange: `${formatNumber(basePayback * 0.8, 1)}–${formatNumber(basePayback * 0.9, 1)} ${isAr ? "سنة" : "yrs"}`, savingsRange: `${formatCurrency(baseSavings)}–${formatCurrency(baseSavings * 1.1)}`, color: "text-solar-green bg-solar-green/10 border-solar-green/30" },
+  ];
+
+  // Assumptions
+  const assumptionGroups = [
+    { category: isAr ? "افتراضات الطاقة" : "Energy Assumptions", items: [
+      { label: isAr ? "العائد النوعي" : "Specific Yield", value: isAr ? "1,800 ك.و.س/ك.و.ذ/سنة" : "1,800 kWh/kWp/year" },
+      { label: isAr ? "بيانات الإشعاع" : "Irradiance Data", value: isAr ? "ناسا باور — المتوسط السنوي" : "NASA POWER — annual average" },
+      { label: isAr ? "نسبة الأداء" : "Performance Ratio", value: "80%" },
+      { label: isAr ? "تدهور الألواح" : "Panel Degradation", value: isAr ? "0.5% سنوياً" : "0.5%/year" },
+      { label: isAr ? "عامل CO₂" : "CO₂ Factor", value: "0.55 kg/kWh" },
+    ]},
+    { category: isAr ? "افتراضات مالية" : "Financial Assumptions", items: [
+      { label: isAr ? "ثبات الأسعار" : "Tariff Stability", value: isAr ? "التعريفة الحالية ثابتة" : "Current tariff held constant" },
+      { label: isAr ? "تكلفة الكيلووات" : "Cost per kW", value: isAr ? "ثابتة حسب الباقة" : "Per selected package" },
+    ]},
+    { category: isAr ? "افتراضات تشغيلية" : "Operational Assumptions", items: [
+      { label: isAr ? "العمر التشغيلي" : "System Lifetime", value: isAr ? "25 سنة" : "25 years" },
+      { label: isAr ? "الاستهلاك" : "Consumption", value: isAr ? "ثابت طوال العمر التشغيلي" : "Held constant" },
+    ]},
+  ];
+
+  // Input traces
+  const rooftopArea = results.usableArea ? Math.round(results.usableArea / 0.65) : undefined;
+  const inputTraces = [
+    { label: isAr ? "مساحة السطح" : "Rooftop Area", value: rooftopArea ? `${rooftopArea} m²` : "—", impact: results.usableArea >= 60 ? "high" : results.usableArea >= 30 ? "medium" : "low" as "high" | "medium" | "low" },
+    { label: isAr ? "الاستهلاك الشهري" : "Monthly Consumption", value: `${monthlyConsumption.toLocaleString()} kWh`, impact: monthlyConsumption >= 500 ? "high" : monthlyConsumption >= 200 ? "medium" : "low" as "high" | "medium" | "low" },
+    { label: isAr ? "نوع الألواح" : "PV Type", value: pvType || "Standard", impact: "medium" as "high" | "medium" | "low" },
+    { label: isAr ? "نوع المبنى" : "Building Type", value: buildingType || "apartment", impact: "medium" as "high" | "medium" | "low" },
+  ];
+  const impactBadgeColors = { high: "bg-solar-green/15 text-solar-green border-solar-green/30", medium: "bg-solar-gold/15 text-solar-gold border-solar-gold/30", low: "bg-muted text-muted-foreground border-border" };
+  const impactLabels = { high: isAr ? "عالي" : "High", medium: isAr ? "متوسط" : "Medium", low: isAr ? "منخفض" : "Low" };
+
   return (
     <section className="container mx-auto px-4 py-12 print:py-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10 animate-fade-in print:mb-4">
-          <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
-            {t('results.title')} <span className="text-gradient-solar">{t('results.titleHighlight')}</span>
+
+        {/* ==================== SECTION 0: DECISION OVERVIEW (ALWAYS VISIBLE) ==================== */}
+        <div className="mb-8 animate-fade-in">
+          <h3 className="font-display text-xl md:text-2xl font-bold text-foreground mb-4">
+            {isAr ? "نظرة عامة على القرار" : "Decision Overview"}
           </h3>
-          <p className="text-muted-foreground">
-            {t('results.subtitle')}
-          </p>
-        </div>
-
-        {/* Analysis Summary Transition */}
-        <div className="mb-6 p-6 bg-muted/30 rounded-2xl border border-border/50 animate-fade-in">
-          <h4 className="font-display text-lg font-semibold text-foreground mb-2">
-            {t('results.analysisSummary.title')}
-          </h4>
-          <p className="text-sm text-muted-foreground mb-1">
-            {t('results.analysisSummary.line1')}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('results.analysisSummary.line2')}
-          </p>
-        </div>
-
-        {/* ==================== LAYER 1: Decision Summary ==================== */}
-        <div className={`mb-4 p-6 rounded-2xl border-2 ${fc.bg} animate-fade-in`}>
-          <div className="flex items-start gap-4">
-            <div className="p-3 rounded-xl bg-card">
-              <FeasibilityIcon className={`w-8 h-8 ${fc.iconColor}`} />
-            </div>
-            <div className="flex-1">
-              <h4 className={`font-display text-xl font-bold ${fc.color} mb-1`}>
-                {t(`results.verdict.${feasibilityStatus}`)}
-              </h4>
-              <p className="text-muted-foreground">
-                {t(`results.feasibility.${feasibilityStatus}Desc`, {
-                  years: formatNumber(results.paybackYears, 1),
-                  coverage: formatNumber(results.coverageRatio * 100, 0),
-                })}
-              </p>
+          
+          <div className={`p-6 rounded-2xl border-2 ${fc.bg} mb-4`}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-card">
+                <FeasibilityIcon className={`w-8 h-8 ${fc.iconColor}`} />
+              </div>
+              <div className="flex-1">
+                <h4 className={`font-display text-xl font-bold ${fc.color} mb-1`}>
+                  {t(`results.verdict.${feasibilityStatus}`)}
+                </h4>
+                <p className="text-muted-foreground">
+                  {t(`results.feasibility.${feasibilityStatus}Desc`, {
+                    years: formatNumber(results.paybackYears, 1),
+                    coverage: formatNumber(results.coverageRatio * 100, 0),
+                  })}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Decision Explanation moved below charts for cleaner flow */}
+          {/* Max 2 high-level figures */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-card rounded-xl border border-border/50 p-4 text-center">
+              <p className="text-2xl md:text-3xl font-bold text-foreground">{formatCurrency(results.savingsYear)}</p>
+              <p className="text-xs text-muted-foreground mt-1">{isAr ? "التوفير السنوي المقدر" : "Estimated Annual Savings"}</p>
+            </div>
+            <div className="bg-card rounded-xl border border-border/50 p-4 text-center">
+              <p className="text-2xl md:text-3xl font-bold text-foreground">{formatNumber(results.paybackYears, 1)} {isAr ? "سنة" : "yrs"}</p>
+              <p className="text-xs text-muted-foreground mt-1">{isAr ? "فترة الاسترداد" : "Payback Period"}</p>
+            </div>
+          </div>
 
-        {/* Warnings */}
-        {results.warnings.length > 0 && (
-          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-xl animate-fade-in print:hidden">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
-              <div>
-                <p className="font-medium text-destructive">{t('results.warnings')}</p>
-                <ul className="mt-1 space-y-1">
-                  {results.warnings.map((warning, i) => (
-                    <li key={i} className="text-sm text-destructive/80">{warning}</li>
+          {/* Warnings */}
+          {results.warnings.length > 0 && (
+            <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-xl print:hidden">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-destructive mt-0.5" />
+                <ul className="space-y-0.5">
+                  {results.warnings.map((w, i) => (
+                    <li key={i} className="text-xs text-destructive/80">{w}</li>
                   ))}
                 </ul>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Building Mode Stats */}
-        {results.buildingMode && (
-          <div className="mb-6 p-5 bg-gradient-to-r from-primary/5 to-solar-green/5 border border-primary/20 rounded-xl animate-fade-in">
-            <div className="flex items-center gap-2 mb-4">
-              <Building className="w-5 h-5 text-primary" />
-              <h4 className="font-semibold text-foreground">{t('results.buildingModeAnalysis')}</h4>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="p-3 bg-card rounded-lg border border-border/50">
-                <p className="text-2xl font-bold text-foreground">{results.numberOfUnits}</p>
-                <p className="text-xs text-muted-foreground">{t('results.totalUnits')}</p>
-              </div>
-              <div className="p-3 bg-card rounded-lg border border-border/50">
-                <p className="text-2xl font-bold text-foreground">{results.avgUnitConsumption}</p>
-                <p className="text-xs text-muted-foreground">{t('results.kWhUnitMonth')}</p>
-              </div>
-              <div className="p-3 bg-card rounded-lg border border-border/50">
-                <p className="text-2xl font-bold text-primary">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">{t('results.totalKWhMonth')}</p>
-              </div>
-              <div className="p-3 bg-card rounded-lg border border-border/50">
-                <div className="flex items-center justify-center gap-1">
-                  <Users className="w-4 h-4 text-solar-green" />
-                  <p className="text-2xl font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</p>
-                </div>
-                <p className="text-xs text-muted-foreground">{t('results.unitsCovered')}</p>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mt-3 text-center">
-              {t('results.unitsMessage', { covered: formatNumber(results.unitsCovered, 1), total: results.numberOfUnits })}
-            </p>
-          </div>
-        )}
-
-        {/* System Package Options */}
-        {results.packageOptions && results.packageOptions.length > 0 && (
-          <div className="mb-10 animate-fade-in print:mb-4" style={{ animationDelay: "100ms" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Package className="w-5 h-5 text-primary" />
-              <h4 className="font-display text-lg font-semibold text-foreground">{t('results.packageOptions')}</h4>
-            </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              {results.packageOptions.map((option, index) => {
-                const isSelected = option.packageKey === results.selectedPackage;
-                const bgColors = {
-                  economy: "from-solar-green/5 to-solar-green/10",
-                  standard: "from-primary/5 to-primary/10", 
-                  premium: "from-solar-gold/5 to-solar-gold/10",
-                };
-                const borderColors = {
-                  economy: isSelected ? "border-solar-green" : "border-solar-green/30",
-                  standard: isSelected ? "border-primary" : "border-primary/30",
-                  premium: isSelected ? "border-solar-gold" : "border-solar-gold/30",
-                };
-                const accentColors = {
-                  economy: "text-solar-green",
-                  standard: "text-primary",
-                  premium: "text-solar-gold",
-                };
-                
-                return (
-                  <div 
-                    key={option.packageKey}
-                    className={`relative p-5 rounded-xl border-2 bg-gradient-to-br ${bgColors[option.packageKey as keyof typeof bgColors]} ${borderColors[option.packageKey as keyof typeof borderColors]} transition-all ${isSelected ? "shadow-lg scale-[1.02]" : "hover:scale-[1.01]"}`}
-                  >
-                    {isSelected && (
-                      <div className={`absolute -top-3 left-4 px-2 py-0.5 text-xs font-semibold rounded-full bg-card border ${borderColors[option.packageKey as keyof typeof borderColors]} ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
-                        {t('results.selected')}
-                      </div>
-                    )}
-                    
-                    <div className="mb-3">
-                      <h5 className={`font-display text-lg font-bold ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
-                        {option.package.name}
-                      </h5>
-                      <p className="text-xs text-muted-foreground">
-                        {option.package.efficiency} efficiency • {option.package.areaPerKW} m²/kW
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">{t('results.costPerKW')}</span>
-                        <span className="font-mono font-semibold text-foreground">
-                          {option.package.costPerKW.toLocaleString()} EGP
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">{t('results.installed')}</span>
-                        <span className="font-mono font-semibold text-foreground">
-                          {option.kWInstalled} kW
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-border/50">
-                        <span className="text-sm font-medium text-foreground">{t('results.totalCost')}</span>
-                        <span className={`font-mono text-lg font-bold ${accentColors[option.packageKey as keyof typeof accentColors]}`}>
-                          {formatCurrency(option.totalCost)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
-                      {option.package.justification}
-                    </div>
-                    
-                    <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-3 gap-2 text-center text-xs">
-                      <div>
-                        <p className="font-semibold text-foreground">{formatNumber(option.energyYear, 0)} kWh</p>
-                        <p className="text-muted-foreground">{t('results.yearly')}</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{formatNumber(option.paybackYears, 1)} yrs</p>
-                        <p className="text-muted-foreground">{t('results.payback')}</p>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-center gap-1">
-                          <LayoutGrid className="w-3 h-3 text-muted-foreground" />
-                          <p className="font-semibold text-foreground">{option.panelCount}</p>
-                        </div>
-                        <p className="text-muted-foreground">{t('results.panels')}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4 print:mb-4">
-          <ResultCard
-            icon={<Sun className="w-6 h-6" />}
-            title={t('results.installedCapacity')}
-            value={`${results.kWInstalled} kW`}
-            subtitle={`Max: ${formatNumber(results.kWMax)} kW`}
-            highlight
-            delay={0}
-          />
-          <ResultCard
-            icon={<Zap className="w-6 h-6" />}
-            title={t('results.yearlyProduction')}
-            value={`${formatNumber(results.energyYear, 0)} kWh`}
-            subtitle={`${formatNumber(results.energyMonth, 0)} kWh/month`}
-            delay={100}
-          />
-          <ResultCard
-            icon={<TrendingUp className="w-6 h-6" />}
-            title={t('results.yearlySavings')}
-            value={formatCurrency(results.savingsYear)}
-            subtitle={`${formatCurrency(results.savingsYear / 12)} / ${t('common.month')}`}
-            highlight
-            delay={200}
-          />
-          <ResultCard
-            icon={<Calendar className="w-6 h-6" />}
-            title={t('results.paybackPeriod')}
-            value={`${formatNumber(results.paybackYears)} ${t('common.years')}`}
-            subtitle={`${t('results.systemLifetime')}: 25 ${t('common.years')}`}
-            delay={300}
-          />
-          <ResultCard
-            icon={<Leaf className="w-6 h-6" />}
-            title={t('results.co2Reduction')}
-            value={`${formatNumber(results.co2Saved)} ${t('common.tons')}`}
-            subtitle={t('results.perYear')}
-            highlight
-            delay={400}
-          />
+          )}
         </div>
 
-        {/* Connection Recommendation */}
-        {results.connectionRecommendation && (
-          <div className="mb-6 animate-fade-in print:hidden" style={{ animationDelay: "125ms" }}>
-            <div className={`p-5 rounded-xl border ${
-              results.connectionRecommendation.icon === "offgrid" 
-                ? "bg-solar-green/10 border-solar-green/30" 
-                : results.connectionRecommendation.icon === "hybrid"
-                  ? "bg-solar-gold/10 border-solar-gold/30"
-                  : "bg-primary/10 border-primary/30"
-            }`}>
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-xl ${
-                  results.connectionRecommendation.icon === "offgrid"
-                    ? "bg-solar-green/20"
-                    : results.connectionRecommendation.icon === "hybrid"
-                      ? "bg-solar-gold/20"
-                      : "bg-primary/20"
-                }`}>
-                  {results.connectionRecommendation.icon === "offgrid" ? (
-                    <Unplug className="w-6 h-6 text-solar-green" />
-                  ) : results.connectionRecommendation.icon === "hybrid" ? (
-                    <Battery className="w-6 h-6 text-solar-gold" />
-                  ) : (
-                    <PlugZap className="w-6 h-6 text-primary" />
-                  )}
+        {/* ==================== DETAILED SECTIONS (TABS) ==================== */}
+        <Tabs defaultValue="" className="print:hidden">
+          <TabsList className="w-full grid grid-cols-4 mb-6 h-auto">
+            <TabsTrigger value="electrical" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Zap className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
+              {isAr ? "النظام الكهربائي" : "Electrical & System"}
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <DollarSign className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
+              {isAr ? "التحليل المالي" : "Financial Analysis"}
+            </TabsTrigger>
+            <TabsTrigger value="assumptions" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Settings2 className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
+              {isAr ? "الافتراضات" : "Assumptions"}
+            </TabsTrigger>
+            <TabsTrigger value="uncertainty" className="text-xs md:text-sm py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <BarChart3 className="w-3.5 h-3.5 me-1.5 hidden md:inline" />
+              {isAr ? "الحساسية" : "Uncertainty"}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ==================== TAB 1: ELECTRICAL & SYSTEM DETAILS ==================== */}
+          <TabsContent value="electrical" className="animate-fade-in space-y-6">
+            <h4 className="font-display text-lg font-semibold text-foreground">
+              {isAr ? "تفاصيل النظام الكهربائي" : "Electrical & System Details"}
+            </h4>
+
+            {/* System specs table */}
+            <div className="bg-card rounded-2xl border border-border/50 p-5">
+              <div className="space-y-3">
+                {[
+                  { label: isAr ? "السعة المركبة" : "Installed Capacity", value: `${results.kWInstalled} kW`, sub: `${isAr ? "الحد الأقصى" : "Max"}: ${formatNumber(results.kWMax)} kW` },
+                  { label: isAr ? "الإنتاج السنوي" : "Annual Production", value: `${formatNumber(results.energyYear, 0)} kWh`, sub: `${formatNumber(results.energyMonth, 0)} kWh/${isAr ? "شهر" : "month"}` },
+                  { label: isAr ? "عدد الألواح" : "Panels Required", value: `${results.panelCount}`, sub: "" },
+                  { label: isAr ? "المساحة القابلة للاستخدام" : "Usable Rooftop Area", value: `${formatNumber(results.usableArea, 0)} m²`, sub: "" },
+                  { label: isAr ? "خفض CO₂" : "CO₂ Reduction", value: `${formatNumber(results.co2Saved)} ${isAr ? "طن/سنة" : "tons/yr"}`, sub: "" },
+                ].map((row, i) => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b border-border/40 last:border-0">
+                    <span className="text-sm text-muted-foreground">{row.label}</span>
+                    <div className="text-end">
+                      <span className="text-sm font-semibold text-foreground">{row.value}</span>
+                      {row.sub && <p className="text-xs text-muted-foreground">{row.sub}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Coverage Ratio */}
+            <div className="bg-card rounded-2xl border border-border/50 p-5">
+              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-primary" />
+                {isAr ? "نسبة التغطية" : "Coverage Ratio"}
+              </h5>
+              <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-2">
+                <div className="absolute h-full bg-gradient-to-r from-primary to-solar-green rounded-full transition-all duration-1000" style={{ width: `${Math.min(coveragePercent, 100)}%` }} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-bold text-foreground">{formatNumber(results.coverageRatio * 100, 0)}%</span>
+                <span className="text-xs text-muted-foreground">
+                  {results.coverageRatio >= 1 ? `✓ ${t('results.fullCoverage')}` : results.coverageRatio >= 0.7 ? t('results.goodCoverage') : t('results.partialCoverage')}
+                </span>
+              </div>
+            </div>
+
+            {/* Building Mode */}
+            {results.buildingMode && (
+              <div className="bg-card rounded-2xl border border-border/50 p-5">
+                <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Building className="w-4 h-4 text-primary" />
+                  {t('results.buildingModeAnalysis')}
+                </h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                  <div className="p-2 bg-muted/50 rounded-lg">
+                    <p className="text-lg font-bold text-foreground">{results.numberOfUnits}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('results.totalUnits')}</p>
+                  </div>
+                  <div className="p-2 bg-muted/50 rounded-lg">
+                    <p className="text-lg font-bold text-foreground">{results.avgUnitConsumption}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('results.kWhUnitMonth')}</p>
+                  </div>
+                  <div className="p-2 bg-muted/50 rounded-lg">
+                    <p className="text-lg font-bold text-primary">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('results.totalKWhMonth')}</p>
+                  </div>
+                  <div className="p-2 bg-muted/50 rounded-lg">
+                    <p className="text-lg font-bold text-solar-green">{formatNumber(results.unitsCovered, 1)}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('results.unitsCovered')}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-display text-lg font-semibold text-foreground">
-                      {t('results.recommended')}: {results.connectionRecommendation.systemType}
-                    </h4>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      results.connectionRecommendation.icon === "offgrid"
-                        ? "bg-solar-green/20 text-solar-green"
-                        : results.connectionRecommendation.icon === "hybrid"
-                          ? "bg-solar-gold/20 text-solar-gold"
-                          : "bg-primary/20 text-primary"
-                    }`}>
-                      {formatNumber(results.coverageRatio * 100, 0)}% {t('results.coverage')}
+              </div>
+            )}
+
+            {/* Connection Recommendation */}
+            {results.connectionRecommendation && (
+              <div className={`p-4 rounded-xl border ${
+                results.connectionRecommendation.icon === "offgrid" ? "bg-solar-green/10 border-solar-green/30"
+                : results.connectionRecommendation.icon === "hybrid" ? "bg-solar-gold/10 border-solar-gold/30"
+                : "bg-primary/10 border-primary/30"
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${results.connectionRecommendation.icon === "offgrid" ? "bg-solar-green/20" : results.connectionRecommendation.icon === "hybrid" ? "bg-solar-gold/20" : "bg-primary/20"}`}>
+                    {results.connectionRecommendation.icon === "offgrid" ? <Unplug className="w-5 h-5 text-solar-green" /> : results.connectionRecommendation.icon === "hybrid" ? <Battery className="w-5 h-5 text-solar-gold" /> : <PlugZap className="w-5 h-5 text-primary" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{t('results.recommended')}: {results.connectionRecommendation.systemType}</p>
+                    <p className="text-xs text-muted-foreground">{results.connectionRecommendation.reason}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Monthly Production Chart */}
+            <div className="bg-card rounded-2xl border border-border/50 p-5">
+              <h5 className="text-sm font-semibold text-foreground mb-4">{t('results.monthlyProduction')}</h5>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [`${value.toLocaleString()} kWh`, "Production"]} />
+                    <Bar dataKey="production" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Input Impact Trace */}
+            <div className="bg-card rounded-2xl border border-border/50 p-5">
+              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Crosshair className="w-4 h-4 text-muted-foreground" />
+                {isAr ? "تأثير المدخلات" : "Input Impact"}
+              </h5>
+              <div className="space-y-2">
+                {inputTraces.map((trace, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0">
+                    <div>
+                      <p className="text-sm text-foreground">{trace.label}</p>
+                      <p className="text-xs text-muted-foreground">{trace.value}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${impactBadgeColors[trace.impact]}`}>
+                      {impactLabels[trace.impact]}
                     </span>
                   </div>
-                  <p className="text-muted-foreground">{results.connectionRecommendation.reason}</p>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* ==================== TAB 2: FINANCIAL ANALYSIS ==================== */}
+          <TabsContent value="financial" className="animate-fade-in space-y-6">
+            <h4 className="font-display text-lg font-semibold text-foreground">
+              {isAr ? "التحليل المالي" : "Financial Analysis"}
+            </h4>
+
+            {/* Key financial metrics */}
+            <div className="bg-card rounded-2xl border border-border/50 p-5">
+              <div className="space-y-4">
+                <div className="flex justify-between items-start py-2 border-b border-border/40">
+                  <span className="text-sm text-muted-foreground">{isAr ? "تكلفة النظام المقدرة" : "Estimated System Cost"}</span>
+                  <div className="text-end">
+                    <span className="text-lg font-bold text-foreground">{formatCurrency(results.totalCost)}</span>
+                    <p className="text-xs text-muted-foreground">{isAr ? "حسب الباقة المختارة" : "Based on selected package"}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-start py-2 border-b border-border/40">
+                  <span className="text-sm text-muted-foreground">{isAr ? "التوفير السنوي" : "Annual Savings"}</span>
+                  <div className="text-end">
+                    <span className="text-lg font-bold text-foreground">{formatCurrency(results.savingsYear)}</span>
+                    <p className="text-xs text-muted-foreground">{formatCurrency(results.savingsYear / 12)} / {isAr ? "شهر" : "month"}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-start py-2 border-b border-border/40">
+                  <span className="text-sm text-muted-foreground">{isAr ? "فترة الاسترداد" : "Payback Period"}</span>
+                  <div className="text-end">
+                    <span className="text-lg font-bold text-foreground">{formatNumber(results.paybackYears, 1)} {isAr ? "سنة" : "years"}</span>
+                    <p className="text-xs text-muted-foreground">{paybackContext}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-start py-2">
+                  <span className="text-sm text-muted-foreground">{isAr ? "عمر النظام" : "System Lifetime"}</span>
+                  <span className="text-lg font-bold text-foreground">25 {isAr ? "سنة" : "years"}</span>
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* AI Solar Advisor */}
-        <div className="mb-6 animate-fade-in print:hidden" style={{ animationDelay: "130ms" }}>
-          <AIAdvisor 
-            results={results}
-            locationName={locationName || ''}
-            monthlyConsumption={monthlyConsumption}
-            pvType={pvType}
-            buildingType={buildingType}
-          />
-        </div>
+            {/* Package Options */}
+            {results.packageOptions && results.packageOptions.length > 0 && (
+              <div>
+                <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" />
+                  {t('results.packageOptions')}
+                </h5>
+                <div className="grid md:grid-cols-3 gap-3">
+                  {results.packageOptions.map((option) => {
+                    const isSelected = option.packageKey === results.selectedPackage;
+                    const accent = { economy: "text-solar-green border-solar-green/30", standard: "text-primary border-primary/30", premium: "text-solar-gold border-solar-gold/30" };
+                    const a = accent[option.packageKey as keyof typeof accent] || accent.standard;
+                    return (
+                      <div key={option.packageKey} className={`p-4 rounded-xl border-2 bg-card ${isSelected ? a.replace("/30", "") : a} ${isSelected ? "shadow-md" : ""}`}>
+                        {isSelected && <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">{t('results.selected')}</span>}
+                        <p className={`font-semibold ${a.split(" ")[0]}`}>{option.package.name}</p>
+                        <p className="text-xs text-muted-foreground mb-2">{option.package.efficiency} • {option.package.areaPerKW} m²/kW</p>
+                        <div className="text-sm space-y-1">
+                          <div className="flex justify-between"><span className="text-muted-foreground">{t('results.totalCost')}</span><span className="font-mono font-semibold">{formatCurrency(option.totalCost)}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">{t('results.payback')}</span><span className="font-mono">{formatNumber(option.paybackYears, 1)} {isAr ? "سنة" : "yrs"}</span></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-        {/* System Comparison */}
-        <div className="mb-6">
-          <SystemComparison results={results} />
-        </div>
+            {/* 25-Year ROI Timeline */}
+            <ROITimeline
+              initialCost={results.totalCost}
+              yearlyEnergy={results.energyYear}
+              electricityPrice={results.climateData?.location ? (results.savingsYear / results.energyYear) : 1.95}
+            />
 
-        {/* Coverage Ratio & Key Info */}
-        <div className="grid md:grid-cols-1 gap-6 mb-6">
-          {/* Coverage Ratio */}
-          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "150ms" }}>
-            <h4 className="font-display text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
-              <Gauge className="w-5 h-5 text-primary" />
-              {t('results.coverageRatio')}
+            {/* Cumulative Savings Chart */}
+            <div className="bg-card rounded-2xl border border-border/50 p-5">
+              <h5 className="text-sm font-semibold text-foreground mb-4">{t('results.cumulativeSavings')}</h5>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={cumulativeSavings}>
+                    <defs>
+                      <linearGradient id="savingsGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--solar-gold))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--solar-gold))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [formatCurrency(value), "Cumulative"]} />
+                    <Area type="monotone" dataKey="cumulative" stroke="hsl(var(--solar-gold))" strokeWidth={2} fill="url(#savingsGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Why this conclusion */}
+            <div className="bg-card rounded-2xl border border-border/50 p-5">
+              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Info className="w-4 h-4 text-primary" />
+                {isAr ? "لماذا تم التوصل إلى هذا الاستنتاج" : "Why This Conclusion Was Reached"}
+              </h5>
+              <div className="space-y-2.5">
+                {rankedFactors.map((factor, i) => (
+                  <div key={factor.key} className="flex items-start gap-2.5">
+                    <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                      {factor.direction === "positive" ? <ArrowUp className="w-3.5 h-3.5 text-solar-green" /> : <ArrowDown className="w-3.5 h-3.5 text-destructive" />}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{rankLabels[i]}</p>
+                      <p className="text-xs text-foreground leading-relaxed">{factor.causalSentence}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* ==================== TAB 3: ASSUMPTIONS & CONDITIONS ==================== */}
+          <TabsContent value="assumptions" className="animate-fade-in space-y-6">
+            <h4 className="font-display text-lg font-semibold text-foreground">
+              {isAr ? "الافتراضات والشروط" : "Assumptions & Conditions"}
             </h4>
-            <p className="text-sm text-muted-foreground mb-4">{t('results.energyVsConsumption')}</p>
-            
-            <div className="relative h-4 bg-muted rounded-full overflow-hidden mb-3">
-              <div 
-                className="absolute h-full bg-gradient-to-r from-primary to-solar-green rounded-full transition-all duration-1000"
-                style={{ width: `${Math.min(coveragePercent, 100)}%` }}
-              />
-              {coveragePercent > 100 && (
-                <div 
-                  className="absolute h-full bg-solar-gold/50 rounded-full"
-                  style={{ left: '100%', width: `${Math.min(coveragePercent - 100, 100)}%`, transform: 'translateX(-100%)' }}
-                />
-              )}
+
+            {assumptionGroups.map((group, gi) => (
+              <div key={gi} className="bg-card rounded-2xl border border-border/50 p-5">
+                <h5 className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{group.category}</h5>
+                <ul className="space-y-2">
+                  {group.items.map((a, i) => (
+                    <li key={i} className="flex justify-between py-1.5 border-b border-border/40 last:border-0 text-sm">
+                      <span className="text-muted-foreground">{a.label}</span>
+                      <span className="font-medium text-foreground text-end">{a.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            {/* Scope & Limitations */}
+            <div className="bg-muted/40 rounded-xl border border-border/50 p-5">
+              <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-solar-gold" />
+                {isAr ? "النطاق والقيود" : "Scope and Limitations"}
+              </h5>
+              <div className="mb-3">
+                <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "مصمم لـ" : "Designed For"}</p>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  {(isAr ? [
+                    "المباني السكنية والتجارية والصناعية والزراعية في مصر.",
+                    "أنظمة الأسطح حتى ~500 ك.و.",
+                    "التقييم الأولي قبل الدراسات الميدانية.",
+                    "تركيبات الزاوية الثابتة القياسية.",
+                  ] : [
+                    "Residential, commercial, industrial, and agricultural buildings in Egypt.",
+                    "Rooftop systems up to ~500 kW.",
+                    "Preliminary assessment before detailed site studies.",
+                    "Standard fixed-tilt installations.",
+                  ]).map((item, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-solar-green mt-0.5">✓</span>{item}</li>)}
+                </ul>
+              </div>
+              <div className="border-t border-border/50 pt-3">
+                <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "غير مصمم لـ" : "Not Designed For"}</p>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  {(isAr ? [
+                    "تصميم وتكلفة البطاريات أو التخزين.",
+                    "تصاريح التركيب أو اختيار المقاولين.",
+                    "أنظمة التتبع الشمسي.",
+                    "حسابات تعريفة التصدير أو العداد الصافي.",
+                    "المواقع خارج مصر.",
+                  ] : [
+                    "Battery or storage system sizing and costing.",
+                    "Installation permitting or contractor selection.",
+                    "Tracking (single/dual-axis) solar systems.",
+                    "Export tariffs or net metering calculations.",
+                    "Locations outside Egypt.",
+                  ]).map((item, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-destructive mt-0.5">✗</span>{item}</li>)}
+                </ul>
+              </div>
             </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-3xl font-bold text-foreground">{formatNumber(results.coverageRatio * 100, 0)}%</span>
-              <span className="text-sm text-muted-foreground">
-                {results.coverageRatio >= 1 
-                  ? `✓ ${t('results.fullCoverage')}` 
-                  : results.coverageRatio >= 0.7 
-                    ? t('results.goodCoverage')
-                    : t('results.partialCoverage')}
-              </span>
+          </TabsContent>
+
+          {/* ==================== TAB 4: UNCERTAINTY & SENSITIVITY ==================== */}
+          <TabsContent value="uncertainty" className="animate-fade-in space-y-6">
+            <h4 className="font-display text-lg font-semibold text-foreground">
+              {isAr ? "عدم اليقين والحساسية" : "Uncertainty & Sensitivity"}
+            </h4>
+
+            <div className="space-y-3">
+              {scenarios.map((s, i) => (
+                <div key={i} className={`p-4 rounded-xl border ${s.color}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold">{s.name}</span>
+                    <span className="text-xs opacity-80">{s.desc}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs opacity-70">{isAr ? "فترة الاسترداد" : "Payback"}</p>
+                      <p className="font-mono font-semibold">{s.paybackRange}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs opacity-70">{isAr ? "التوفير السنوي" : "Annual Savings"}</p>
+                      <p className="font-mono font-semibold">{s.savingsRange}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
 
-        {/* Ideal System Sizing Analysis */}
-        {results.idealSizing && (
-          <div className="mb-6 print:hidden">
-            <IdealSizingCard analysis={results.idealSizing} />
-          </div>
-        )}
-
-        {/* 25-Year ROI Timeline */}
-        <div className="mb-6 print:hidden">
-          <ROITimeline
-            initialCost={results.totalCost}
-            yearlyEnergy={results.energyYear}
-            electricityPrice={results.climateData?.location ? (results.savingsYear / results.energyYear) : 1.95}
-          />
-        </div>
-
-        {/* Charts Grid */}
-        <div className="grid md:grid-cols-2 gap-6 print:hidden">
-          {/* Monthly Production Chart */}
-          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "250ms" }}>
-            <h4 className="font-display text-lg font-semibold text-foreground mb-1">{t('results.monthlyProduction')}</h4>
-            <p className="text-sm text-muted-foreground mb-6">{t('results.kWhGenerated')}</p>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                  />
-                  <YAxis 
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      boxShadow: "var(--shadow-lg)",
-                    }}
-                    labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-                    formatter={(value: number) => [`${value.toLocaleString()} kWh`, "Production"]}
-                  />
-                  <Bar 
-                    dataKey="production" 
-                    fill="hsl(var(--primary))"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="bg-muted/40 rounded-xl border border-border/50 p-4">
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? "النتائج قد تختلف بسبب تغيرات في أنماط الاستهلاك، أسعار الكهرباء، أداء المعدات، أو ظروف الطقس. النطاقات أعلاه توضح التأثير المحتمل لهذه التغيرات."
+                  : "Results may vary due to changes in consumption patterns, electricity prices, equipment performance, or weather conditions. The ranges above illustrate the potential impact of these variations."}
+              </p>
             </div>
-          </div>
-
-          {/* Cumulative Savings Chart */}
-          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
-            <h4 className="font-display text-lg font-semibold text-foreground mb-1">{t('results.cumulativeSavings')}</h4>
-            <p className="text-sm text-muted-foreground mb-6">{t('results.totalSavingsFirstYear')}</p>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={cumulativeSavings}>
-                  <defs>
-                    <linearGradient id="savingsGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--solar-gold))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--solar-gold))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                  />
-                  <YAxis 
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      boxShadow: "var(--shadow-lg)",
-                    }}
-                    labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-                    formatter={(value: number) => [formatCurrency(value), "Cumulative"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="cumulative"
-                    stroke="hsl(var(--solar-gold))"
-                    strokeWidth={2}
-                    fill="url(#savingsGradient)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Decision Explanation — after charts, before disclaimer */}
-        <div className="mt-8 mb-4 print:hidden">
-          <DecisionExplanation
-            results={results}
-            monthlyConsumption={monthlyConsumption}
-            rooftopArea={results.usableArea ? Math.round(results.usableArea / 0.65) : undefined}
-            pvType={pvType}
-            buildingType={buildingType}
-          />
-        </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Uncertainty Statement */}
-        <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
+        <div className="mt-6 flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
           <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
           <p className="text-xs text-muted-foreground">{t('results.uncertaintyStatement')}</p>
         </div>
 
-        {/* Summary Card */}
-        <div className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 animate-slide-up print:mt-4" style={{ animationDelay: "400ms" }}>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Actions Bar */}
+        <div className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-5 md:p-6 print:mt-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
-              <h4 className="font-display text-xl font-semibold text-foreground mb-2">
-                {t('results.readyToGoSolar')}
-              </h4>
-              <p className="text-muted-foreground max-w-lg">
-                {t('results.readyMessage', {
-                  kw: results.kWInstalled,
-                  savings: formatCurrency(results.savingsYear),
-                  co2: formatNumber(results.co2Saved),
-                })}
+              <h4 className="font-display text-lg font-semibold text-foreground mb-1">{t('results.readyToGoSolar')}</h4>
+              <p className="text-sm text-muted-foreground max-w-lg">
+                {t('results.readyMessage', { kw: results.kWInstalled, savings: formatCurrency(results.savingsYear), co2: formatNumber(results.co2Saved) })}
               </p>
             </div>
-            <div className="flex flex-wrap gap-3 print:hidden">
-              <button 
-                onClick={handleDownloadReport}
-                disabled={isGeneratingPdf}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGeneratingPdf ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50">
+                {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 {isGeneratingPdf ? "..." : t('results.downloadReport')}
               </button>
-              
-              <button 
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors"
-              >
+              <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
                 <Printer className="w-4 h-4" />
                 {t('results.printReport')}
               </button>
-
               {shareableParams && (
-                <ShareDialog 
-                  params={shareableParams}
-                  trigger={
-                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground font-medium hover:bg-muted transition-colors">
-                      <Share2 className="w-4 h-4" />
-                      {t('results.shareResults')}
-                    </button>
-                  }
-                />
+                <ShareDialog params={shareableParams} trigger={
+                  <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
+                    <Share2 className="w-4 h-4" />
+                    {t('results.shareResults')}
+                  </button>
+                } />
               )}
-              
-              <ContactExpertDialog 
-                results={results}
-                locationName={locationName}
-              />
+              <ContactExpertDialog results={results} locationName={locationName} />
             </div>
           </div>
+        </div>
+
+        {/* AI Advisor - separate from data sections */}
+        <div className="mt-6 print:hidden">
+          <AIAdvisor results={results} locationName={locationName || ''} monthlyConsumption={monthlyConsumption} pvType={pvType} buildingType={buildingType} />
         </div>
       </div>
     </section>
