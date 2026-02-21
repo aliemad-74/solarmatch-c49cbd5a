@@ -85,7 +85,7 @@ const HowItWorks = () => {
         <section className="container mx-auto px-4 mb-16">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">
-              {t('howItWorks.hero.title')}
+              {t('howItWorks.hero.titleUpdated')}
             </h1>
             <p className="text-lg text-muted-foreground">
               {t('howItWorks.hero.subtitle')}

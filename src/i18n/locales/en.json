@@ -2,7 +2,7 @@
   "header": {
     "title": "SolarMatch",
     "subtitle": "Rooftop Solar Feasibility",
-    "howItWorks": "How it Works",
+    "howItWorks": "How This System Works",
     "about": "About",
     "getStarted": "Get Started",
     "adminDashboard": "Dashboard",
@@ -14,7 +14,8 @@
   "hero": {
     "title": "Check Your Solar Feasibility",
     "subtitle": "Enter your location, roof area, and electricity usage — get a full technical and financial recommendation in seconds.",
-    "expectation": "You'll provide your roof size and energy bill details. We'll return system sizing, cost estimates, savings projections, and a clear recommendation."
+    "expectation": "You'll provide your roof size and energy bill details. We'll return system sizing, cost estimates, savings projections, and a clear recommendation.",
+    "productRole": "This tool provides a preliminary technical and financial assessment to support solar feasibility evaluation before detailed site studies."
   },
   "counter": {
     "reportsGenerated": "Reports Generated",
@@ -98,6 +99,7 @@
   "howItWorks": {
     "hero": {
       "title": "How SolarMatch Works",
+      "titleUpdated": "How This System Works",
       "subtitle": "Our engineering-grade calculator uses real NASA climate data and Egypt's actual electricity tariffs to give you accurate solar feasibility estimates"
     },
     "step": "Step",
@@ -331,6 +333,12 @@
     "titleHighlight": "Feasibility Report",
     "subtitle": "Based on your inputs and local climate data",
     "disclaimer": "Results are estimates based on current tariffs and assumed consumption patterns. Actual performance may vary.",
+    "uncertaintyStatement": "All results are estimates and may vary due to behavioral, technical, or market changes.",
+    "analysisSummary": {
+      "title": "Analysis Summary",
+      "line1": "Based on the inputs you provided, the system generated an overall feasibility conclusion.",
+      "line2": "The conclusion is shown first, followed by supporting metrics."
+    },
     "verdict": {
       "suitable": "Suitable for Solar Installation",
       "conditional": "Conditionally Suitable",

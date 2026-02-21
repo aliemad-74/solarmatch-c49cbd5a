@@ -120,12 +120,12 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
   // --- Financial context ---
   const paybackContext =
     results.paybackYears <= 5
-      ? isAr ? "ممتاز — أقل من المتوسط المصري (5-8 سنوات)" : "Excellent — below Egypt's typical range (5–8 years)"
+      ? isAr ? "أقل من النطاق النموذجي في مصر (5-8 سنوات)" : "Below Egypt's typical range of 5-8 years"
       : results.paybackYears <= 8
-      ? isAr ? "جيد — ضمن النطاق المصري النموذجي" : "Good — within Egypt's typical range"
+      ? isAr ? "ضمن النطاق النموذجي في مصر (5-8 سنوات)" : "Within Egypt's typical range of 5-8 years"
       : results.paybackYears <= 12
-      ? isAr ? "مقبول — أعلى من المتوسط قليلاً" : "Acceptable — slightly above average"
-      : isAr ? "مرتفع — يتجاوز نطاق التبرير المعتاد (12+ سنة)" : "High — exceeds typical justification range (12+ years)";
+      ? isAr ? "أعلى من النطاق النموذجي في مصر، ضمن 8-12 سنة" : "Above Egypt's typical range, within 8-12 years"
+      : isAr ? "يتجاوز 12 سنة، أعلى من نطاق التبرير النموذجي" : "Exceeds 12 years, above typical justification range";
 
   // --- Sensitivity scenarios ---
   const baseSavings = results.savingsYear;
@@ -227,7 +227,7 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
         <div className="flex items-center gap-2 mb-3">
           <Info className="w-5 h-5 text-primary" />
           <h4 className="font-display text-base font-semibold text-foreground">
-            {isAr ? "لماذا هذه التوصية؟" : "Why This Recommendation?"}
+            {isAr ? "لماذا تم التوصل إلى هذا الاستنتاج" : "Why This Conclusion Was Reached"}
           </h4>
         </div>
 
@@ -272,7 +272,10 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
       >
         <div className="flex items-center gap-2">
           <Settings2 className="w-4 h-4" />
-          {isAr ? "العرض المتقدم — الافتراضات والحساسية والتتبع" : "Advanced View — Assumptions, Sensitivity & Traceability"}
+          {showAdvanced 
+            ? (isAr ? "العرض الأساسي" : "Basic View")
+            : (isAr ? "العرض المتقدم" : "Advanced View")
+          }
         </div>
         {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </button>
@@ -362,7 +365,7 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-semibold text-foreground">
-                  {isAr ? "كيف تتغير النتائج إذا تغيرت الظروف" : "How Results Change If Conditions Vary"}
+                  {isAr ? "كيف تتغير النتائج في ظروف مختلفة" : "How Results Change Under Different Conditions"}
                 </span>
               </div>
               {showSensitivity ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -400,32 +403,58 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
 
           {/* Scope & Limitations */}
           <div className="bg-muted/40 rounded-xl border border-border/50 p-4">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-solar-gold" />
               <span className="text-sm font-semibold text-foreground">
-                {isAr ? "نطاق النظام وحدوده" : "System Scope & Limitations"}
+                {isAr ? "النطاق والقيود" : "Scope and Limitations"}
               </span>
             </div>
-            <ul className="space-y-1.5 text-xs text-muted-foreground">
-              {(isAr ? [
-                "مصمم للمواقع في مصر — لا يناسب دول أخرى.",
-                "يعتمد على الاستهلاك الشهري الثابت. تغيير نمط الاستهلاك يؤثر على الدقة.",
-                "لا يحسب تكاليف البطاريات أو أنظمة التخزين.",
-                "لا يشمل تعقيدات التركيب أو متطلبات الربط بالشبكة.",
-                "التقدير مبني على بيانات متوسطة؛ الأداء الفعلي قد يختلف.",
-              ] : [
-                "Designed for Egypt-based locations only.",
-                "Assumes constant monthly consumption. Changes in usage patterns affect accuracy.",
-                "Does not calculate battery or storage system costs.",
-                "Does not account for installation complexity or grid-connection requirements.",
-                "Estimates are based on average data; actual performance may vary.",
-              ]).map((item, i) => (
-                <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-solar-gold mt-0.5">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "مصمم لـ" : "Designed For"}</p>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                {(isAr ? [
+                  "المباني السكنية والتجارية والصناعية والزراعية في مصر.",
+                  "أنظمة الأسطح حتى ~500 ك.و.",
+                  "التقييم الأولي قبل الدراسات الميدانية التفصيلية.",
+                  "تركيبات الزاوية الثابتة القياسية.",
+                ] : [
+                  "Residential, commercial, industrial, and agricultural buildings in Egypt.",
+                  "Rooftop systems up to ~500 kW.",
+                  "Preliminary assessment before detailed site studies.",
+                  "Standard fixed-tilt installations.",
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <span className="text-solar-green mt-0.5">✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="border-t border-border/50 pt-3">
+              <p className="text-xs font-semibold text-foreground mb-1.5">{isAr ? "غير مصمم لـ" : "Not Designed For"}</p>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                {(isAr ? [
+                  "تصميم وتكلفة البطاريات أو أنظمة التخزين.",
+                  "تصاريح التركيب أو اختيار المقاولين.",
+                  "أنظمة التتبع الشمسي (أحادي أو ثنائي المحور).",
+                  "حسابات تعريفة التصدير أو العداد الصافي.",
+                  "المواقع خارج مصر.",
+                ] : [
+                  "Battery or storage system sizing and costing.",
+                  "Installation permitting or contractor selection.",
+                  "Tracking (single/dual-axis) solar systems.",
+                  "Export tariffs or net metering calculations.",
+                  "Locations outside Egypt.",
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <span className="text-destructive mt-0.5">✗</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       )}

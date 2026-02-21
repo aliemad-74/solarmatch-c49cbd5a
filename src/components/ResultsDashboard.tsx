@@ -98,6 +98,19 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </p>
         </div>
 
+        {/* Analysis Summary Transition */}
+        <div className="mb-6 p-6 bg-muted/30 rounded-2xl border border-border/50 animate-fade-in">
+          <h4 className="font-display text-lg font-semibold text-foreground mb-2">
+            {t('results.analysisSummary.title')}
+          </h4>
+          <p className="text-sm text-muted-foreground mb-1">
+            {t('results.analysisSummary.line1')}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {t('results.analysisSummary.line2')}
+          </p>
+        </div>
+
         {/* ==================== LAYER 1: Decision Summary ==================== */}
         <div className={`mb-4 p-6 rounded-2xl border-2 ${fc.bg} animate-fade-in`}>
           <div className="flex items-start gap-4">
@@ -520,10 +533,10 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           />
         </div>
 
-        {/* Disclaimer */}
+        {/* Uncertainty Statement */}
         <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-muted/50 border border-border/50">
           <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-          <p className="text-xs text-muted-foreground">{t('results.disclaimer')}</p>
+          <p className="text-xs text-muted-foreground">{t('results.uncertaintyStatement')}</p>
         </div>
 
         {/* Summary Card */}
