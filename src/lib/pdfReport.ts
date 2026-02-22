@@ -146,6 +146,18 @@ const labels = {
   },
 };
 
+// Helper: load font file as base64
+async function loadFontAsBase64(url: string): Promise<string> {
+  const response = await fetch(url);
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 export async function generateSolarReport(
   results: SolarCalculation,
   locationName?: string,
@@ -157,6 +169,25 @@ export async function generateSolarReport(
   const margin = 18;
   let yPos = margin;
   const L = labels[language];
+  const isAr = language === "ar";
+
+  // Load Arabic font if needed
+  if (isAr) {
+    try {
+      const [regularBase64, boldBase64] = await Promise.all([
+        loadFontAsBase64('/fonts/Amiri-Regular.ttf'),
+        loadFontAsBase64('/fonts/Amiri-Bold.ttf'),
+      ]);
+      doc.addFileToVFS('Amiri-Regular.ttf', regularBase64);
+      doc.addFileToVFS('Amiri-Bold.ttf', boldBase64);
+      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+      doc.addFont('Amiri-Bold.ttf', 'Amiri', 'bold');
+    } catch (e) {
+      console.warn('Failed to load Arabic font:', e);
+    }
+  }
+
+  const fontFamily = isAr ? 'Amiri' : 'helvetica';
 
   // Helper functions
   const addText = (
@@ -172,7 +203,7 @@ export async function generateSolarReport(
   ) => {
     const { fontSize = 10, fontStyle = "normal", color = [0, 0, 0], align = "left" } = options || {};
     doc.setFontSize(fontSize);
-    doc.setFont("helvetica", fontStyle);
+    doc.setFont(fontFamily, fontStyle);
     doc.setTextColor(...color);
     doc.text(text, x, y, { align });
     return fontSize * 0.4 + 2;
@@ -572,7 +603,7 @@ export async function generateSolarReport(
 
     const splitReason = doc.splitTextToSize(results.connectionRecommendation.reason, pageWidth - margin * 2 - 18);
     doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontFamily, "normal");
     doc.setTextColor(120, 120, 120);
     doc.text(splitReason, margin + 9, yPos + 14);
 
@@ -594,7 +625,7 @@ export async function generateSolarReport(
     results.warnings.forEach((warning) => {
       const splitWarning = doc.splitTextToSize("• " + warning, pageWidth - margin * 2 - 14);
       doc.setFontSize(7);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(fontFamily, "normal");
       doc.setTextColor(140, 100, 40);
       doc.text(splitWarning, margin + 8, yPos);
       yPos += splitWarning.length * 4.5 + 2;
@@ -611,7 +642,7 @@ export async function generateSolarReport(
   doc.roundedRect(margin, yPos - 2, pageWidth - margin * 2, 18, 3, 3, "F");
   const disclaimerLines = doc.splitTextToSize(L.disclaimer, pageWidth - margin * 2 - 12);
   doc.setFontSize(6.5);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(fontFamily, "normal");
   doc.setTextColor(130, 130, 130);
   doc.text(disclaimerLines, margin + 6, yPos + 5);
   yPos += 22;
@@ -631,7 +662,7 @@ export async function generateSolarReport(
     doc.line(margin, pageHeight - 16, pageWidth - margin, pageHeight - 16);
 
     doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontFamily, "normal");
     doc.setTextColor(130, 130, 130);
     doc.text(L.generatedBy, margin, pageHeight - 7);
     doc.text("solarmatch.lovable.app", margin, pageHeight - 3);
