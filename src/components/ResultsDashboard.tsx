@@ -1,4 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -10,10 +10,12 @@ import AIAdvisor from "./AIAdvisor";
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { generateSolarReport } from "@/lib/pdfReport";
+import { generateSolarReport, ReportLanguage } from "@/lib/pdfReport";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -29,6 +31,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [reportLanguage, setReportLanguage] = useState<ReportLanguage>(isAr ? "ar" : "en");
 
   if (!results || !isVisible) return null;
 
@@ -36,7 +39,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
     if (!results || isGeneratingPdf) return;
     setIsGeneratingPdf(true);
     try {
-      await generateSolarReport(results, locationName);
+      await generateSolarReport(results, locationName, reportLanguage);
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
@@ -613,32 +616,57 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
         </div>
 
         {/* Actions Bar */}
-        <div className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-5 md:p-6 print:mt-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h4 className="font-display text-lg font-semibold text-foreground mb-1">{t('results.readyToGoSolar')}</h4>
-              <p className="text-sm text-muted-foreground max-w-lg">
+        <div className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 print:mt-4">
+          <div className="flex flex-col gap-6">
+            {/* CTA text */}
+            <div className="text-center md:text-start">
+              <h4 className="font-display text-xl md:text-2xl font-bold text-foreground mb-2">{t('results.readyToGoSolar')}</h4>
+              <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
                 {t('results.readyMessage', { kw: results.kWInstalled, savings: formatCurrency(results.savingsYear), co2: formatNumber(results.co2Saved) })}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2 print:hidden">
-              <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50">
-                {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {isGeneratingPdf ? "..." : t('results.downloadReport')}
-              </button>
-              <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
+
+            {/* Contact Expert — Primary CTA */}
+            <div className="print:hidden">
+              <ContactExpertDialog results={results} locationName={locationName} trigger={
+                <Button size="lg" className="w-full md:w-auto gradient-solar text-primary-foreground shadow-glow text-base md:text-lg px-8 py-6 gap-3 font-semibold">
+                  <Phone className="w-5 h-5" />
+                  {t('results.contactExpert')}
+                </Button>
+              } />
+            </div>
+
+            {/* Secondary actions */}
+            <div className="flex flex-wrap items-center gap-3 print:hidden">
+              {/* Report download with language selector */}
+              <div className="flex items-center gap-2 bg-card rounded-xl border border-border p-1.5">
+                <Select value={reportLanguage} onValueChange={(v: ReportLanguage) => setReportLanguage(v)}>
+                  <SelectTrigger className="w-[100px] h-9 text-xs border-0 bg-muted/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">🇬🇧 English</SelectItem>
+                    <SelectItem value="ar">🇪🇬 عربي</SelectItem>
+                  </SelectContent>
+                </Select>
+                <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors disabled:opacity-50">
+                  {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {isGeneratingPdf ? "..." : t('results.downloadReport')}
+                </button>
+              </div>
+              
+              <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
                 <Printer className="w-4 h-4" />
                 {t('results.printReport')}
               </button>
               {shareableParams && (
                 <ShareDialog params={shareableParams} trigger={
-                  <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
                     <Share2 className="w-4 h-4" />
                     {t('results.shareResults')}
                   </button>
                 } />
               )}
-              <ContactExpertDialog results={results} locationName={locationName} />
             </div>
           </div>
         </div>
