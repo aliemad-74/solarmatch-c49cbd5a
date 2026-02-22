@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Minus } from "lucide-react";
+import { Search } from "lucide-react";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 
@@ -192,35 +192,22 @@ const UsersTable = () => {
                         {format(new Date(user.created_at), "PP", { locale: dateLocale })}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              updateProfileLimitMutation.mutate({
-                                userId: user.user_id,
-                                newLimit: Math.max(0, user.report_limit - 1),
-                              })
+                        <Input
+                          type="number"
+                          min={0}
+                          className="w-20 h-8 text-center"
+                          defaultValue={user.report_limit}
+                          key={user.report_limit}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val >= 0 && val !== user.report_limit) {
+                              updateProfileLimitMutation.mutate({ userId: user.user_id, newLimit: val });
                             }
-                            disabled={user.report_limit <= 0}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              updateProfileLimitMutation.mutate({
-                                userId: user.user_id,
-                                newLimit: user.report_limit + 1,
-                              })
-                            }
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          }}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
@@ -274,35 +261,22 @@ const UsersTable = () => {
                         {format(new Date(user.created_at), "PP", { locale: dateLocale })}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              updateLegacyLimitMutation.mutate({
-                                userId: user.id,
-                                newLimit: Math.max(0, user.report_limit - 1),
-                              })
+                        <Input
+                          type="number"
+                          min={0}
+                          className="w-20 h-8 text-center"
+                          defaultValue={user.report_limit}
+                          key={user.report_limit}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val >= 0 && val !== user.report_limit) {
+                              updateLegacyLimitMutation.mutate({ userId: user.id, newLimit: val });
                             }
-                            disabled={user.report_limit <= 0}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              updateLegacyLimitMutation.mutate({
-                                userId: user.id,
-                                newLimit: user.report_limit + 1,
-                              })
-                            }
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          }}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
