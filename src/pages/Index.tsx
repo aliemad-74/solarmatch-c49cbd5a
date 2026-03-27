@@ -214,7 +214,7 @@ const Index = () => {
         <div id="map-section">
           <ScrollReveal>
             <MapSection
-              onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setUserEditedConfig(true); }}
+              onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); }}
               onClimateDataFetched={(data) => {
                 setClimateData(data);
                 if (initialLocationLoadRef.current) {
