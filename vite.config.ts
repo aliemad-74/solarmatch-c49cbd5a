@@ -19,6 +19,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ["leaflet", "@turf/turf"],
+    include: ["@turf/turf"],
   },
 }));

@@ -3,19 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
 import * as turf from "@turf/turf";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { fetchClimateData, searchLocation, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
-// Fix Leaflet default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
+const GOOGLE_MAPS_API_KEY = "AIzaSyBpp8YMnGRI_O2c48bdPc6gS_vbMRVHWJo";
 
 interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
@@ -23,14 +16,12 @@ interface MapSectionProps {
   onLocationChange?: (locationName: string) => void;
 }
 
-// Default location (Cairo)
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
-
 const MIN_POLYGON_POINTS = 4;
 
 type MapSize = "normal" | "large";
 
-const MapSection = ({ 
+const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
@@ -39,103 +30,34 @@ const MapSection = ({
   const [searchResults, setSearchResults] = useState<{ lat: number; lng: number; name: string }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [polygonPoints, setPolygonPoints] = useState<L.LatLng[]>([]);
+  const [polygonPoints, setPolygonPoints] = useState<google.maps.LatLngLiteral[]>([]);
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; name: string }>(DEFAULT_LOCATION);
+  const [currentLocation, setCurrentLocation] = useState(DEFAULT_LOCATION);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
-  
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const polygonLayerRef = useRef<L.Polygon | null>(null);
-  const pointMarkersRef = useRef<L.CircleMarker[]>([]);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const { t, i18n } = useTranslation();
-  const isArabic = i18n.language === 'ar';
+  const isArabic = i18n.language === "ar";
 
-  // Initialize map
-  useEffect(() => {
-    if (mapContainerRef.current && !mapRef.current) {
-      mapRef.current = L.map(mapContainerRef.current).setView(
-        [currentLocation.lat, currentLocation.lng],
-        20
-      );
-
-      // ESRI World Imagery (satellite view) - free for basic use
-      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
-        maxZoom: 19,
-      }).addTo(mapRef.current);
-    }
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
-
-  // Invalidate map size when container size changes
-  useEffect(() => {
-    if (mapRef.current) {
-      setTimeout(() => {
-        mapRef.current?.invalidateSize();
-      }, 300);
-    }
-  }, [mapSize]);
-
-  // Reference to track if we should complete polygon
-  const shouldCompleteRef = useRef<L.LatLng[] | null>(null);
-
-  // Effect to handle polygon completion outside of state setter
-  useEffect(() => {
-    if (shouldCompleteRef.current) {
-      const points = shouldCompleteRef.current;
-      shouldCompleteRef.current = null;
-      completePolygon(points);
-    }
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
 
-  // Update click handler when drawing mode changes
-  useEffect(() => {
-    if (mapRef.current) {
-      mapRef.current.off("click");
-      if (isDrawingMode) {
-        mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
-          setPolygonPoints(prev => {
-            // Check if clicking near the first point to close polygon
-            if (prev.length >= MIN_POLYGON_POINTS) {
-              const firstPoint = prev[0];
-              const distance = e.latlng.distanceTo(firstPoint);
-              if (distance < 5) {
-                shouldCompleteRef.current = prev;
-                return prev;
-              }
-            }
-            return [...prev, e.latlng];
-          });
-        });
-      }
-    }
-  }, [isDrawingMode]);
-
   // Calculate polygon area using Turf.js
-  const calculatePolygonArea = useCallback((points: L.LatLng[]) => {
+  const calculatePolygonArea = useCallback((points: google.maps.LatLngLiteral[]) => {
     if (points.length < MIN_POLYGON_POINTS) return 0;
-
-    const coordinates = points.map((ll) => [ll.lng, ll.lat]);
+    const coordinates = points.map((p) => [p.lng, p.lat]);
     coordinates.push(coordinates[0]);
-
     const polygon = turf.polygon([coordinates]);
-    const areaInSqMeters = turf.area(polygon);
-    
-    return Math.round(areaInSqMeters * 100) / 100;
+    return Math.round(turf.area(polygon) * 100) / 100;
   }, []);
 
-  // Recalculate area whenever points change (for dragging updates)
+  // Recalculate area when points change (after drawing is done)
   useEffect(() => {
     if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
       const area = calculatePolygonArea(polygonPoints);
@@ -146,167 +68,98 @@ const MapSection = ({
     }
   }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
 
-  // Update polygon visualization
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    // Clear existing polygon and markers
-    if (polygonLayerRef.current) {
-      mapRef.current.removeLayer(polygonLayerRef.current);
-      polygonLayerRef.current = null;
-    }
-    pointMarkersRef.current.forEach(marker => mapRef.current?.removeLayer(marker));
-    pointMarkersRef.current = [];
-
-    // Draw new polygon if we have points
-    if (polygonPoints.length >= 2) {
-      const positions: L.LatLngExpression[] = polygonPoints.map(p => [p.lat, p.lng]);
-      polygonLayerRef.current = L.polygon(positions, {
-        color: "#14b8a6",
-        fillColor: "#14b8a6",
-        fillOpacity: 0.4,
-        weight: 2,
-      }).addTo(mapRef.current);
-    }
-
-    // Draw draggable point markers (only when not in drawing mode for better UX)
-    polygonPoints.forEach((point, index) => {
-      const marker = L.marker([point.lat, point.lng], {
-        draggable: !isDrawingMode,
-        icon: L.divIcon({
-          className: 'custom-marker',
-          html: `<div style="
-            width: 8px;
-            height: 8px;
-            background: ${index === 0 ? '#f59e0b' : '#14b8a6'};
-            border: 1px solid white;
-            border-radius: 50%;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            cursor: ${isDrawingMode ? 'crosshair' : 'grab'};
-          "></div>`,
-          iconSize: [8, 8],
-          iconAnchor: [4, 4],
-        }),
-      }).addTo(mapRef.current!);
-
-      // Handle drag events to update polygon points
-      if (!isDrawingMode) {
-        marker.on('drag', (e: L.LeafletEvent) => {
-          const target = e.target as L.Marker;
-          const newLatLng = target.getLatLng();
-          setPolygonPoints(prev => {
-            const updated = [...prev];
-            updated[index] = newLatLng;
-            return updated;
-          });
-        });
+  // Fetch climate data
+  const fetchClimateForLocation = useCallback(
+    async (lat: number, lng: number) => {
+      setIsLoadingClimate(true);
+      try {
+        const data = await fetchClimateData(lat, lng);
+        setClimateData(data);
+        onClimateDataFetched?.(data);
+      } catch (error) {
+        console.error("Failed to fetch climate data:", error);
+      } finally {
+        setIsLoadingClimate(false);
       }
-
-      pointMarkersRef.current.push(marker as any);
-    });
-  }, [polygonPoints, isDrawingMode]);
-
-  // Fetch climate data when location changes
-  const fetchClimateForLocation = useCallback(async (lat: number, lng: number) => {
-    setIsLoadingClimate(true);
-    try {
-      const data = await fetchClimateData(lat, lng);
-      setClimateData(data);
-      if (onClimateDataFetched) {
-        onClimateDataFetched(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch climate data:", error);
-    } finally {
-      setIsLoadingClimate(false);
-    }
-  }, [onClimateDataFetched]);
-
-  // Complete polygon drawing and update location based on polygon center
-  const completePolygon = useCallback(async (points: L.LatLng[]) => {
-    if (points.length >= MIN_POLYGON_POINTS) {
-      const area = calculatePolygonArea(points);
-      setCalculatedArea(area);
-      if (onAreaCalculated && area > 0) {
-        onAreaCalculated(area);
-      }
-
-      // Calculate the center of the polygon using Turf.js
-      const coordinates = points.map((ll) => [ll.lng, ll.lat]);
-      coordinates.push(coordinates[0]);
-      const polygon = turf.polygon([coordinates]);
-      const centroid = turf.centroid(polygon);
-      const [lng, lat] = centroid.geometry.coordinates;
-
-      // Update location based on polygon center and fetch climate data
-      const locationName = await getLocationName(lat, lng);
-      setCurrentLocation({ lat, lng, name: locationName });
-      if (onLocationChange) {
-        onLocationChange(locationName);
-      }
-      fetchClimateForLocation(lat, lng);
-    }
-    setIsDrawingMode(false);
-  }, [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]);
-
-  // Update location and fetch climate data
-  const updateLocation = useCallback(async (lat: number, lng: number, name?: string) => {
-    const locationName = name || await getLocationName(lat, lng);
-    setCurrentLocation({ lat, lng, name: locationName });
-    
-    if (onLocationChange) {
-      onLocationChange(locationName);
-    }
-    
-    if (mapRef.current) {
-      mapRef.current.setView([lat, lng], 20);
-    }
-    
-    // Fetch climate data for new location
-    setIsLoadingClimate(true);
-    try {
-      const data = await fetchClimateData(lat, lng);
-      setClimateData(data);
-      if (onClimateDataFetched) {
-        onClimateDataFetched(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch climate data:", error);
-    } finally {
-      setIsLoadingClimate(false);
-    }
-  }, [onClimateDataFetched, onLocationChange]);
+    },
+    [onClimateDataFetched]
+  );
 
   // Initial climate data fetch
   useEffect(() => {
     fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
   }, []);
 
-  // Detect location using GPS
+  // Complete polygon
+  const completePolygon = useCallback(
+    async (points: google.maps.LatLngLiteral[]) => {
+      if (points.length >= MIN_POLYGON_POINTS) {
+        const area = calculatePolygonArea(points);
+        setCalculatedArea(area);
+        if (onAreaCalculated && area > 0) {
+          onAreaCalculated(area);
+        }
+
+        const coordinates = points.map((p) => [p.lng, p.lat]);
+        coordinates.push(coordinates[0]);
+        const polygon = turf.polygon([coordinates]);
+        const centroid = turf.centroid(polygon);
+        const [lng, lat] = centroid.geometry.coordinates;
+
+        const locationName = await getLocationName(lat, lng);
+        setCurrentLocation({ lat, lng, name: locationName });
+        onLocationChange?.(locationName);
+        fetchClimateForLocation(lat, lng);
+      }
+      setIsDrawingMode(false);
+    },
+    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]
+  );
+
+  // Update location
+  const updateLocation = useCallback(
+    async (lat: number, lng: number, name?: string) => {
+      const locationName = name || (await getLocationName(lat, lng));
+      setCurrentLocation({ lat, lng, name: locationName });
+      onLocationChange?.(locationName);
+
+      if (mapRef.current) {
+        mapRef.current.panTo({ lat, lng });
+        mapRef.current.setZoom(20);
+      }
+
+      setIsLoadingClimate(true);
+      try {
+        const data = await fetchClimateData(lat, lng);
+        setClimateData(data);
+        onClimateDataFetched?.(data);
+      } catch (error) {
+        console.error("Failed to fetch climate data:", error);
+      } finally {
+        setIsLoadingClimate(false);
+      }
+    },
+    [onClimateDataFetched, onLocationChange]
+  );
+
+  // GPS detection
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      toast.error(t('map.gpsNotSupported'));
+      toast.error(t("map.gpsNotSupported"));
       return;
     }
-
     setIsDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude: lat, longitude: lng } = position.coords;
-        await updateLocation(lat, lng);
-        toast.success(t('map.locationDetected'));
+        await updateLocation(position.coords.latitude, position.coords.longitude);
+        toast.success(t("map.locationDetected"));
         setIsDetectingLocation(false);
       },
-      (error) => {
-        console.error('GPS error:', error);
-        toast.error(t('map.locationError'));
+      () => {
+        toast.error(t("map.locationError"));
         setIsDetectingLocation(false);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, [t, updateLocation]);
 
@@ -314,19 +167,11 @@ const MapSection = ({
   const clearPolygon = useCallback(() => {
     setPolygonPoints([]);
     setCalculatedArea(null);
-    
-    // Clear polygon layer
-    if (polygonLayerRef.current && mapRef.current) {
-      mapRef.current.removeLayer(polygonLayerRef.current);
-      polygonLayerRef.current = null;
-    }
-    pointMarkersRef.current.forEach(marker => mapRef.current?.removeLayer(marker));
-    pointMarkersRef.current = [];
   }, []);
 
   // Undo last point
   const undoLastPoint = useCallback(() => {
-    setPolygonPoints(prev => prev.slice(0, -1));
+    setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
   // Toggle drawing mode
@@ -342,58 +187,117 @@ const MapSection = ({
     }
   }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
-  // Debounced search ref
+  // Map click handler
+  const handleMapClick = useCallback(
+    (e: google.maps.MapMouseEvent) => {
+      if (!isDrawingMode || !e.latLng) return;
+
+      const newPoint = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+
+      setPolygonPoints((prev) => {
+        if (prev.length >= MIN_POLYGON_POINTS) {
+          const first = prev[0];
+          const dist = google.maps.geometry?.spherical?.computeDistanceBetween(
+            new google.maps.LatLng(newPoint.lat, newPoint.lng),
+            new google.maps.LatLng(first.lat, first.lng)
+          );
+          if (dist !== undefined && dist < 5) {
+            setTimeout(() => completePolygon(prev), 0);
+            return prev;
+          }
+        }
+        return [...prev, newPoint];
+      });
+    },
+    [isDrawingMode, completePolygon]
+  );
+
+  // Debounced search
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-search as user types with debounce
   useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     if (!searchQuery.trim()) {
       setSearchResults([]);
       return;
     }
-
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
         const results = await searchLocation(searchQuery);
         setSearchResults(results);
-      } catch (error) {
-        console.error("Search failed:", error);
+      } catch {
+        console.error("Search failed");
       } finally {
         setIsSearching(false);
       }
     }, 300);
-
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
   }, [searchQuery]);
 
-  // Select a search result
   const selectSearchResult = (result: { lat: number; lng: number; name: string }) => {
     updateLocation(result.lat, result.lng, result.name.split(",")[0]);
     setSearchResults([]);
     setSearchQuery("");
   };
 
+  // Marker drag handler
+  const handleMarkerDrag = useCallback(
+    (index: number, e: google.maps.MapMouseEvent) => {
+      if (!e.latLng) return;
+      setPolygonPoints((prev) => {
+        const updated = [...prev];
+        updated[index] = { lat: e.latLng!.lat(), lng: e.latLng!.lng() };
+        return updated;
+      });
+    },
+    []
+  );
+
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+  }, []);
+
+  const mapContainerStyle = {
+    width: "100%",
+    height: "100%",
+  };
+
+  const mapOptions: google.maps.MapOptions = {
+    mapTypeId: "satellite",
+    disableDefaultUI: true,
+    zoomControl: true,
+    tilt: 0,
+    maxZoom: 22,
+    draggableCursor: isDrawingMode ? "crosshair" : "grab",
+  };
+
+  if (!isLoaded) {
+    return (
+      <section className="relative">
+        <div className="absolute inset-0 gradient-hero" />
+        <div className="relative container mx-auto px-4 pt-24 pb-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative">
       <div className="absolute inset-0 gradient-hero" />
-      
+
       <div className="relative container mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8 animate-fade-in">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
-            {isArabic ? 'اكتشف' : 'Find Your'} <span className="text-gradient-solar">{isArabic ? 'إمكاناتك الشمسية' : 'Solar Potential'}</span>
+            {isArabic ? "اكتشف" : "Find Your"}{" "}
+            <span className="text-gradient-solar">{isArabic ? "إمكاناتك الشمسية" : "Solar Potential"}</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            {t('map.subtitle')}
-          </p>
+          <p className="text-muted-foreground max-w-xl mx-auto">{t("map.subtitle")}</p>
         </div>
 
         {/* Search Bar */}
@@ -411,8 +315,7 @@ const MapSection = ({
               <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
             )}
           </div>
-          
-          {/* Search Results Dropdown */}
+
           {searchResults.length > 0 && (
             <div className="absolute start-0 end-0 z-[100] mt-2 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
               {searchResults.map((result, index) => (
@@ -439,12 +342,12 @@ const MapSection = ({
             {isDetectingLocation ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {t('map.detectingLocation')}
+                {t("map.detectingLocation")}
               </>
             ) : (
               <>
                 <Navigation className="w-4 h-4" />
-                {t('map.detectLocation')}
+                {t("map.detectLocation")}
               </>
             )}
           </Button>
@@ -460,23 +363,19 @@ const MapSection = ({
             {isDrawingMode ? (
               <>
                 <MousePointer className="w-4 h-4" />
-                {isArabic ? 'إنهاء الرسم' : 'Finish Drawing'}
+                {isArabic ? "إنهاء الرسم" : "Finish Drawing"}
               </>
             ) : (
               <>
                 <PenTool className="w-4 h-4" />
-                {isArabic ? 'ارسم السطح' : 'Draw Rooftop'}
+                {isArabic ? "ارسم السطح" : "Draw Rooftop"}
               </>
             )}
           </Button>
           {isDrawingMode && polygonPoints.length > 0 && (
-            <Button
-              onClick={undoLastPoint}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
+            <Button onClick={undoLastPoint} variant="outline" className="flex items-center gap-2">
               <Undo2 className="w-4 h-4" />
-              {isArabic ? 'تراجع' : 'Undo'}
+              {isArabic ? "تراجع" : "Undo"}
             </Button>
           )}
           {(polygonPoints.length > 0 || calculatedArea !== null) && (
@@ -486,7 +385,7 @@ const MapSection = ({
               className="flex items-center gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
             >
               <Trash2 className="w-4 h-4" />
-              {isArabic ? 'مسح' : 'Clear'}
+              {isArabic ? "مسح" : "Clear"}
             </Button>
           )}
         </div>
@@ -495,13 +394,13 @@ const MapSection = ({
         {isDrawingMode && (
           <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
-              {polygonPoints.length < MIN_POLYGON_POINTS 
-                ? (isArabic 
-                    ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
-                    : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`)
-                : (isArabic
-                    ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو 'إنهاء الرسم'`
-                    : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`)}
+              {polygonPoints.length < MIN_POLYGON_POINTS
+                ? isArabic
+                  ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
+                  : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
+                : isArabic
+                  ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو 'إنهاء الرسم'`
+                  : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`}
             </p>
           </div>
         )}
@@ -510,7 +409,7 @@ const MapSection = ({
         {calculatedArea !== null && (
           <div className="text-center mb-4 animate-scale-in">
             <div className="inline-flex items-center gap-2 bg-solar-green/20 text-solar-green px-4 py-2 rounded-lg border border-solar-green/30">
-              <span className="text-sm font-medium">{t('map.rooftopArea')}:</span>
+              <span className="text-sm font-medium">{t("map.rooftopArea")}:</span>
               <span className="text-lg font-bold">{calculatedArea.toFixed(1)} m²</span>
             </div>
           </div>
@@ -525,7 +424,7 @@ const MapSection = ({
             className="flex items-center gap-1"
           >
             <Minimize2 className="w-4 h-4" />
-            {isArabic ? 'عادي' : 'Normal'}
+            {isArabic ? "عادي" : "Normal"}
           </Button>
           <Button
             onClick={() => setMapSize("large")}
@@ -534,43 +433,81 @@ const MapSection = ({
             className="flex items-center gap-1"
           >
             <Maximize2 className="w-4 h-4" />
-            {isArabic ? 'كبير' : 'Large'}
+            {isArabic ? "كبير" : "Large"}
           </Button>
         </div>
 
         {/* Map Container */}
-        <div 
+        <div
           className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in transition-all duration-300"
           style={{ animationDelay: "0.2s" }}
         >
-          <div 
+          <div
             className={`bg-muted relative ${
-              mapSize === "normal" 
-                ? "aspect-[16/9] md:aspect-[21/9]" 
+              mapSize === "normal"
+                ? "aspect-[16/9] md:aspect-[21/9]"
                 : "aspect-square md:aspect-[16/9] min-h-[500px]"
             }`}
           >
-            <div 
-              ref={mapContainerRef} 
-              className="w-full h-full z-0"
-              style={{ cursor: isDrawingMode ? "crosshair" : "grab" }}
-            />
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+              zoom={20}
+              options={mapOptions}
+              onClick={handleMapClick}
+              onLoad={onMapLoad}
+            >
+              {/* Polygon */}
+              {polygonPoints.length >= 2 && (
+                <Polygon
+                  paths={polygonPoints}
+                  options={{
+                    fillColor: "#14b8a6",
+                    fillOpacity: 0.4,
+                    strokeColor: "#14b8a6",
+                    strokeWeight: 2,
+                    clickable: false,
+                  }}
+                />
+              )}
+
+              {/* Point markers */}
+              {polygonPoints.map((point, index) => (
+                <Marker
+                  key={`point-${index}-${point.lat}-${point.lng}`}
+                  position={point}
+                  draggable={!isDrawingMode}
+                  onDrag={(e) => handleMarkerDrag(index, e)}
+                  icon={{
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 5,
+                    fillColor: index === 0 ? "#f59e0b" : "#14b8a6",
+                    fillOpacity: 1,
+                    strokeColor: "#ffffff",
+                    strokeWeight: 1.5,
+                  }}
+                />
+              ))}
+            </GoogleMap>
           </div>
-          
+
           {/* Map Overlay Info */}
           <div className="absolute bottom-4 start-4 glass rounded-lg px-4 py-2 shadow-lg z-[1000]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
-              <span className="text-sm font-medium text-foreground">{currentLocation.name}, {isArabic ? 'مصر' : 'Egypt'}</span>
+              <span className="text-sm font-medium text-foreground">
+                {currentLocation.name}, {isArabic ? "مصر" : "Egypt"}
+              </span>
             </div>
             {isLoadingClimate ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                {isArabic ? 'جاري تحميل بيانات المناخ...' : 'Loading climate data...'}
+                {isArabic ? "جاري تحميل بيانات المناخ..." : "Loading climate data..."}
               </div>
             ) : climateData ? (
               <p className="text-xs text-muted-foreground">
-                {isArabic ? 'متوسط الإشعاع الشمسي:' : 'Avg. Solar Irradiance:'} {climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day
+                {isArabic ? "متوسط الإشعاع الشمسي:" : "Avg. Solar Irradiance:"}{" "}
+                {climateData.annualAvgIrradiance.toFixed(1)} kWh/m²/day
               </p>
             ) : null}
           </div>
@@ -578,7 +515,7 @@ const MapSection = ({
           {/* Data Source Badge */}
           <div className="absolute bottom-4 end-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
             <p className="text-xs text-muted-foreground">
-              {isArabic ? 'البيانات:' : 'Data:'} <span className="text-foreground font-medium">NASA POWER</span>
+              {isArabic ? "البيانات:" : "Data:"} <span className="text-foreground font-medium">NASA POWER</span>
             </p>
           </div>
         </div>
