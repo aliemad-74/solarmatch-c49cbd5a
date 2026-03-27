@@ -26,19 +26,21 @@ const ProgressIndicator = ({ hasLocation, hasConfigured, hasResults }: ProgressI
   const activeIndex = hasResults ? 3 : hasConfigured ? 2 : hasLocation ? 1 : 0;
 
   // Auto-scroll to the next section when a step completes (skip initial mount)
+  // Only scroll ONE step at a time to prevent skipping sections
   useEffect(() => {
     if (!hasMountedRef.current) {
       hasMountedRef.current = true;
       prevActiveRef.current = activeIndex;
       return;
     }
-    if (activeIndex > prevActiveRef.current && activeIndex <= sectionIds.length) {
+    // Only scroll if we advanced exactly 1 step (prevent multi-step jumps)
+    if (activeIndex === prevActiveRef.current + 1 && activeIndex <= sectionIds.length) {
       const targetId = sectionIds[Math.min(activeIndex, sectionIds.length - 1)];
       const el = document.getElementById(targetId);
       if (el) {
         setTimeout(() => {
           el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 300);
+        }, 600);
       }
     }
     prevActiveRef.current = activeIndex;
