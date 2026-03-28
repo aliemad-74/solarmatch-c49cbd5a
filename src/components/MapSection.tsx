@@ -1,19 +1,21 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation } from "lucide-react";
+import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation, Satellite } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
 import * as turf from "@turf/turf";
-import { fetchClimateData, searchLocation, getLocationName, ClimateData } from "@/lib/climateApi";
+import { fetchClimateData, fetchGoogleSolarData, getLocationName, ClimateData, GoogleSolarData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
+const LIBRARIES: ("places")[] = ["places"];
 
 interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
+  onGoogleSolarData?: (data: GoogleSolarData | null) => void;
 }
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
@@ -25,28 +27,55 @@ const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
+  onGoogleSolarData,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<{ lat: number; lng: number; name: string }[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [polygonPoints, setPolygonPoints] = useState<google.maps.LatLngLiteral[]>([]);
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
   const [currentLocation, setCurrentLocation] = useState(DEFAULT_LOCATION);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
+  const [isLoadingSolar, setIsLoadingSolar] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
+  const [googleSolarData, setGoogleSolarData] = useState<GoogleSolarData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   const mapRef = useRef<google.maps.Map | null>(null);
+  const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: LIBRARIES,
   });
+
+  // Initialize Places Autocomplete
+  useEffect(() => {
+    if (!isLoaded || !autocompleteInputRef.current || autocompleteRef.current) return;
+
+    const autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
+      componentRestrictions: { country: "eg" },
+      fields: ["geometry", "formatted_address", "name"],
+      types: ["geocode", "establishment"],
+    });
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (place.geometry?.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const name = place.name || place.formatted_address?.split(",")[0] || "";
+        updateLocation(lat, lng, name);
+        setSearchQuery(place.formatted_address || name);
+      }
+    });
+
+    autocompleteRef.current = autocomplete;
+  }, [isLoaded]);
 
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: google.maps.LatLngLiteral[]) => {
@@ -57,14 +86,12 @@ const MapSection = ({
     return Math.round(turf.area(polygon) * 100) / 100;
   }, []);
 
-  // Recalculate area when points change (after drawing is done)
+  // Recalculate area when points change
   useEffect(() => {
     if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
       const area = calculatePolygonArea(polygonPoints);
       setCalculatedArea(area);
-      if (onAreaCalculated && area > 0) {
-        onAreaCalculated(area);
-      }
+      if (onAreaCalculated && area > 0) onAreaCalculated(area);
     }
   }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
 
@@ -85,6 +112,28 @@ const MapSection = ({
     [onClimateDataFetched]
   );
 
+  // Fetch Google Solar data
+  const fetchSolarForLocation = useCallback(
+    async (lat: number, lng: number) => {
+      setIsLoadingSolar(true);
+      try {
+        const data = await fetchGoogleSolarData(lat, lng);
+        setGoogleSolarData(data);
+        onGoogleSolarData?.(data);
+        if (data?.available) {
+          toast.success(isArabic ? "تم العثور على بيانات Google Solar! 🛰️" : "Google Solar data found! 🛰️");
+        }
+      } catch (error) {
+        console.error("Failed to fetch Google Solar data:", error);
+        setGoogleSolarData(null);
+        onGoogleSolarData?.(null);
+      } finally {
+        setIsLoadingSolar(false);
+      }
+    },
+    [onGoogleSolarData, isArabic]
+  );
+
   // Initial climate data fetch
   useEffect(() => {
     fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
@@ -96,9 +145,7 @@ const MapSection = ({
       if (points.length >= MIN_POLYGON_POINTS) {
         const area = calculatePolygonArea(points);
         setCalculatedArea(area);
-        if (onAreaCalculated && area > 0) {
-          onAreaCalculated(area);
-        }
+        if (onAreaCalculated && area > 0) onAreaCalculated(area);
 
         const coordinates = points.map((p) => [p.lng, p.lat]);
         coordinates.push(coordinates[0]);
@@ -110,10 +157,11 @@ const MapSection = ({
         setCurrentLocation({ lat, lng, name: locationName });
         onLocationChange?.(locationName);
         fetchClimateForLocation(lat, lng);
+        fetchSolarForLocation(lat, lng);
       }
       setIsDrawingMode(false);
     },
-    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]
+    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation, fetchSolarForLocation]
   );
 
   // Update location
@@ -138,8 +186,11 @@ const MapSection = ({
       } finally {
         setIsLoadingClimate(false);
       }
+
+      // Also fetch Google Solar data for new location
+      fetchSolarForLocation(lat, lng);
     },
-    [onClimateDataFetched, onLocationChange]
+    [onClimateDataFetched, onLocationChange, fetchSolarForLocation]
   );
 
   // GPS detection
@@ -177,9 +228,7 @@ const MapSection = ({
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
-      if (polygonPoints.length >= MIN_POLYGON_POINTS) {
-        completePolygon(polygonPoints);
-      }
+      if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
     } else {
       clearPolygon();
@@ -191,9 +240,7 @@ const MapSection = ({
   const handleMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
       if (!isDrawingMode || !e.latLng) return;
-
       const newPoint = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-
       setPolygonPoints((prev) => {
         if (prev.length >= MIN_POLYGON_POINTS) {
           const first = prev[0];
@@ -212,37 +259,6 @@ const MapSection = ({
     [isDrawingMode, completePolygon]
   );
 
-  // Debounced search
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    searchTimeoutRef.current = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const results = await searchLocation(searchQuery);
-        setSearchResults(results);
-      } catch {
-        console.error("Search failed");
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
-    return () => {
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    };
-  }, [searchQuery]);
-
-  const selectSearchResult = (result: { lat: number; lng: number; name: string }) => {
-    updateLocation(result.lat, result.lng, result.name.split(",")[0]);
-    setSearchResults([]);
-    setSearchQuery("");
-  };
-
   // Marker drag handler
   const handleMarkerDrag = useCallback(
     (index: number, e: google.maps.MapMouseEvent) => {
@@ -260,11 +276,7 @@ const MapSection = ({
     mapRef.current = map;
   }, []);
 
-  const mapContainerStyle = {
-    width: "100%",
-    height: "100%",
-  };
-
+  const mapContainerStyle = { width: "100%", height: "100%" };
   const mapOptions: google.maps.MapOptions = {
     mapTypeId: "satellite",
     disableDefaultUI: true,
@@ -290,7 +302,6 @@ const MapSection = ({
   return (
     <section className="relative">
       <div className="absolute inset-0 gradient-hero" />
-
       <div className="relative container mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8 animate-fade-in">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
@@ -300,35 +311,19 @@ const MapSection = ({
           <p className="text-muted-foreground max-w-xl mx-auto">{t("map.subtitle")}</p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar with Google Places Autocomplete */}
         <div className="max-w-lg mx-auto mb-6 animate-slide-up relative z-50">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-            <Input
+            <input
+              ref={autocompleteInputRef}
               type="text"
               placeholder={isArabic ? "ابحث عن أي موقع في مصر..." : "Search any location in Egypt..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="ps-10 pe-10 h-12 bg-card border-border/50 shadow-card focus:shadow-glow transition-shadow"
+              className="w-full ps-10 pe-10 h-12 bg-card border border-border/50 rounded-md shadow-card focus:shadow-glow transition-shadow text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             />
-            {isSearching && (
-              <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
-            )}
           </div>
-
-          {searchResults.length > 0 && (
-            <div className="absolute start-0 end-0 z-[100] mt-2 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
-              {searchResults.map((result, index) => (
-                <button
-                  key={index}
-                  onClick={() => selectSearchResult(result)}
-                  className="w-full px-4 py-3 text-start hover:bg-primary/10 text-sm truncate border-b border-border/50 last:border-b-0 transition-colors"
-                >
-                  <span className="text-foreground">{result.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* GPS Location Button */}
@@ -415,6 +410,33 @@ const MapSection = ({
           </div>
         )}
 
+        {/* Google Solar Data Badge */}
+        {isLoadingSolar && (
+          <div className="text-center mb-4 animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg border border-primary/30">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm font-medium">
+                {isArabic ? "جاري تحليل السطح بالأقمار الصناعية..." : "Analyzing rooftop via satellite..."}
+              </span>
+            </div>
+          </div>
+        )}
+        {googleSolarData?.available && !isLoadingSolar && (
+          <div className="text-center mb-4 animate-scale-in">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg border border-primary/30">
+              <Satellite className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {isArabic ? "بيانات Google Solar متاحة" : "Google Solar data available"}
+              </span>
+              {googleSolarData.maxSunshineHoursPerYear && (
+                <span className="text-xs text-muted-foreground">
+                  • {Math.round(googleSolarData.maxSunshineHoursPerYear)} {isArabic ? "ساعة شمس/سنة" : "sun hrs/yr"}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Map Size Toggle */}
         <div className="flex justify-center gap-2 mb-4">
           <Button
@@ -457,7 +479,6 @@ const MapSection = ({
               onClick={handleMapClick}
               onLoad={onMapLoad}
             >
-              {/* Polygon */}
               {polygonPoints.length >= 2 && (
                 <Polygon
                   paths={polygonPoints}
@@ -471,7 +492,6 @@ const MapSection = ({
                 />
               )}
 
-              {/* Point markers */}
               {polygonPoints.map((point, index) => (
                 <Marker
                   key={`point-${index}-${point.lat}-${point.lng}`}
@@ -515,7 +535,10 @@ const MapSection = ({
           {/* Data Source Badge */}
           <div className="absolute bottom-4 end-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
             <p className="text-xs text-muted-foreground">
-              {isArabic ? "البيانات:" : "Data:"} <span className="text-foreground font-medium">NASA POWER</span>
+              {isArabic ? "البيانات:" : "Data:"}{" "}
+              <span className="text-foreground font-medium">
+                {googleSolarData?.available ? "Google Solar + NASA POWER" : "NASA POWER"}
+              </span>
             </p>
           </div>
         </div>
