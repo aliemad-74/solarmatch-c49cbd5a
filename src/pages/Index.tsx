@@ -17,7 +17,7 @@ import LiveReportCounter from "@/components/LiveReportCounter";
 
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
-import { ClimateData } from "@/lib/climateApi";
+import { ClimateData, GoogleSolarData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
 
@@ -60,6 +60,7 @@ const Index = () => {
   
   // Map/location state
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
+  const [googleSolarData, setGoogleSolarData] = useState<GoogleSolarData | null>(null);
   const [locationName, setLocationName] = useState<string>("");
   
   // Results
@@ -224,6 +225,7 @@ const Index = () => {
                 }
               }}
               onLocationChange={(name) => { setLocationName(name); }}
+              onGoogleSolarData={(data) => { setGoogleSolarData(data); }}
             />
           </ScrollReveal>
         </div>
