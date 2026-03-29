@@ -34,9 +34,7 @@ const MapSection = ({
   const [currentLocation, setCurrentLocation] = useState(DEFAULT_LOCATION);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
-  const [isLoadingSolar, setIsLoadingSolar] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
-  const [googleSolarData, setGoogleSolarData] = useState<GoogleSolarData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
 
   const mapRef = useRef<google.maps.Map | null>(null);
