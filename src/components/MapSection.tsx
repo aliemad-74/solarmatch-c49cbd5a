@@ -26,7 +26,6 @@ const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
-  onGoogleSolarData,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawingMode, setIsDrawingMode] = useState(false);
