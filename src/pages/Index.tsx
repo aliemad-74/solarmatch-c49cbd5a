@@ -159,12 +159,6 @@ const Index = () => {
           monthlyIrradiance: climateData.monthlyIrradiance,
           monthlyTemperature: climateData.monthlyTemperature,
         } : null,
-        googleSolarData: googleSolarData?.available ? {
-          maxArrayAreaMeters2: googleSolarData.maxArrayAreaMeters2,
-          maxSunshineHoursPerYear: googleSolarData.maxSunshineHoursPerYear,
-          maxArrayPanelsCount: googleSolarData.maxArrayPanelsCount,
-          panelCapacityWatts: googleSolarData.panelCapacityWatts,
-        } : null,
       };
 
       const response = await fetch(
