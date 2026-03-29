@@ -132,11 +132,10 @@ const MapSection = ({
         setCurrentLocation({ lat, lng, name: locationName });
         onLocationChange?.(locationName);
         fetchClimateForLocation(lat, lng);
-        fetchSolarForLocation(lat, lng);
       }
       setIsDrawingMode(false);
     },
-    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation, fetchSolarForLocation]
+    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]
   );
 
   // Update location
