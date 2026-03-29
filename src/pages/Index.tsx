@@ -61,7 +61,7 @@ const Index = () => {
   
   // Map/location state
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
-  const [googleSolarData, setGoogleSolarData] = useState<GoogleSolarData | null>(null);
+  
   const [locationName, setLocationName] = useState<string>("");
   
   // Results
