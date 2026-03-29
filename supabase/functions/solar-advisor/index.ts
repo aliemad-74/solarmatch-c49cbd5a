@@ -45,7 +45,7 @@ serve(async (req) => {
     const { solarData, language, mode } = body as {
       solarData: Record<string, unknown>;
       language: string;
-      mode?: "advice" | "calculate";
+      mode?: "advice" | "report";
     };
 
     if (language !== "en" && language !== "ar") {
@@ -56,98 +56,127 @@ serve(async (req) => {
 
     const d = solarData;
 
-    // ===== MODE: AI CALCULATION =====
-    if (mode === "calculate") {
-      const calcPrompt = language === "ar"
-        ? `أنت خبير طاقة شمسية ومهندس حسابات. لديك بيانات مبنى محدد في مصر وتحتاج تقوم بتحليل شامل ودقيق.
+    // ===== MODE: AI REPORT (structured JSON calculation) =====
+    if (mode === "report") {
+      const reportPrompt = `You are an expert solar energy engineer performing calculations for a building in Egypt.
+You MUST return a JSON object with precise numerical calculations based on the input data.
 
-بيانات المبنى:
-- الموقع: ${d.locationName || "غير محدد"} (خط عرض: ${d.lat}, خط طول: ${d.lng})
-- مساحة السطح الكلية: ${d.rooftopArea} م²
-- نوع المبنى: ${d.buildingType}
-- الاستهلاك الشهري: ${d.monthlyConsumption} كيلوواط/ساعة
-- سعر الكهرباء: ${d.electricityPrice} جنيه/كيلوواط
-- نوع الألواح المختار: ${d.pvType}
-- سيناريو التكلفة: ${d.costScenario}
-${d.googleSolarData ? `
-بيانات Google Solar (بيانات أقمار صناعية فعلية):
-- أقصى مساحة للألواح: ${(d.googleSolarData as any).maxArrayAreaMeters2} م²
-- ساعات الشمس السنوية: ${(d.googleSolarData as any).maxSunshineHoursPerYear} ساعة
-- أقصى عدد ألواح: ${(d.googleSolarData as any).maxArrayPanelsCount}
-- قدرة اللوح: ${(d.googleSolarData as any).panelCapacityWatts} واط
-` : ""}
-${d.climateData ? `
-بيانات المناخ (NASA POWER):
-- متوسط الإشعاع الشمسي السنوي: ${(d.climateData as any).annualAvgIrradiance} كيلوواط/م²/يوم
-- الإشعاع الشهري: ${JSON.stringify((d.climateData as any).monthlyIrradiance)}
-- درجات الحرارة الشهرية: ${JSON.stringify((d.climateData as any).monthlyTemperature)}
-` : ""}
-
-المطلوب:
-قم بتحليل هذا المبنى تحديداً وقدم:
-
-1. **تقييم السطح**: هل هذا السطح مناسب للطاقة الشمسية؟ (ممتاز/جيد/مقبول/غير مناسب) مع السبب
-2. **الحجم الأمثل للنظام**: كم كيلوواط يُنصح بتركيبه لهذا المبنى تحديداً ولماذا
-3. **التكلفة المتوقعة**: التكلفة الإجمالية بالجنيه المصري مع تفصيل (ألواح، عاكس، تركيب، كابلات)
-4. **الإنتاج المتوقع**: الإنتاج السنوي والشهري بناءً على بيانات المناخ الفعلية للموقع
-5. **التوفير**: التوفير السنوي والشهري بالجنيه
-6. **فترة الاسترداد**: كم سنة لاسترداد التكلفة
-7. **نسبة التغطية**: نسبة تغطية الاستهلاك
-8. **توصيات خاصة**: نصائح مخصصة لهذا المبنى (اتجاه الألواح، صيانة، تمويل)
-9. **مقارنة الباقات**: قارن بين 3 خيارات (اقتصادي/قياسي/ممتاز) مع التكلفة والكفاءة لكل واحد
-10. **الأثر البيئي**: تقليل CO2 وما يعادله من أشجار
-
-استخدم أرقام واقعية للسوق المصري 2024-2025. لا تكرر البيانات المدخلة فقط، بل قدم تحليلاً حقيقياً.`
-
-        : `You are an expert solar energy engineer and calculator. You have specific building data from Egypt and need to perform a comprehensive, precise analysis.
-
-Building Data:
+INPUT DATA:
 - Location: ${d.locationName || "Not specified"} (lat: ${d.lat}, lng: ${d.lng})
 - Total Rooftop Area: ${d.rooftopArea} m²
-- Building Type: ${d.buildingType}
+- Building Type: ${d.buildingType} (usable fraction: ${d.usableFraction})
 - Monthly Consumption: ${d.monthlyConsumption} kWh
 - Electricity Price: ${d.electricityPrice} EGP/kWh
-- Selected Panel Type: ${d.pvType}
+- Selected PV Type: ${d.pvType}
 - Cost Scenario: ${d.costScenario}
 ${d.googleSolarData ? `
-Google Solar Data (actual satellite data):
+GOOGLE SOLAR DATA (satellite):
 - Max Array Area: ${(d.googleSolarData as any).maxArrayAreaMeters2} m²
 - Annual Sunshine Hours: ${(d.googleSolarData as any).maxSunshineHoursPerYear} hrs
 - Max Panel Count: ${(d.googleSolarData as any).maxArrayPanelsCount}
 - Panel Capacity: ${(d.googleSolarData as any).panelCapacityWatts} W
 ` : ""}
 ${d.climateData ? `
-Climate Data (NASA POWER):
+CLIMATE DATA (NASA POWER):
 - Annual Avg Irradiance: ${(d.climateData as any).annualAvgIrradiance} kWh/m²/day
 - Monthly Irradiance: ${JSON.stringify((d.climateData as any).monthlyIrradiance)}
-- Monthly Temperatures: ${JSON.stringify((d.climateData as any).monthlyTemperature)}
+- Monthly Temperature: ${JSON.stringify((d.climateData as any).monthlyTemperature)}
 ` : ""}
 
-Required Analysis:
-Analyze THIS specific building and provide:
+SYSTEM PACKAGES for Egyptian market 2024-2025:
+- economy: Polycrystalline 16%, 8.5 m²/kW, 15,000 EGP/kW, ~350W panels
+- standard: Standard Mono 18%, 7 m²/kW, 19,000 EGP/kW, ~450W panels  
+- premium: High-Power Mono 20%+, 6 m²/kW, 26,000 EGP/kW, ~600W panels
 
-1. **Rooftop Assessment**: Is this rooftop suitable for solar? (Excellent/Good/Fair/Not suitable) with reasoning
-2. **Optimal System Size**: How many kW recommended for THIS building specifically and why
-3. **Expected Cost**: Total cost in EGP with breakdown (panels, inverter, installation, cables)
-4. **Expected Production**: Annual and monthly production based on actual climate data for this location
-5. **Savings**: Annual and monthly savings in EGP
-6. **Payback Period**: Years to recover investment
-7. **Coverage Ratio**: Percentage of consumption covered
-8. **Custom Recommendations**: Tips specific to this building (panel orientation, maintenance, financing)
-9. **Package Comparison**: Compare 3 options (Economy/Standard/Premium) with cost and efficiency for each
-10. **Environmental Impact**: CO2 reduction and equivalent trees
+CALCULATION RULES:
+1. Usable area = rooftop area × usable fraction (residential house=0.50, apartment=0.60, commercial=0.70, industrial=0.75, agricultural=0.85)
+2. kWMax = usable area / areaPerKW of selected package
+3. kWInstalled = floor(kWMax × 0.95), minimum 1 kW
+4. For residential (house/apartment): enforce 150% coverage cap. If (kWInstalled × 1800) > (monthlyConsumption × 12 × 1.5), reduce kWInstalled
+5. energyYear = kWInstalled × specific_yield (use ~1800 kWh/kW/year for Egypt, adjust based on irradiance data)
+6. Monthly production: distribute based on monthly irradiance ratios. If no data, use typical Egypt pattern
+7. savingsYear = energyYear × electricityPrice (capped at actual consumption cost)
+8. totalCost = kWInstalled × costPerKW
+9. paybackYears = totalCost / savingsYear
+10. coverageRatio = energyYear / (monthlyConsumption × 12)
+11. co2Saved = energyYear × 0.55 / 1000 (tons/year)
+12. panelCount = ceil(kWInstalled × 1000 / panelWattage)
+13. Calculate ALL THREE package options with their respective costs and payback
 
-Use realistic numbers for Egyptian market 2024-2025. Don't just repeat input data - provide actual analysis.`;
+WARNINGS to include (as string array):
+- If system > 15kW for residential: "Large residential system (>15kW) - verify actual consumption"
+- If payback > 12 years: "Long payback period - consider alternative financing"
+- If coverage < 30%: "Low coverage ratio - consider larger installation area"
+- If rooftop area < 10: "Very small rooftop area"
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+Return ONLY valid JSON. Be precise with numbers. Use realistic Egyptian market data.`;
+
+      const toolSchema = {
+        name: "solar_report",
+        description: "Return structured solar feasibility calculation results",
+        parameters: {
+          type: "object",
+          properties: {
+            usableArea: { type: "number", description: "Usable rooftop area in m²" },
+            kWMax: { type: "number", description: "Maximum installable kW" },
+            kWInstalled: { type: "number", description: "Practical installed kW" },
+            energyYear: { type: "number", description: "Annual energy production kWh" },
+            energyMonth: { type: "number", description: "Average monthly production kWh" },
+            monthlyProduction: { type: "array", items: { type: "number" }, description: "12 monthly production values in kWh" },
+            savingsYear: { type: "number", description: "Annual savings in EGP" },
+            savingsMonth: { type: "number", description: "Monthly savings in EGP" },
+            totalCost: { type: "number", description: "Total system cost in EGP" },
+            costPerKW: { type: "number", description: "Cost per kW in EGP" },
+            paybackYears: { type: "number", description: "Payback period in years" },
+            coverageRatio: { type: "number", description: "Coverage ratio as decimal (e.g. 0.85)" },
+            co2Saved: { type: "number", description: "CO2 saved in tons/year" },
+            panelCount: { type: "integer", description: "Number of panels" },
+            panelWattage: { type: "integer", description: "Wattage per panel" },
+            connectionRecommendation: {
+              type: "object",
+              properties: {
+                systemType: { type: "string", enum: ["Grid-Connected", "Hybrid (Grid + Battery)", "Off-grid possible"] },
+                reason: { type: "string" },
+                icon: { type: "string", enum: ["grid", "hybrid", "offgrid"] }
+              },
+              required: ["systemType", "reason", "icon"]
+            },
+            packageOptions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  packageKey: { type: "string", enum: ["economy", "standard", "premium"] },
+                  kWInstalled: { type: "number" },
+                  totalCost: { type: "number" },
+                  energyYear: { type: "number" },
+                  savingsYear: { type: "number" },
+                  paybackYears: { type: "number" },
+                  coverageRatio: { type: "number" },
+                  panelCount: { type: "integer" }
+                },
+                required: ["packageKey", "kWInstalled", "totalCost", "energyYear", "savingsYear", "paybackYears", "coverageRatio", "panelCount"]
+              },
+              description: "All 3 package options calculated"
+            },
+            warnings: { type: "array", items: { type: "string" }, description: "Warning messages" },
+          },
+          required: ["usableArea", "kWMax", "kWInstalled", "energyYear", "energyMonth", "monthlyProduction", "savingsYear", "savingsMonth", "totalCost", "costPerKW", "paybackYears", "coverageRatio", "co2Saved", "panelCount", "panelWattage", "connectionRecommendation", "packageOptions", "warnings"],
+          additionalProperties: false
+        }
+      };
+
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
       const response = await fetch(geminiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: calcPrompt }] }],
+          contents: [{ role: "user", parts: [{ text: reportPrompt }] }],
+          tools: [{ functionDeclarations: [toolSchema] }],
+          toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["solar_report"] } },
           generationConfig: {
-            temperature: 0.4,
+            temperature: 0.2,
             maxOutputTokens: 8192,
           },
         }),
@@ -166,52 +195,30 @@ Use realistic numbers for Egyptian market 2024-2025. Don't just repeat input dat
         });
       }
 
-      // Transform Gemini SSE to OpenAI-compatible SSE
-      const { readable, writable } = new TransformStream();
-      const writer = writable.getWriter();
-      const encoder = new TextEncoder();
+      const result = await response.json();
+      const functionCall = result.candidates?.[0]?.content?.parts?.[0]?.functionCall;
+      
+      if (!functionCall || functionCall.name !== "solar_report") {
+        console.error("Unexpected Gemini response:", JSON.stringify(result));
+        return new Response(JSON.stringify({ error: "AI returned unexpected format" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-      (async () => {
-        try {
-          const reader = response.body!.getReader();
-          const decoder = new TextDecoder();
-          let buffer = "";
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            let newlineIndex: number;
-            while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-              let line = buffer.slice(0, newlineIndex);
-              buffer = buffer.slice(newlineIndex + 1);
-              if (line.endsWith("\r")) line = line.slice(0, -1);
-              if (!line.startsWith("data: ")) continue;
-              const jsonStr = line.slice(6).trim();
-              if (!jsonStr) continue;
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) {
-                  const openaiChunk = { choices: [{ delta: { content: text }, index: 0 }] };
-                  await writer.write(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
-                }
-              } catch { /* skip */ }
-            }
-          }
-          await writer.write(encoder.encode("data: [DONE]\n\n"));
-        } catch (e) {
-          console.error("Stream error:", e);
-        } finally {
-          await writer.close();
-        }
-      })();
+      const reportData = functionCall.args;
 
-      return new Response(readable, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      // Ensure monthlyProduction has exactly 12 values
+      if (!reportData.monthlyProduction || reportData.monthlyProduction.length !== 12) {
+        const avgMonthly = reportData.energyYear / 12;
+        reportData.monthlyProduction = [0.85, 0.90, 1.0, 1.05, 1.1, 1.15, 1.15, 1.1, 1.05, 0.95, 0.85, 0.85].map(f => Math.round(avgMonthly * f));
+      }
+
+      return new Response(JSON.stringify(reportData), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ===== MODE: ADVICE (post-calculation advice) =====
+    // ===== MODE: ADVICE (post-calculation streaming advice) =====
     const systemPrompt = language === "ar"
       ? `أنت مستشار طاقة شمسية خبير في السوق المصري. هذا المستخدم عنده نظام شمسي محسوب بالفعل. 
 قدم توصيات عملية ومخصصة بناءً على بياناته المحددة.
