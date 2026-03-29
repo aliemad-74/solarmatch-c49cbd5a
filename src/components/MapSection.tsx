@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
 import * as turf from "@turf/turf";
-import { fetchClimateData, fetchGoogleSolarData, getLocationName, ClimateData, GoogleSolarData } from "@/lib/climateApi";
+import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
@@ -15,7 +15,6 @@ interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
-  onGoogleSolarData?: (data: GoogleSolarData | null) => void;
 }
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
@@ -27,7 +26,6 @@ const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
-  onGoogleSolarData,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawingMode, setIsDrawingMode] = useState(false);
@@ -36,9 +34,7 @@ const MapSection = ({
   const [currentLocation, setCurrentLocation] = useState(DEFAULT_LOCATION);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
-  const [isLoadingSolar, setIsLoadingSolar] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
-  const [googleSolarData, setGoogleSolarData] = useState<GoogleSolarData | null>(null);
   const [mapSize, setMapSize] = useState<MapSize>("normal");
 
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -112,27 +108,6 @@ const MapSection = ({
     [onClimateDataFetched]
   );
 
-  // Fetch Google Solar data
-  const fetchSolarForLocation = useCallback(
-    async (lat: number, lng: number) => {
-      setIsLoadingSolar(true);
-      try {
-        const data = await fetchGoogleSolarData(lat, lng);
-        setGoogleSolarData(data);
-        onGoogleSolarData?.(data);
-        if (data?.available) {
-          toast.success(isArabic ? "تم العثور على بيانات Google Solar! 🛰️" : "Google Solar data found! 🛰️");
-        }
-      } catch (error) {
-        console.error("Failed to fetch Google Solar data:", error);
-        setGoogleSolarData(null);
-        onGoogleSolarData?.(null);
-      } finally {
-        setIsLoadingSolar(false);
-      }
-    },
-    [onGoogleSolarData, isArabic]
-  );
 
   // Initial climate data fetch
   useEffect(() => {
@@ -157,11 +132,10 @@ const MapSection = ({
         setCurrentLocation({ lat, lng, name: locationName });
         onLocationChange?.(locationName);
         fetchClimateForLocation(lat, lng);
-        fetchSolarForLocation(lat, lng);
       }
       setIsDrawingMode(false);
     },
-    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation, fetchSolarForLocation]
+    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]
   );
 
   // Update location
@@ -187,10 +161,8 @@ const MapSection = ({
         setIsLoadingClimate(false);
       }
 
-      // Also fetch Google Solar data for new location
-      fetchSolarForLocation(lat, lng);
     },
-    [onClimateDataFetched, onLocationChange, fetchSolarForLocation]
+    [onClimateDataFetched, onLocationChange]
   );
 
   // GPS detection
@@ -415,32 +387,6 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Google Solar Data Badge */}
-        {isLoadingSolar && (
-          <div className="text-center mb-4 animate-fade-in">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg border border-primary/30">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm font-medium">
-                {isArabic ? "جاري تحليل السطح بالأقمار الصناعية..." : "Analyzing rooftop via satellite..."}
-              </span>
-            </div>
-          </div>
-        )}
-        {googleSolarData?.available && !isLoadingSolar && (
-          <div className="text-center mb-4 animate-scale-in">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg border border-primary/30">
-              <Satellite className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {isArabic ? "بيانات Google Solar متاحة" : "Google Solar data available"}
-              </span>
-              {googleSolarData.maxSunshineHoursPerYear && (
-                <span className="text-xs text-muted-foreground">
-                  • {Math.round(googleSolarData.maxSunshineHoursPerYear)} {isArabic ? "ساعة شمس/سنة" : "sun hrs/yr"}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Map Size Toggle */}
         <div className="flex justify-center gap-2 mb-4">
@@ -542,7 +488,7 @@ const MapSection = ({
             <p className="text-xs text-muted-foreground">
               {isArabic ? "البيانات:" : "Data:"}{" "}
               <span className="text-foreground font-medium">
-                {googleSolarData?.available ? "Google Solar + NASA POWER" : "NASA POWER"}
+                {"NASA POWER"}
               </span>
             </p>
           </div>

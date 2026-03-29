@@ -18,7 +18,7 @@ import LiveReportCounter from "@/components/LiveReportCounter";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM, buildingTypes, systemPackages } from "@/lib/solarData";
 import { toast } from "sonner";
-import { ClimateData, GoogleSolarData } from "@/lib/climateApi";
+import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
 
@@ -61,7 +61,7 @@ const Index = () => {
   
   // Map/location state
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
-  const [googleSolarData, setGoogleSolarData] = useState<GoogleSolarData | null>(null);
+  
   const [locationName, setLocationName] = useState<string>("");
   
   // Results
@@ -158,12 +158,6 @@ const Index = () => {
           annualAvgIrradiance: climateData.annualAvgIrradiance,
           monthlyIrradiance: climateData.monthlyIrradiance,
           monthlyTemperature: climateData.monthlyTemperature,
-        } : null,
-        googleSolarData: googleSolarData?.available ? {
-          maxArrayAreaMeters2: googleSolarData.maxArrayAreaMeters2,
-          maxSunshineHoursPerYear: googleSolarData.maxSunshineHoursPerYear,
-          maxArrayPanelsCount: googleSolarData.maxArrayPanelsCount,
-          panelCapacityWatts: googleSolarData.panelCapacityWatts,
         } : null,
       };
 
@@ -333,7 +327,7 @@ const Index = () => {
                 }
               }}
               onLocationChange={(name) => { setLocationName(name); }}
-              onGoogleSolarData={(data) => { setGoogleSolarData(data); }}
+              
             />
           </ScrollReveal>
         </div>

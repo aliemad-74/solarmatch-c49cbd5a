@@ -69,13 +69,6 @@ INPUT DATA:
 - Electricity Price: ${d.electricityPrice} EGP/kWh
 - Selected PV Type: ${d.pvType}
 - Cost Scenario: ${d.costScenario}
-${d.googleSolarData ? `
-GOOGLE SOLAR DATA (satellite):
-- Max Array Area: ${(d.googleSolarData as any).maxArrayAreaMeters2} m²
-- Annual Sunshine Hours: ${(d.googleSolarData as any).maxSunshineHoursPerYear} hrs
-- Max Panel Count: ${(d.googleSolarData as any).maxArrayPanelsCount}
-- Panel Capacity: ${(d.googleSolarData as any).panelCapacityWatts} W
-` : ""}
 ${d.climateData ? `
 CLIMATE DATA (NASA POWER):
 - Annual Avg Irradiance: ${(d.climateData as any).annualAvgIrradiance} kWh/m²/day
