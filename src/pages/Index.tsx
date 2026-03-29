@@ -397,8 +397,6 @@ const Index = () => {
               buildingType={buildingType}
               costScenario={costScenario}
               electricityPrice={electricityPrice}
-              climateData={climateData}
-              googleSolarData={googleSolarData}
             />
           </ScrollReveal>
         </div>
