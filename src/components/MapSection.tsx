@@ -514,7 +514,7 @@ const MapSection = ({
             <p className="text-xs text-muted-foreground">
               {isArabic ? "البيانات:" : "Data:"}{" "}
               <span className="text-foreground font-medium">
-                {googleSolarData?.available ? "Google Solar + NASA POWER" : "NASA POWER"}
+                {"NASA POWER"}
               </span>
             </p>
           </div>
