@@ -7,7 +7,7 @@ import ROITimeline from "./ROITimeline";
 import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 import AIAdvisor from "./AIAdvisor";
-import AIAnalysis from "./AIAnalysis";
+
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
