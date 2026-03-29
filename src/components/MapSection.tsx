@@ -162,10 +162,8 @@ const MapSection = ({
         setIsLoadingClimate(false);
       }
 
-      // Also fetch Google Solar data for new location
-      fetchSolarForLocation(lat, lng);
     },
-    [onClimateDataFetched, onLocationChange, fetchSolarForLocation]
+    [onClimateDataFetched, onLocationChange]
   );
 
   // GPS detection
