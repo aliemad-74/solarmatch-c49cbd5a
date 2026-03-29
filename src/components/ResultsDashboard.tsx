@@ -676,23 +676,6 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         </div>
 
-        {/* AI-Powered Analysis - Comprehensive */}
-        <div className="mt-6 print:hidden">
-          <AIAnalysis
-            rooftopArea={results.usableArea}
-            locationName={locationName || ''}
-            monthlyConsumption={monthlyConsumption}
-            pvType={pvType}
-            buildingType={buildingType}
-            costScenario={costScenario}
-            electricityPrice={electricityPrice}
-            climateData={climateData || null}
-            googleSolarData={googleSolarData || null}
-            lat={climateData?.location?.lat}
-            lng={climateData?.location?.lng}
-            isVisible={isVisible}
-          />
-        </div>
 
         {/* AI Advisor - Quick tips */}
         <div className="mt-6 print:hidden">
