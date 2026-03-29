@@ -26,9 +26,13 @@ interface ResultsDashboardProps {
   monthlyConsumption?: number;
   pvType?: string;
   buildingType?: string;
+  costScenario?: string;
+  electricityPrice?: number;
+  climateData?: import("@/lib/climateApi").ClimateData | null;
+  googleSolarData?: import("@/lib/climateApi").GoogleSolarData | null;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment" }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, climateData, googleSolarData }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
