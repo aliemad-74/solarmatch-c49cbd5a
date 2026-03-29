@@ -327,7 +327,7 @@ const Index = () => {
                 }
               }}
               onLocationChange={(name) => { setLocationName(name); }}
-              onGoogleSolarData={(data) => { setGoogleSolarData(data); }}
+              
             />
           </ScrollReveal>
         </div>

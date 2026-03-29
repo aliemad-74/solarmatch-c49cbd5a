@@ -387,32 +387,6 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Google Solar Data Badge */}
-        {isLoadingSolar && (
-          <div className="text-center mb-4 animate-fade-in">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg border border-primary/30">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm font-medium">
-                {isArabic ? "جاري تحليل السطح بالأقمار الصناعية..." : "Analyzing rooftop via satellite..."}
-              </span>
-            </div>
-          </div>
-        )}
-        {googleSolarData?.available && !isLoadingSolar && (
-          <div className="text-center mb-4 animate-scale-in">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg border border-primary/30">
-              <Satellite className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {isArabic ? "بيانات Google Solar متاحة" : "Google Solar data available"}
-              </span>
-              {googleSolarData.maxSunshineHoursPerYear && (
-                <span className="text-xs text-muted-foreground">
-                  • {Math.round(googleSolarData.maxSunshineHoursPerYear)} {isArabic ? "ساعة شمس/سنة" : "sun hrs/yr"}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Map Size Toggle */}
         <div className="flex justify-center gap-2 mb-4">
