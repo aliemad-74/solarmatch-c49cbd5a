@@ -108,27 +108,6 @@ const MapSection = ({
     [onClimateDataFetched]
   );
 
-  // Fetch Google Solar data
-  const fetchSolarForLocation = useCallback(
-    async (lat: number, lng: number) => {
-      setIsLoadingSolar(true);
-      try {
-        const data = await fetchGoogleSolarData(lat, lng);
-        setGoogleSolarData(data);
-        onGoogleSolarData?.(data);
-        if (data?.available) {
-          toast.success(isArabic ? "تم العثور على بيانات Google Solar! 🛰️" : "Google Solar data found! 🛰️");
-        }
-      } catch (error) {
-        console.error("Failed to fetch Google Solar data:", error);
-        setGoogleSolarData(null);
-        onGoogleSolarData?.(null);
-      } finally {
-        setIsLoadingSolar(false);
-      }
-    },
-    [onGoogleSolarData, isArabic]
-  );
 
   // Initial climate data fetch
   useEffect(() => {
