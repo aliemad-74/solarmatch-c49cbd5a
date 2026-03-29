@@ -5,7 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Simple in-memory rate limiter (per instance)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_REQUESTS = 10;
 const RATE_LIMIT_WINDOW_MS = 60000;
@@ -22,30 +21,13 @@ function checkRateLimit(identifier: string): boolean {
   return true;
 }
 
-function validateSolarData(data: unknown): { valid: boolean; error?: string } {
-  if (!data || typeof data !== 'object') return { valid: false, error: 'Invalid solar data' };
-  const d = data as Record<string, unknown>;
-  const numericFields = ['rooftopArea', 'kWInstalled', 'energyYear', 'monthlyConsumption',
-    'coverageRatio', 'totalCost', 'savingsYear', 'paybackYears', 'co2Reduction'];
-  for (const field of numericFields) {
-    if (typeof d[field] !== 'number' || !isFinite(d[field] as number)) {
-      return { valid: false, error: `Invalid ${field}: must be a valid number` };
-    }
-  }
-  if ((d.rooftopArea as number) <= 0 || (d.rooftopArea as number) > 1000000) return { valid: false, error: 'Rooftop area out of range' };
-  if ((d.kWInstalled as number) <= 0 || (d.kWInstalled as number) > 10000) return { valid: false, error: 'kW installed out of range' };
-  if (typeof d.pvType !== 'string') return { valid: false, error: 'Invalid pvType' };
-  if (typeof d.buildingType !== 'string') return { valid: false, error: 'Invalid buildingType' };
-  return { valid: true };
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     if (!checkRateLimit(clientIP)) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
         status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -53,66 +35,210 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
-    let body: unknown;
+    let body: Record<string, unknown>;
     try { body = await req.json(); } catch {
       return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { solarData, language } = body as { solarData: unknown; language: unknown };
-    if (language !== 'en' && language !== 'ar') {
-      return new Response(JSON.stringify({ error: "Invalid language parameter" }), {
+    const { solarData, language, mode } = body as {
+      solarData: Record<string, unknown>;
+      language: string;
+      mode?: "advice" | "calculate";
+    };
+
+    if (language !== "en" && language !== "ar") {
+      return new Response(JSON.stringify({ error: "Invalid language" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const validation = validateSolarData(solarData);
-    if (!validation.valid) {
-      return new Response(JSON.stringify({ error: validation.error }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const d = solarData;
+
+    // ===== MODE: AI CALCULATION =====
+    if (mode === "calculate") {
+      const calcPrompt = language === "ar"
+        ? `أنت خبير طاقة شمسية ومهندس حسابات. لديك بيانات مبنى محدد في مصر وتحتاج تقوم بتحليل شامل ودقيق.
+
+بيانات المبنى:
+- الموقع: ${d.locationName || "غير محدد"} (خط عرض: ${d.lat}, خط طول: ${d.lng})
+- مساحة السطح الكلية: ${d.rooftopArea} م²
+- نوع المبنى: ${d.buildingType}
+- الاستهلاك الشهري: ${d.monthlyConsumption} كيلوواط/ساعة
+- سعر الكهرباء: ${d.electricityPrice} جنيه/كيلوواط
+- نوع الألواح المختار: ${d.pvType}
+- سيناريو التكلفة: ${d.costScenario}
+${d.googleSolarData ? `
+بيانات Google Solar (بيانات أقمار صناعية فعلية):
+- أقصى مساحة للألواح: ${(d.googleSolarData as any).maxArrayAreaMeters2} م²
+- ساعات الشمس السنوية: ${(d.googleSolarData as any).maxSunshineHoursPerYear} ساعة
+- أقصى عدد ألواح: ${(d.googleSolarData as any).maxArrayPanelsCount}
+- قدرة اللوح: ${(d.googleSolarData as any).panelCapacityWatts} واط
+` : ""}
+${d.climateData ? `
+بيانات المناخ (NASA POWER):
+- متوسط الإشعاع الشمسي السنوي: ${(d.climateData as any).annualAvgIrradiance} كيلوواط/م²/يوم
+- الإشعاع الشهري: ${JSON.stringify((d.climateData as any).monthlyIrradiance)}
+- درجات الحرارة الشهرية: ${JSON.stringify((d.climateData as any).monthlyTemperature)}
+` : ""}
+
+المطلوب:
+قم بتحليل هذا المبنى تحديداً وقدم:
+
+1. **تقييم السطح**: هل هذا السطح مناسب للطاقة الشمسية؟ (ممتاز/جيد/مقبول/غير مناسب) مع السبب
+2. **الحجم الأمثل للنظام**: كم كيلوواط يُنصح بتركيبه لهذا المبنى تحديداً ولماذا
+3. **التكلفة المتوقعة**: التكلفة الإجمالية بالجنيه المصري مع تفصيل (ألواح، عاكس، تركيب، كابلات)
+4. **الإنتاج المتوقع**: الإنتاج السنوي والشهري بناءً على بيانات المناخ الفعلية للموقع
+5. **التوفير**: التوفير السنوي والشهري بالجنيه
+6. **فترة الاسترداد**: كم سنة لاسترداد التكلفة
+7. **نسبة التغطية**: نسبة تغطية الاستهلاك
+8. **توصيات خاصة**: نصائح مخصصة لهذا المبنى (اتجاه الألواح، صيانة، تمويل)
+9. **مقارنة الباقات**: قارن بين 3 خيارات (اقتصادي/قياسي/ممتاز) مع التكلفة والكفاءة لكل واحد
+10. **الأثر البيئي**: تقليل CO2 وما يعادله من أشجار
+
+استخدم أرقام واقعية للسوق المصري 2024-2025. لا تكرر البيانات المدخلة فقط، بل قدم تحليلاً حقيقياً.`
+
+        : `You are an expert solar energy engineer and calculator. You have specific building data from Egypt and need to perform a comprehensive, precise analysis.
+
+Building Data:
+- Location: ${d.locationName || "Not specified"} (lat: ${d.lat}, lng: ${d.lng})
+- Total Rooftop Area: ${d.rooftopArea} m²
+- Building Type: ${d.buildingType}
+- Monthly Consumption: ${d.monthlyConsumption} kWh
+- Electricity Price: ${d.electricityPrice} EGP/kWh
+- Selected Panel Type: ${d.pvType}
+- Cost Scenario: ${d.costScenario}
+${d.googleSolarData ? `
+Google Solar Data (actual satellite data):
+- Max Array Area: ${(d.googleSolarData as any).maxArrayAreaMeters2} m²
+- Annual Sunshine Hours: ${(d.googleSolarData as any).maxSunshineHoursPerYear} hrs
+- Max Panel Count: ${(d.googleSolarData as any).maxArrayPanelsCount}
+- Panel Capacity: ${(d.googleSolarData as any).panelCapacityWatts} W
+` : ""}
+${d.climateData ? `
+Climate Data (NASA POWER):
+- Annual Avg Irradiance: ${(d.climateData as any).annualAvgIrradiance} kWh/m²/day
+- Monthly Irradiance: ${JSON.stringify((d.climateData as any).monthlyIrradiance)}
+- Monthly Temperatures: ${JSON.stringify((d.climateData as any).monthlyTemperature)}
+` : ""}
+
+Required Analysis:
+Analyze THIS specific building and provide:
+
+1. **Rooftop Assessment**: Is this rooftop suitable for solar? (Excellent/Good/Fair/Not suitable) with reasoning
+2. **Optimal System Size**: How many kW recommended for THIS building specifically and why
+3. **Expected Cost**: Total cost in EGP with breakdown (panels, inverter, installation, cables)
+4. **Expected Production**: Annual and monthly production based on actual climate data for this location
+5. **Savings**: Annual and monthly savings in EGP
+6. **Payback Period**: Years to recover investment
+7. **Coverage Ratio**: Percentage of consumption covered
+8. **Custom Recommendations**: Tips specific to this building (panel orientation, maintenance, financing)
+9. **Package Comparison**: Compare 3 options (Economy/Standard/Premium) with cost and efficiency for each
+10. **Environmental Impact**: CO2 reduction and equivalent trees
+
+Use realistic numbers for Egyptian market 2024-2025. Don't just repeat input data - provide actual analysis.`;
+
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+
+      const response = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: calcPrompt }] }],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 8192,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Gemini API error:", response.status, errorText);
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ error: "AI service error" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Transform Gemini SSE to OpenAI-compatible SSE
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
+      const encoder = new TextEncoder();
+
+      (async () => {
+        try {
+          const reader = response.body!.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let newlineIndex: number;
+            while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+              let line = buffer.slice(0, newlineIndex);
+              buffer = buffer.slice(newlineIndex + 1);
+              if (line.endsWith("\r")) line = line.slice(0, -1);
+              if (!line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr) continue;
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                  const openaiChunk = { choices: [{ delta: { content: text }, index: 0 }] };
+                  await writer.write(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
+                }
+              } catch { /* skip */ }
+            }
+          }
+          await writer.write(encoder.encode("data: [DONE]\n\n"));
+        } catch (e) {
+          console.error("Stream error:", e);
+        } finally {
+          await writer.close();
+        }
+      })();
+
+      return new Response(readable, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     }
 
-    const d = solarData as Record<string, unknown>;
+    // ===== MODE: ADVICE (post-calculation advice) =====
+    const systemPrompt = language === "ar"
+      ? `أنت مستشار طاقة شمسية خبير في السوق المصري. هذا المستخدم عنده نظام شمسي محسوب بالفعل. 
+قدم توصيات عملية ومخصصة بناءً على بياناته المحددة.
 
-    const systemPrompt = language === 'ar'
-      ? `أنت مستشار طاقة شمسية خبير في السوق المصري. حلل بيانات النظام الشمسي وقدم توصيات مخصصة ومفصلة.
+قواعد مهمة:
+- لا تكرر الأرقام فقط. حلل واشرح ماذا تعني.
+- إذا نسبة التغطية < 80%: اقترح حلول محددة (ترقية ألواح، زيادة مساحة)
+- إذا فترة الاسترداد > 7 سنوات: اقترح خيارات تمويل أو تقليل تكاليف
+- قارن وضعه الحالي بالمثالي
+- اذكر برامج دعم حكومية إن وجدت
+- اذكر أفضل وقت للتركيب في مصر
+- قدم 5-7 نقاط عملية مختلفة`
+      : `You are an expert solar energy consultant for the Egyptian market. This user already has calculated solar system data.
+Provide practical, personalized recommendations based on their specific data.
 
-قواعد التحليل:
-1. إذا كانت نسبة التغطية أقل من 80%، اقترح زيادة مساحة الألواح أو الترقية لنوع أعلى كفاءة
-2. إذا كانت فترة الاسترداد أكثر من 7 سنوات، اقترح خيارات توفير أو تمويل
-3. قارن بين أنواع الألواح المختلفة وفائدة كل نوع
-4. اذكر الفوائد البيئية بشكل ملموس (مثلاً: زراعة أشجار مكافئة)
-5. قدم نصائح عن أفضل وقت للتركيب وصيانة الألواح في مصر
-6. اذكر معلومات عن دعم الحكومة المصرية للطاقة الشمسية إن وجد
+Important rules:
+- Don't just repeat numbers. Analyze and explain what they mean.
+- If coverage < 80%: suggest specific solutions (upgrade panels, increase area)
+- If payback > 7 years: suggest financing or cost reduction options
+- Compare their current setup to the ideal
+- Mention government support programs if available
+- Mention best installation timing in Egypt
+- Provide 5-7 distinct practical points`;
 
-اجعل ردك:
-- مفصلاً (5-7 نقاط رئيسية)
-- عملياً وقابلاً للتنفيذ
-- بأسلوب ودود ومشجع
-- استخدم الإيموجي للتوضيح
-- اذكر أرقام محددة من البيانات المقدمة`
-      : `You are an expert solar energy consultant for the Egyptian market. Analyze the provided solar system data and give detailed, personalized recommendations.
-
-Analysis rules:
-1. If coverage ratio is below 80%, suggest increasing panel area or upgrading to higher efficiency type
-2. If payback period exceeds 7 years, suggest cost-saving options or financing
-3. Compare different panel types and their benefits for this specific case
-4. Mention environmental benefits in concrete terms (e.g., equivalent trees planted)
-5. Provide tips about best installation timing and panel maintenance in Egypt
-6. Mention Egyptian government solar incentives if applicable
-
-Keep your response:
-- Detailed (5-7 main points)
-- Practical and actionable
-- Friendly and encouraging
-- Use emojis for clarity
-- Reference specific numbers from the provided data`;
-
-    const userPrompt = language === 'ar'
-      ? `بيانات النظام الشمسي:
-- الموقع: ${d.locationName || 'غير محدد'}
+    const userPrompt = language === "ar"
+      ? `بيانات النظام الشمسي لهذا المبنى المحدد:
+- الموقع: ${d.locationName || "غير محدد"}
 - مساحة السطح: ${d.rooftopArea} م²
 - القدرة المركبة: ${d.kWInstalled} كيلوواط
 - الإنتاج السنوي: ${d.energyYear} كيلوواط/ساعة
@@ -125,9 +251,9 @@ Keep your response:
 - فترة الاسترداد: ${d.paybackYears} سنة
 - تقليل CO2: ${d.co2Reduction} كجم/سنة
 
-قدم تحليلاً مفصلاً وتوصيات عملية لهذا المستخدم.`
-      : `Solar System Data:
-- Location: ${d.locationName || 'Not specified'}
+حلل هذا النظام وقدم توصيات عملية ومفصلة خاصة بهذا المبنى. لا تعيد سرد الأرقام فقط.`
+      : `Solar system data for this specific building:
+- Location: ${d.locationName || "Not specified"}
 - Rooftop Area: ${d.rooftopArea} m²
 - Installed Capacity: ${d.kWInstalled} kW
 - Annual Production: ${d.energyYear} kWh
@@ -140,9 +266,8 @@ Keep your response:
 - Payback Period: ${d.paybackYears} years
 - CO2 Reduction: ${d.co2Reduction} kg/year
 
-Provide a detailed analysis and practical recommendations for this user.`;
+Analyze this system and provide practical, detailed recommendations specific to this building. Don't just restate the numbers.`;
 
-    // Call Gemini API directly
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
 
     const response = await fetch(geminiUrl, {
@@ -154,7 +279,7 @@ Provide a detailed analysis and practical recommendations for this user.`;
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
         },
       }),
     });
@@ -163,7 +288,7 @@ Provide a detailed analysis and practical recommendations for this user.`;
       const errorText = await response.text();
       console.error("Gemini API error:", response.status, errorText);
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -172,7 +297,7 @@ Provide a detailed analysis and practical recommendations for this user.`;
       });
     }
 
-    // Transform Gemini SSE stream to OpenAI-compatible SSE stream
+    // Transform Gemini SSE to OpenAI-compatible SSE
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
@@ -182,40 +307,31 @@ Provide a detailed analysis and practical recommendations for this user.`;
         const reader = response.body!.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-
           let newlineIndex: number;
           while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
             let line = buffer.slice(0, newlineIndex);
             buffer = buffer.slice(newlineIndex + 1);
             if (line.endsWith("\r")) line = line.slice(0, -1);
             if (!line.startsWith("data: ")) continue;
-
             const jsonStr = line.slice(6).trim();
             if (!jsonStr) continue;
-
             try {
               const parsed = JSON.parse(jsonStr);
               const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
               if (text) {
-                // Convert to OpenAI-compatible format
-                const openaiChunk = {
-                  choices: [{ delta: { content: text }, index: 0 }],
-                };
+                const openaiChunk = { choices: [{ delta: { content: text }, index: 0 }] };
                 await writer.write(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
               }
-            } catch {
-              // skip invalid JSON
-            }
+            } catch { /* skip */ }
           }
         }
         await writer.write(encoder.encode("data: [DONE]\n\n"));
       } catch (e) {
-        console.error("Stream transform error:", e);
+        console.error("Stream error:", e);
       } finally {
         await writer.close();
       }

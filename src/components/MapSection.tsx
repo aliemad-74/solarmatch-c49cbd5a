@@ -202,6 +202,11 @@ const MapSection = ({
     setIsDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        // Clear search query and autocomplete to prevent redirect back
+        setSearchQuery("");
+        if (autocompleteInputRef.current) {
+          autocompleteInputRef.current.value = "";
+        }
         await updateLocation(position.coords.latitude, position.coords.longitude);
         toast.success(t("map.locationDetected"));
         setIsDetectingLocation(false);

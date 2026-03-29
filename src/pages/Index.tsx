@@ -287,6 +287,10 @@ const Index = () => {
               monthlyConsumption={effectiveMonthlyConsumption}
               pvType={pvType}
               buildingType={buildingType}
+              costScenario={costScenario}
+              electricityPrice={electricityPrice}
+              climateData={climateData}
+              googleSolarData={googleSolarData}
             />
           </ScrollReveal>
         </div>

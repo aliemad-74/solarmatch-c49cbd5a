@@ -7,6 +7,7 @@ import ROITimeline from "./ROITimeline";
 import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 import AIAdvisor from "./AIAdvisor";
+import AIAnalysis from "./AIAnalysis";
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -25,9 +26,13 @@ interface ResultsDashboardProps {
   monthlyConsumption?: number;
   pvType?: string;
   buildingType?: string;
+  costScenario?: string;
+  electricityPrice?: number;
+  climateData?: import("@/lib/climateApi").ClimateData | null;
+  googleSolarData?: import("@/lib/climateApi").GoogleSolarData | null;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment" }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, climateData, googleSolarData }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -671,7 +676,25 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         </div>
 
-        {/* AI Advisor - separate from data sections */}
+        {/* AI-Powered Analysis - Comprehensive */}
+        <div className="mt-6 print:hidden">
+          <AIAnalysis
+            rooftopArea={results.usableArea}
+            locationName={locationName || ''}
+            monthlyConsumption={monthlyConsumption}
+            pvType={pvType}
+            buildingType={buildingType}
+            costScenario={costScenario}
+            electricityPrice={electricityPrice}
+            climateData={climateData || null}
+            googleSolarData={googleSolarData || null}
+            lat={climateData?.location?.lat}
+            lng={climateData?.location?.lng}
+            isVisible={isVisible}
+          />
+        </div>
+
+        {/* AI Advisor - Quick tips */}
         <div className="mt-6 print:hidden">
           <AIAdvisor results={results} locationName={locationName || ''} monthlyConsumption={monthlyConsumption} pvType={pvType} buildingType={buildingType} />
         </div>
