@@ -81,6 +81,7 @@ const Index = () => {
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
   const [userEditedConfig, setUserEditedConfig] = useState(false);
+  const [polygonDrawn, setPolygonDrawn] = useState(false);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
