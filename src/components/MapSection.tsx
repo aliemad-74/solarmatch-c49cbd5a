@@ -424,11 +424,17 @@ const MapSection = ({
           >
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
-              center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+              center={undefined}
               zoom={20}
-              options={mapOptions}
+              options={{
+                ...mapOptions,
+                center: mapRef.current ? undefined : { lat: currentLocation.lat, lng: currentLocation.lng },
+              }}
               onClick={handleMapClick}
-              onLoad={onMapLoad}
+              onLoad={(map) => {
+                onMapLoad(map);
+                map.setCenter({ lat: currentLocation.lat, lng: currentLocation.lng });
+              }}
             >
               {polygonPoints.length >= 2 && (
                 <Polygon
