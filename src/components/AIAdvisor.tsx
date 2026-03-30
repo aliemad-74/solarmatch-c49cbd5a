@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,23 @@ interface AIAdvisorProps {
   monthlyConsumption: number;
   pvType: string;
   buildingType: string;
+  preloadedRecommendation?: string;
+  preloadedLoading?: boolean;
 }
 
-const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, buildingType }: AIAdvisorProps) => {
+const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, buildingType, preloadedRecommendation, preloadedLoading }: AIAdvisorProps) => {
   const { t, i18n } = useTranslation();
-  const [advice, setAdvice] = useState<string>("");
+  const [advice, setAdvice] = useState<string>(preloadedRecommendation || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [hasAsked, setHasAsked] = useState(false);
+  const [hasAsked, setHasAsked] = useState(!!preloadedRecommendation);
 
+  // Update when preloaded recommendation arrives
+  useEffect(() => {
+    if (preloadedRecommendation && preloadedRecommendation !== "AI analysis unavailable. Results are based on engineering calculations.") {
+      setAdvice(preloadedRecommendation);
+      setHasAsked(true);
+    }
+  }, [preloadedRecommendation]);
   const getAdvice = async () => {
     setIsLoading(true);
     setAdvice("");

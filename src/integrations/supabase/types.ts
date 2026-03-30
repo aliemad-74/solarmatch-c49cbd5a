@@ -212,6 +212,105 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_assessments: {
+        Row: {
+          ai_confidence: string | null
+          ai_recommendation: string | null
+          annual_production: number | null
+          annual_savings: number | null
+          aqi: number | null
+          area_in_feddans: number | null
+          building_type: string | null
+          city: string | null
+          cloud_cover: number | null
+          co2_saved: number | null
+          coverage_ratio: number | null
+          created_at: string
+          data_source: string | null
+          dust_efficiency_loss: number | null
+          elevation: number | null
+          farm_mode: boolean | null
+          feasibility: string | null
+          formatted_address: string | null
+          governorate: string | null
+          id: string
+          latitude: number
+          longitude: number
+          monthly_consumption: number | null
+          payback_years: number | null
+          pv_package: string | null
+          rooftop_area: number | null
+          system_size_kw: number | null
+          temperature: number | null
+          total_cost: number | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_confidence?: string | null
+          ai_recommendation?: string | null
+          annual_production?: number | null
+          annual_savings?: number | null
+          aqi?: number | null
+          area_in_feddans?: number | null
+          building_type?: string | null
+          city?: string | null
+          cloud_cover?: number | null
+          co2_saved?: number | null
+          coverage_ratio?: number | null
+          created_at?: string
+          data_source?: string | null
+          dust_efficiency_loss?: number | null
+          elevation?: number | null
+          farm_mode?: boolean | null
+          feasibility?: string | null
+          formatted_address?: string | null
+          governorate?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          monthly_consumption?: number | null
+          payback_years?: number | null
+          pv_package?: string | null
+          rooftop_area?: number | null
+          system_size_kw?: number | null
+          temperature?: number | null
+          total_cost?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_confidence?: string | null
+          ai_recommendation?: string | null
+          annual_production?: number | null
+          annual_savings?: number | null
+          aqi?: number | null
+          area_in_feddans?: number | null
+          building_type?: string | null
+          city?: string | null
+          cloud_cover?: number | null
+          co2_saved?: number | null
+          coverage_ratio?: number | null
+          created_at?: string
+          data_source?: string | null
+          dust_efficiency_loss?: number | null
+          elevation?: number | null
+          farm_mode?: boolean | null
+          feasibility?: string | null
+          formatted_address?: string | null
+          governorate?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          monthly_consumption?: number | null
+          payback_years?: number | null
+          pv_package?: string | null
+          rooftop_area?: number | null
+          system_size_kw?: number | null
+          temperature?: number | null
+          total_cost?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

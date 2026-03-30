@@ -22,6 +22,47 @@ import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
 
+export interface SolarEngineData {
+  success: boolean;
+  location: {
+    formatted_address: string;
+    city: string;
+    governorate?: string;
+    elevation: number;
+    coordinates: { lat: number; lng: number };
+  };
+  environmental: {
+    aqi: number;
+    dust_efficiency_loss: number;
+    temperature: number;
+    humidity?: number;
+    cloud_cover: number;
+    weather_description: string;
+  };
+  solar_data: {
+    source: "google_solar" | "nasa_power";
+    irradiance: number;
+    adjusted_irradiance: number;
+    max_panels: number | null;
+    sunshine_hours: number | null;
+  };
+  calculation: {
+    system_size_kw: number;
+    annual_production: number;
+    coverage_ratio: number;
+    total_cost: number;
+    annual_savings: number;
+    payback_years: number;
+    co2_saved: number;
+    feasibility: "suitable" | "conditional" | "not_suitable";
+    pv_package: string;
+  };
+  ai_analysis: {
+    recommendation: string;
+    confidence: "high" | "medium" | "low";
+  };
+}
+
 const Index = () => {
   const { t, i18n } = useTranslation();
   const { user, profile, canGenerateReport, recordReportGeneration } = useUserAuth();
@@ -32,6 +73,10 @@ const Index = () => {
   const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
   const [pendingCalculation, setPendingCalculation] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+  
+  // Solar engine enhanced data
+  const [solarEngineData, setSolarEngineData] = useState<SolarEngineData | null>(null);
+  const [solarEngineLoading, setSolarEngineLoading] = useState(false);
   
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
@@ -130,8 +175,109 @@ const Index = () => {
     }
   }, [user, profile, canGenerateReport, pendingCalculation]);
 
+  // Call solar-engine in parallel (fire and forget enhancement)
+  const callSolarEngine = async () => {
+    const packageMap: Record<string, string> = {
+      'C_poly_economy': 'economy', 'low': 'economy',
+      'B_standard_mono': 'standard', 'medium': 'standard',
+      'A_high_power_mono': 'premium', 'high': 'premium',
+    };
+    const pkg = packageMap[costScenario] || packageMap[pvType] || 'standard';
+
+    setSolarEngineLoading(true);
+    setSolarEngineData(null);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/solar-engine`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            latitude: climateData?.location?.lat,
+            longitude: climateData?.location?.lng,
+            monthlyConsumption: effectiveMonthlyConsumption,
+            rooftopArea,
+            buildingType,
+            pvPackage: pkg,
+            farmMode,
+            areaInFeddans: farmMode ? areaInFeddans : undefined,
+          }),
+          signal: controller.signal,
+        }
+      );
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data: SolarEngineData = await res.json();
+        if (data.success) {
+          setSolarEngineData(data);
+
+          // Silent capture-lead call
+          try {
+            fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                },
+                body: JSON.stringify({
+                  latitude: data.location.coordinates.lat,
+                  longitude: data.location.coordinates.lng,
+                  city: data.location.city,
+                  governorate: data.location.governorate,
+                  formatted_address: data.location.formatted_address,
+                  building_type: buildingType,
+                  pv_package: pkg,
+                  monthly_consumption: effectiveMonthlyConsumption,
+                  rooftop_area: rooftopArea,
+                  system_size_kw: data.calculation.system_size_kw,
+                  annual_production: data.calculation.annual_production,
+                  annual_savings: data.calculation.annual_savings,
+                  payback_years: data.calculation.payback_years,
+                  total_cost: data.calculation.total_cost,
+                  coverage_ratio: data.calculation.coverage_ratio,
+                  co2_saved: data.calculation.co2_saved,
+                  feasibility: data.calculation.feasibility,
+                  aqi: data.environmental.aqi,
+                  elevation: data.location.elevation,
+                  data_source: data.solar_data.source,
+                  dust_efficiency_loss: data.environmental.dust_efficiency_loss,
+                  temperature: data.environmental.temperature,
+                  cloud_cover: data.environmental.cloud_cover,
+                  ai_recommendation: data.ai_analysis.recommendation,
+                  ai_confidence: data.ai_analysis.confidence,
+                  user_id: user?.id || null,
+                  farm_mode: farmMode,
+                  area_in_feddans: farmMode ? areaInFeddans : null,
+                }),
+              }
+            );
+          } catch {
+            // Silent - don't bother user
+          }
+        }
+      }
+    } catch {
+      // Silent timeout/failure - existing results remain
+    } finally {
+      setSolarEngineLoading(false);
+    }
+  };
+
   const performCalculation = async () => {
     setIsCalculating(true);
+    
+    // Fire solar-engine in parallel (non-blocking enhancement)
+    callSolarEngine();
     
     try {
       // Determine which package maps to the selected pvType + costScenario
@@ -391,6 +537,8 @@ const Index = () => {
               buildingType={buildingType}
               costScenario={costScenario}
               electricityPrice={electricityPrice}
+              solarEngineData={solarEngineData}
+              solarEngineLoading={solarEngineLoading}
             />
           </ScrollReveal>
         </div>

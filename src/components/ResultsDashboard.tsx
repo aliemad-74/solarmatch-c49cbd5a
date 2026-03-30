@@ -1,4 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone, Satellite, Wind, Mountain } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import type { SolarEngineData } from "@/pages/Index";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -28,9 +29,11 @@ interface ResultsDashboardProps {
   buildingType?: string;
   costScenario?: string;
   electricityPrice?: number;
+  solarEngineData?: SolarEngineData | null;
+  solarEngineLoading?: boolean;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95 }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -675,9 +678,79 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
         </div>
 
 
+        {/* Solar Engine Enhanced Data Badges */}
+        {(solarEngineLoading || solarEngineData) && (
+          <div className="mt-6">
+            {solarEngineLoading && !solarEngineData ? (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                {isAr ? "جاري تحليل البيانات المتقدمة..." : "Loading AI-enhanced analysis..."}
+              </div>
+            ) : solarEngineData ? (
+              <div className="space-y-3">
+                {/* Data source & environmental badges */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                    <Satellite className="w-3 h-3" />
+                    {solarEngineData.solar_data.source === "google_solar" ? "Google Solar" : "NASA POWER"}
+                  </span>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
+                    solarEngineData.environmental.aqi < 50 ? "bg-solar-green/10 text-solar-green border-solar-green/20" :
+                    solarEngineData.environmental.aqi <= 100 ? "bg-solar-gold/10 text-solar-gold border-solar-gold/20" :
+                    "bg-destructive/10 text-destructive border-destructive/20"
+                  }`}>
+                    <Wind className="w-3 h-3" />
+                    AQI: {solarEngineData.environmental.aqi}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+                    <Mountain className="w-3 h-3" />
+                    {solarEngineData.location.elevation}m
+                  </span>
+                  {solarEngineData.environmental.dust_efficiency_loss > 0 && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-solar-gold/10 text-solar-gold border-solar-gold/20">
+                      {isAr ? `فقد غبار: ${solarEngineData.environmental.dust_efficiency_loss}%` : `Dust loss: ${solarEngineData.environmental.dust_efficiency_loss}%`}
+                    </span>
+                  )}
+                </div>
+
+                {/* AI-Enhanced Estimate comparison */}
+                {results && (
+                  Math.abs(solarEngineData.calculation.system_size_kw - results.kWInstalled) > 0.5 ||
+                  Math.abs(solarEngineData.calculation.annual_production - results.energyYear) > 500
+                ) && (
+                  <div className="p-4 rounded-xl bg-accent/50 border border-accent-foreground/10">
+                    <h5 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <Crosshair className="w-4 h-4 text-primary" />
+                      {isAr ? "تقدير مُحسّن بالذكاء الاصطناعي" : "AI-Enhanced Estimate"}
+                    </h5>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">{isAr ? "حجم النظام" : "System Size"}</span>
+                        <p className="font-semibold">{solarEngineData.calculation.system_size_kw} kW</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">{isAr ? "الإنتاج السنوي" : "Annual Production"}</span>
+                        <p className="font-semibold">{formatNumber(solarEngineData.calculation.annual_production, 0)} kWh</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        )}
+
         {/* AI Advisor - Quick tips */}
         <div className="mt-6 print:hidden">
-          <AIAdvisor results={results} locationName={locationName || ''} monthlyConsumption={monthlyConsumption} pvType={pvType} buildingType={buildingType} />
+          <AIAdvisor
+            results={results}
+            locationName={locationName || ''}
+            monthlyConsumption={monthlyConsumption}
+            pvType={pvType}
+            buildingType={buildingType}
+            preloadedRecommendation={solarEngineData?.ai_analysis?.recommendation}
+            preloadedLoading={solarEngineLoading}
+          />
         </div>
       </div>
     </section>
