@@ -37,15 +37,18 @@ serve(async (req) => {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Google Solar API error:", response.status, JSON.stringify(data));
-        return new Response(JSON.stringify({ 
-          error: "Solar API unavailable", 
-          fallback: true,
-          details: data.error?.message || "Unknown error"
-        }), {
-          status: response.status === 404 ? 404 : 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.log("Google Solar API not available for this location:", response.status);
+        return new Response(
+          JSON.stringify({ 
+            available: false,
+            fallback: true,
+            reason: "Solar imagery not available for this location"
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
 
       // Extract useful data
