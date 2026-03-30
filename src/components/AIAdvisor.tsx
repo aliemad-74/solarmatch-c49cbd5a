@@ -30,7 +30,7 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
       setHasAsked(true);
     }
   }, [preloadedRecommendation]);
-
+  const getAdvice = async () => {
     setIsLoading(true);
     setAdvice("");
     setHasAsked(true);
