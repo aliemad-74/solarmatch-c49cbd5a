@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.building-footprints]
 verify_jwt = false
+
+[functions.solar-engine]
+verify_jwt = false
