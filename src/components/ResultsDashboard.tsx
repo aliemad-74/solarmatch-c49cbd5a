@@ -1,4 +1,4 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone, Satellite, Wind, Mountain } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import type { SolarEngineData } from "@/pages/Index";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -28,9 +29,11 @@ interface ResultsDashboardProps {
   buildingType?: string;
   costScenario?: string;
   electricityPrice?: number;
+  solarEngineData?: SolarEngineData | null;
+  solarEngineLoading?: boolean;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95 }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
