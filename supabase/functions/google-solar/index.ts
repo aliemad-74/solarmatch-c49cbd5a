@@ -89,7 +89,7 @@ serve(async (req) => {
 
     } else if (action === "dataLayers") {
       // Google Solar API - Data Layers (for heatmaps)
-      const url = `https://solar.googleapis.com/v1/dataLayers:get?location.latitude=${lat}&location.longitude=${lng}&radiusMeters=100&view=FULL_LAYERS&requiredQuality=HIGH&pixelSizeMeters=0.5&key=${GOOGLE_MAPS_API_KEY}`;
+      const url = `https://solar.googleapis.com/v1/dataLayers:get?location.latitude=${lat}&location.longitude=${lng}&radiusMeters=100&view=FULL_LAYERS&pixelSizeMeters=0.5&key=${GOOGLE_MAPS_API_KEY}`;
 
       const response = await fetch(url);
       const data = await response.json();
