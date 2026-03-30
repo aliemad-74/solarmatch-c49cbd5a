@@ -159,11 +159,15 @@ Return ONLY valid JSON. Be precise with numbers. Use realistic Egyptian market d
         }
       };
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+      const reportController = new AbortController();
+      const reportTimeoutId = setTimeout(() => reportController.abort(), 25000);
 
       const response = await fetch(geminiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: reportController.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: reportPrompt }] }],
           tools: [{ functionDeclarations: [toolSchema] }],
@@ -174,6 +178,8 @@ Return ONLY valid JSON. Be precise with numbers. Use realistic Egyptian market d
           },
         }),
       });
+
+      clearTimeout(reportTimeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -268,11 +274,15 @@ Important rules:
 
 Analyze this system and provide practical, detailed recommendations specific to this building. Don't just restate the numbers.`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+
+    const adviceController = new AbortController();
+    const adviceTimeoutId = setTimeout(() => adviceController.abort(), 25000);
 
     const response = await fetch(geminiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: adviceController.signal,
       body: JSON.stringify({
         contents: [
           { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] },
@@ -283,6 +293,8 @@ Analyze this system and provide practical, detailed recommendations specific to 
         },
       }),
     });
+
+    clearTimeout(adviceTimeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -301,7 +313,6 @@ Analyze this system and provide practical, detailed recommendations specific to 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
-
     (async () => {
       try {
         const reader = response.body!.getReader();
@@ -311,34 +322,42 @@ Analyze this system and provide practical, detailed recommendations specific to 
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-          let newlineIndex: number;
-          while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-            let line = buffer.slice(0, newlineIndex);
-            buffer = buffer.slice(newlineIndex + 1);
-            if (line.endsWith("\r")) line = line.slice(0, -1);
-            if (!line.startsWith("data: ")) continue;
+
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line || !line.startsWith("data: ")) continue;
             const jsonStr = line.slice(6).trim();
-            if (!jsonStr) continue;
+            if (!jsonStr || jsonStr === "[DONE]") continue;
             try {
               const parsed = JSON.parse(jsonStr);
               const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
               if (text) {
-                const openaiChunk = { choices: [{ delta: { content: text }, index: 0 }] };
-                await writer.write(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
+                const chunk = { choices: [{ delta: { content: text }, index: 0 }] };
+                await writer.write(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
               }
-            } catch { /* skip */ }
+            } catch {
+              continue;
+            }
           }
         }
         await writer.write(encoder.encode("data: [DONE]\n\n"));
       } catch (e) {
         console.error("Stream error:", e);
       } finally {
-        await writer.close();
+        try { await writer.close(); } catch {}
       }
     })();
 
     return new Response(readable, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (error) {
     console.error("Solar advisor error:", error);

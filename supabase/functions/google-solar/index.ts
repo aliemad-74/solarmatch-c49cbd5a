@@ -31,21 +31,24 @@ serve(async (req) => {
 
     if (action === "buildingInsights") {
       // Google Solar API - Building Insights
-      const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=HIGH&key=${GOOGLE_MAPS_API_KEY}`;
+      const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${GOOGLE_MAPS_API_KEY}`;
       
       const response = await fetch(url);
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Google Solar API error:", response.status, JSON.stringify(data));
-        return new Response(JSON.stringify({ 
-          error: "Solar API unavailable", 
-          fallback: true,
-          details: data.error?.message || "Unknown error"
-        }), {
-          status: response.status === 404 ? 404 : 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.log("Google Solar API not available for this location:", response.status);
+        return new Response(
+          JSON.stringify({ 
+            available: false,
+            fallback: true,
+            reason: "Solar imagery not available for this location"
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
 
       // Extract useful data
@@ -86,14 +89,14 @@ serve(async (req) => {
 
     } else if (action === "dataLayers") {
       // Google Solar API - Data Layers (for heatmaps)
-      const url = `https://solar.googleapis.com/v1/dataLayers:get?location.latitude=${lat}&location.longitude=${lng}&radiusMeters=100&view=FULL_LAYERS&requiredQuality=HIGH&pixelSizeMeters=0.5&key=${GOOGLE_MAPS_API_KEY}`;
+      const url = `https://solar.googleapis.com/v1/dataLayers:get?location.latitude=${lat}&location.longitude=${lng}&radiusMeters=100&view=FULL_LAYERS&pixelSizeMeters=0.5&key=${GOOGLE_MAPS_API_KEY}`;
 
       const response = await fetch(url);
       const data = await response.json();
 
       if (!response.ok) {
-        return new Response(JSON.stringify({ error: "Data layers unavailable", fallback: true }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ available: false, fallback: true, reason: "Data layers unavailable" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
