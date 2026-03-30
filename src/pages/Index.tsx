@@ -439,7 +439,7 @@ const Index = () => {
   });
 
   // Progress tracking — only from explicit user actions
-  const hasLocation = userSelectedLocation && !!climateData && rooftopArea > 0;
+  const hasLocation = userSelectedLocation && !!climateData && rooftopArea > 0 && polygonDrawn;
   const hasConfigured = userEditedConfig && rooftopArea > 0 && effectiveMonthlyConsumption > 0;
 
   return (
