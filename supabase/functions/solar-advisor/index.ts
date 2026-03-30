@@ -274,11 +274,15 @@ Important rules:
 
 Analyze this system and provide practical, detailed recommendations specific to this building. Don't just restate the numbers.`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+
+    const adviceController = new AbortController();
+    const adviceTimeoutId = setTimeout(() => adviceController.abort(), 25000);
 
     const response = await fetch(geminiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: adviceController.signal,
       body: JSON.stringify({
         contents: [
           { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] },
@@ -289,6 +293,8 @@ Analyze this system and provide practical, detailed recommendations specific to 
         },
       }),
     });
+
+    clearTimeout(adviceTimeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
