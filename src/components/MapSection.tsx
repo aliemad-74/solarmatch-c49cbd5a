@@ -424,12 +424,8 @@ const MapSection = ({
           >
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
-              center={undefined}
               zoom={20}
-              options={{
-                ...mapOptions,
-                center: mapRef.current ? undefined : { lat: currentLocation.lat, lng: currentLocation.lng },
-              }}
+              options={mapOptions}
               onClick={handleMapClick}
               onLoad={(map) => {
                 onMapLoad(map);
