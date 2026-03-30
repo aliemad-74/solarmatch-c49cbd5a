@@ -13,13 +13,15 @@ interface AIAdvisorProps {
   monthlyConsumption: number;
   pvType: string;
   buildingType: string;
+  preloadedRecommendation?: string;
+  preloadedLoading?: boolean;
 }
 
-const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, buildingType }: AIAdvisorProps) => {
+const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, buildingType, preloadedRecommendation, preloadedLoading }: AIAdvisorProps) => {
   const { t, i18n } = useTranslation();
-  const [advice, setAdvice] = useState<string>("");
+  const [advice, setAdvice] = useState<string>(preloadedRecommendation || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [hasAsked, setHasAsked] = useState(false);
+  const [hasAsked, setHasAsked] = useState(!!preloadedRecommendation);
 
   const getAdvice = async () => {
     setIsLoading(true);
