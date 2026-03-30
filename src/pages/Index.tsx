@@ -81,6 +81,7 @@ const Index = () => {
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
   const [userEditedConfig, setUserEditedConfig] = useState(false);
+  const [polygonDrawn, setPolygonDrawn] = useState(false);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
@@ -439,7 +440,7 @@ const Index = () => {
   });
 
   // Progress tracking — only from explicit user actions
-  const hasLocation = userSelectedLocation && !!climateData && rooftopArea > 0;
+  const hasLocation = userSelectedLocation && !!climateData && rooftopArea > 0 && polygonDrawn;
   const hasConfigured = userEditedConfig && rooftopArea > 0 && effectiveMonthlyConsumption > 0;
 
   return (
@@ -463,7 +464,7 @@ const Index = () => {
         <div id="map-section">
           <ScrollReveal>
             <MapSection
-              onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); }}
+              onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setPolygonDrawn(true); }}
               onClimateDataFetched={(data) => {
                 setClimateData(data);
                 if (initialLocationLoadRef.current) {

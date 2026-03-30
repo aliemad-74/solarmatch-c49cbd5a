@@ -154,8 +154,7 @@ Return ONLY valid JSON. Be precise with numbers. Use realistic Egyptian market d
             },
             warnings: { type: "array", items: { type: "string" }, description: "Warning messages" },
           },
-          required: ["usableArea", "kWMax", "kWInstalled", "energyYear", "energyMonth", "monthlyProduction", "savingsYear", "savingsMonth", "totalCost", "costPerKW", "paybackYears", "coverageRatio", "co2Saved", "panelCount", "panelWattage", "connectionRecommendation", "packageOptions", "warnings"],
-          additionalProperties: false
+          required: ["usableArea", "kWMax", "kWInstalled", "energyYear", "energyMonth", "monthlyProduction", "savingsYear", "savingsMonth", "totalCost", "costPerKW", "paybackYears", "coverageRatio", "co2Saved", "panelCount", "panelWattage", "connectionRecommendation", "packageOptions", "warnings"]
         }
       };
 
