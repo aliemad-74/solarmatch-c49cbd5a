@@ -95,8 +95,8 @@ serve(async (req) => {
       const data = await response.json();
 
       if (!response.ok) {
-        return new Response(JSON.stringify({ error: "Data layers unavailable", fallback: true }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ available: false, fallback: true, reason: "Data layers unavailable" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
