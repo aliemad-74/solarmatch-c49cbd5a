@@ -23,7 +23,14 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
   const [isLoading, setIsLoading] = useState(false);
   const [hasAsked, setHasAsked] = useState(!!preloadedRecommendation);
 
-  const getAdvice = async () => {
+  // Update when preloaded recommendation arrives
+  useEffect(() => {
+    if (preloadedRecommendation && preloadedRecommendation !== "AI analysis unavailable. Results are based on engineering calculations.") {
+      setAdvice(preloadedRecommendation);
+      setHasAsked(true);
+    }
+  }, [preloadedRecommendation]);
+
     setIsLoading(true);
     setAdvice("");
     setHasAsked(true);
