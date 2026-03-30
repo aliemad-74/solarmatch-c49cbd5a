@@ -161,9 +161,13 @@ Return ONLY valid JSON. Be precise with numbers. Use realistic Egyptian market d
 
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
+      const reportController = new AbortController();
+      const reportTimeoutId = setTimeout(() => reportController.abort(), 25000);
+
       const response = await fetch(geminiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: reportController.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: reportPrompt }] }],
           tools: [{ functionDeclarations: [toolSchema] }],
@@ -174,6 +178,8 @@ Return ONLY valid JSON. Be precise with numbers. Use realistic Egyptian market d
           },
         }),
       });
+
+      clearTimeout(reportTimeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
