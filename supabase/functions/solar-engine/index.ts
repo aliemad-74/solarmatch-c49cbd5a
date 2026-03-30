@@ -170,7 +170,7 @@ async function getElevation(lat: number, lng: number, apiKey: string) {
 /* ───── STEP 6: Gemini AI ───── */
 async function getAIAnalysis(prompt: string, geminiKey: string) {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
     const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
