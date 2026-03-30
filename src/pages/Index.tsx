@@ -22,6 +22,47 @@ import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
 
+export interface SolarEngineData {
+  success: boolean;
+  location: {
+    formatted_address: string;
+    city: string;
+    governorate?: string;
+    elevation: number;
+    coordinates: { lat: number; lng: number };
+  };
+  environmental: {
+    aqi: number;
+    dust_efficiency_loss: number;
+    temperature: number;
+    humidity?: number;
+    cloud_cover: number;
+    weather_description: string;
+  };
+  solar_data: {
+    source: "google_solar" | "nasa_power";
+    irradiance: number;
+    adjusted_irradiance: number;
+    max_panels: number | null;
+    sunshine_hours: number | null;
+  };
+  calculation: {
+    system_size_kw: number;
+    annual_production: number;
+    coverage_ratio: number;
+    total_cost: number;
+    annual_savings: number;
+    payback_years: number;
+    co2_saved: number;
+    feasibility: "suitable" | "conditional" | "not_suitable";
+    pv_package: string;
+  };
+  ai_analysis: {
+    recommendation: string;
+    confidence: "high" | "medium" | "low";
+  };
+}
+
 const Index = () => {
   const { t, i18n } = useTranslation();
   const { user, profile, canGenerateReport, recordReportGeneration } = useUserAuth();
@@ -32,6 +73,10 @@ const Index = () => {
   const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
   const [pendingCalculation, setPendingCalculation] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+  
+  // Solar engine enhanced data
+  const [solarEngineData, setSolarEngineData] = useState<SolarEngineData | null>(null);
+  const [solarEngineLoading, setSolarEngineLoading] = useState(false);
   
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
