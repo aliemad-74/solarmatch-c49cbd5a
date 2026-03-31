@@ -133,58 +133,33 @@ Be concise. Do not repeat the numbers above. Focus on interpretation and advice.
       return errorResponse(`AI service error: ${response.status}`, 502);
     }
 
-    // Stream the SSE response back to client
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
+    // Parse JSON response from generateContent
+    const rawText = await response.text();
+    console.log("Raw Gemini response:", rawText.slice(0, 500));
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (parseErr) {
+      console.error("Failed to parse Gemini JSON:", rawText.slice(0, 500));
+      throw new Error(`Invalid JSON from Gemini: ${rawText.slice(0, 200)}`);
+    }
+
+    console.log("Parsed Gemini response:", JSON.stringify(parsed).slice(0, 300));
+
+    const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      console.log("Fallback activated: No text in Gemini response");
+      return errorResponse("AI returned empty response");
+    }
+
+    // Return as SSE format for client compatibility
     const encoder = new TextEncoder();
+    const chunk = { choices: [{ delta: { content: text }, index: 0 }] };
+    const sseData = `data: ${JSON.stringify(chunk)}\n\ndata: [DONE]\n\n`;
 
-    (async () => {
-      try {
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const rawLine of lines) {
-            const line = rawLine.trim();
-            if (!line || !line.startsWith("data: ")) continue;
-            const jsonStr = line.slice(6).trim();
-            if (!jsonStr || jsonStr === "[DONE]") continue;
-            try {
-              const parsed = JSON.parse(jsonStr);
-              console.log("Parsed Gemini chunk:", JSON.stringify(parsed).slice(0, 200));
-              const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) {
-                const chunk = {
-                  choices: [{ delta: { content: text }, index: 0 }],
-                };
-                await writer.write(
-                  encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`)
-                );
-              }
-            } catch (parseErr) {
-              console.error("Failed to parse SSE chunk:", jsonStr?.slice(0, 200), parseErr);
-              continue;
-            }
-          }
-        }
-        await writer.write(encoder.encode("data: [DONE]\n\n"));
-      } catch (e) {
-        console.error("Stream error:", e);
-        console.log("Fallback activated: Stream processing failed");
-      } finally {
-        try { await writer.close(); } catch {}
-      }
-    })();
-
-    return new Response(readable, {
+    return new Response(encoder.encode(sseData), {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
