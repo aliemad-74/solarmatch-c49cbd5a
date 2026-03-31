@@ -106,19 +106,19 @@
 
     --border: 220 16% 16%;
     --input: 220 16% 16%;
-    --ring: 42 72% 55%;
+    --ring: 40 55% 55%;
 
     --gradient-hero: linear-gradient(180deg, hsl(220 20% 7%) 0%, hsl(220 22% 9%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(220 18% 10%) 0%, hsl(220 20% 9%) 100%);
 
     --sidebar-background: 220 20% 7%;
     --sidebar-foreground: 220 10% 92%;
-    --sidebar-primary: 42 72% 55%;
+    --sidebar-primary: 40 55% 55%;
     --sidebar-primary-foreground: 220 20% 7%;
     --sidebar-accent: 220 16% 13%;
     --sidebar-accent-foreground: 220 10% 92%;
     --sidebar-border: 220 16% 16%;
-    --sidebar-ring: 42 72% 55%;
+    --sidebar-ring: 40 55% 55%;
   }
 }
 
