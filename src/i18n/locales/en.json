@@ -403,12 +403,12 @@
     "printReport": "Print Report"
   },
   "loading": {
-    "analyzing": "Analyzing your energy data…",
-    "subtitle": "Calculating system sizing, savings, and feasibility",
-    "step1": "Reading location & climate data…",
-    "step2": "Calculating optimal system size…",
-    "step3": "Estimating costs & savings…",
-    "step4": "Preparing your recommendation…"
+    "analyzing": "AI is analyzing your solar potential…",
+    "subtitle": "Our AI engine is reviewing your data in real-time",
+    "step1": "AI is reading location & climate data…",
+    "step2": "AI is computing optimal system sizing…",
+    "step3": "AI is validating costs & market prices…",
+    "step4": "AI is reviewing & finalizing your report…"
   },
   "roi": {
     "title": "25-Year ROI Timeline",
