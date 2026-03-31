@@ -203,6 +203,63 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
+  // AI auto-detect rooftop
+  const [isAiDetecting, setIsAiDetecting] = useState(false);
+
+  const detectRooftopAI = useCallback(async (clickLat?: number, clickLng?: number) => {
+    const targetLat = clickLat ?? currentLocation.lat;
+    const targetLng = clickLng ?? currentLocation.lng;
+    
+    setIsAiDetecting(true);
+    setDrawingPhase("fullscreen");
+    
+    try {
+      toast.info(isArabic ? "جاري تحليل صورة القمر الصناعي بالذكاء الاصطناعي..." : "AI is analyzing satellite image...");
+      
+      const { data, error } = await supabase.functions.invoke('detect-rooftop', {
+        body: { lat: targetLat, lng: targetLng, zoom: 20 },
+      });
+
+      if (error) throw error;
+
+      if (data?.found && data.polygon?.length >= 4) {
+        const aiPoints: google.maps.LatLngLiteral[] = data.polygon.map((p: { lat: number; lng: number }) => ({
+          lat: p.lat,
+          lng: p.lng,
+        }));
+        setPolygonPoints(aiPoints);
+        setIsDrawingMode(false);
+        
+        const area = calculatePolygonArea(aiPoints);
+        setCalculatedArea(area);
+        if (onAreaCalculated && area > 0) onAreaCalculated(area);
+        
+        toast.success(
+          isArabic
+            ? `تم تحديد السطح بالذكاء الاصطناعي! المساحة: ${area.toFixed(1)} م²`
+            : `Rooftop detected by AI! Area: ${area.toFixed(1)} m²`
+        );
+      } else {
+        toast.error(
+          isArabic
+            ? "لم يتمكن الذكاء الاصطناعي من تحديد مبنى. حاول الرسم يدوياً."
+            : "AI couldn't detect a building. Try drawing manually."
+        );
+        setIsDrawingMode(true);
+      }
+    } catch (err) {
+      console.error('AI detection error:', err);
+      toast.error(
+        isArabic
+          ? "حدث خطأ أثناء التحليل. حاول مرة أخرى."
+          : "Analysis error. Please try again."
+      );
+      setIsDrawingMode(true);
+    } finally {
+      setIsAiDetecting(false);
+    }
+  }, [currentLocation, isArabic, calculatePolygonArea, onAreaCalculated]);
+
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
