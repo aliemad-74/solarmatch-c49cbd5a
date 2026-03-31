@@ -20,27 +20,27 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
 
-    /* Primary — Deep Navy #1F3A5F */
-    --primary: 215 51% 25%;
+    /* Primary — Steel Blue #355C7D */
+    --primary: 207 40% 35%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary — Warm Gold #E8B547 */
-    --secondary: 42 78% 59%;
+    /* Secondary — Antique Gold #C89B3C */
+    --secondary: 40 55% 51%;
     --secondary-foreground: 0 0% 10%;
 
     --muted: 220 14% 95%;
     --muted-foreground: 215 14% 46%;  /* #667085 */
 
     /* Accent — same as secondary for consistency */
-    --accent: 42 78% 59%;
+    --accent: 40 55% 51%;
     --accent-foreground: 0 0% 10%;
 
     /* Status colors */
     --solar-green: 153 47% 33%;      /* #2E7D5B */
-    --solar-gold: 42 78% 59%;        /* #E8B547 */
+    --solar-gold: 40 55% 51%;        /* #C89B3C */
     --solar-orange: 36 67% 47%;      /* #C68A2B */
     --solar-teal: 175 45% 32%;
-    --solar-navy: 215 51% 25%;
+    --solar-navy: 207 40% 35%;
 
     --destructive: 1 41% 46%;        /* #A94442 */
     --destructive-foreground: 0 0% 100%;
