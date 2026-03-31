@@ -749,7 +749,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             monthlyConsumption={monthlyConsumption}
             pvType={pvType}
             buildingType={buildingType}
-            preloadedRecommendation={solarEngineData?.ai_analysis?.recommendation}
+            preloadedRecommendation={aiReviewText || solarEngineData?.ai_analysis?.recommendation}
             preloadedLoading={solarEngineLoading}
           />
         </div>
