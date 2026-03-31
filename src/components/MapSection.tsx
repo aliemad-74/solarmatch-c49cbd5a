@@ -207,9 +207,11 @@ const MapSection = ({
     if (isDrawingMode) {
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
+      setDrawingPhase("idle");
     } else {
       clearPolygon();
       setIsDrawingMode(true);
+      setDrawingPhase("fullscreen");
     }
   }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
