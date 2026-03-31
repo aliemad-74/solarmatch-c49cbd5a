@@ -100,7 +100,7 @@ Provide:
 
 Be concise. Do not repeat the numbers above. Focus on interpretation and advice.`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
