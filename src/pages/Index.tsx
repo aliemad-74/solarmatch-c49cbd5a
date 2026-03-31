@@ -432,14 +432,6 @@ const Index = () => {
     <div className="min-h-screen bg-background" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       
-      {/* Progress Indicator — sticky below header */}
-      <div className="sticky top-16 z-40">
-        <ProgressIndicator
-          hasLocation={hasLocation}
-          hasConfigured={hasConfigured}
-          hasResults={showResults}
-        />
-      </div>
 
       <main>
 
