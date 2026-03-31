@@ -113,6 +113,7 @@ const Index = () => {
   // Results
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [aiReviewText, setAiReviewText] = useState<string>("");
 
   // Persist inputs whenever they change
   useEffect(() => {
