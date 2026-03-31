@@ -71,6 +71,24 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           best_time: string
