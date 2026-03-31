@@ -11,7 +11,7 @@ import LimitReachedModal from "@/components/LimitReachedModal";
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
-import ProgressIndicator from "@/components/ProgressIndicator";
+
 import ScrollReveal from "@/components/ScrollReveal";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
 import LiveReportCounter from "@/components/LiveReportCounter";
