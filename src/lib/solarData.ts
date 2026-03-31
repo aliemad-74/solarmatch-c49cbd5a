@@ -427,17 +427,6 @@ export function calculateSolarFeasibility(
     // Step 3: Practical installed (with residential cap)
     let kWInstalled = Math.floor(kWMax * 0.95);
     
-    // Apply residential coverage cap for package options
-    if (isResidentialType && annualConsumptionForCap > 0) {
-      const uncappedEnergyYear = kWInstalled * SPECIFIC_YIELD;
-      const uncappedCoverageRatio = uncappedEnergyYear / annualConsumptionForCap;
-      
-      if (uncappedCoverageRatio > MAX_RESIDENTIAL_COVERAGE) {
-        const requiredAnnualProduction = annualConsumptionForCap * MAX_RESIDENTIAL_COVERAGE;
-        kWInstalled = Math.max(1, Math.floor(requiredAnnualProduction / SPECIFIC_YIELD));
-      }
-    }
-    
     // Step 4: Energy production
     const energyYear = kWInstalled * SPECIFIC_YIELD;
     
