@@ -11,8 +11,8 @@ const SolarMatchLogo = ({ variant = "full", className = "", size = 36 }: SolarMa
     <img
       src={logoIcon}
       alt="SolarMatch"
-      style={{ height: size, width: size }}
-      className="object-contain dark:brightness-[1.6] dark:contrast-[0.85]"
+      style={{ height: size * 1.4, width: size * 1.4 }}
+      className="object-contain"
     />
   );
 
