@@ -24,9 +24,16 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
   const [hasAsked, setHasAsked] = useState(false);
 
   const getAdvice = async () => {
+    setHasAsked(true);
+
+    // Use cached checkpoint interpretation if available
+    if (preloadedRecommendation && preloadedRecommendation !== "AI analysis unavailable. Results are based on engineering calculations.") {
+      setAdvice(preloadedRecommendation);
+      return;
+    }
+
     setIsLoading(true);
     setAdvice("");
-    setHasAsked(true);
 
     try {
       const solarData = {
