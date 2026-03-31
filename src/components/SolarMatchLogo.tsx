@@ -1,3 +1,5 @@
+import logoFull from "@/assets/logo.png";
+
 interface SolarMatchLogoProps {
   variant?: "full" | "icon";
   className?: string;
@@ -5,7 +7,14 @@ interface SolarMatchLogoProps {
 }
 
 const SolarMatchLogo = ({ variant = "full", className = "", size = 36 }: SolarMatchLogoProps) => {
-  return <div className={className} style={{ height: size }} />;
+  return (
+    <img
+      src={logoFull}
+      alt="SolarMatch"
+      className={className}
+      style={{ height: size }}
+    />
+  );
 };
 
 export default SolarMatchLogo;
