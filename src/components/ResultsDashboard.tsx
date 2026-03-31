@@ -31,9 +31,10 @@ interface ResultsDashboardProps {
   electricityPrice?: number;
   solarEngineData?: SolarEngineData | null;
   solarEngineLoading?: boolean;
+  aiReviewText?: string;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -748,7 +749,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             monthlyConsumption={monthlyConsumption}
             pvType={pvType}
             buildingType={buildingType}
-            preloadedRecommendation={solarEngineData?.ai_analysis?.recommendation}
+            preloadedRecommendation={aiReviewText || solarEngineData?.ai_analysis?.recommendation}
             preloadedLoading={solarEngineLoading}
           />
         </div>
