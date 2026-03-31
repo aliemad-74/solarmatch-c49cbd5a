@@ -112,7 +112,7 @@ Provide:
 Be concise. Do not repeat the numbers above. Focus on interpretation and advice.`;
 
     // --- Single Gemini call ---
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     console.log("Gemini URL:", geminiUrl.replace(GEMINI_API_KEY, "REDACTED"));
 
     const controller = new AbortController();
