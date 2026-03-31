@@ -354,11 +354,22 @@ const MapSection = ({
             >
               <X className="w-5 h-5" />
             </Button>
-            <span className="font-semibold text-foreground">
+            <span className="font-semibold text-foreground text-sm">
               {isArabic ? "حدد سطح المبنى" : "Draw Your Rooftop"}
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {!isAiDetecting && polygonPoints.length === 0 && (
+              <Button
+                onClick={() => detectRooftopAI()}
+                variant="outline"
+                size="sm"
+                className="gap-1"
+              >
+                <Sparkles className="w-4 h-4" />
+                {isArabic ? "تحديد AI" : "AI Detect"}
+              </Button>
+            )}
             {polygonPoints.length > 0 && (
               <Button onClick={undoLastPoint} variant="outline" size="sm" className="gap-1">
                 <Undo2 className="w-4 h-4" />
@@ -394,18 +405,32 @@ const MapSection = ({
           </div>
         </div>
 
+        {/* AI Detecting overlay */}
+        {isAiDetecting && (
+          <div className="text-center py-3 bg-accent/20 border-b border-accent/30">
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <p className="text-sm text-primary font-medium">
+                {isArabic ? "الذكاء الاصطناعي يحلل صورة القمر الصناعي..." : "AI analyzing satellite image..."}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Drawing instructions */}
-        <div className="text-center py-2 bg-primary/10 border-b border-primary/20">
-          <p className="text-sm text-primary font-medium">
-            {polygonPoints.length < MIN_POLYGON_POINTS
-              ? isArabic
-                ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
-                : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
-              : isArabic
-                ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو اضغط 'تم'`
-                : `${polygonPoints.length} points - Click near first point or press 'Done'`}
-          </p>
-        </div>
+        {!isAiDetecting && (
+          <div className="text-center py-2 bg-primary/10 border-b border-primary/20">
+            <p className="text-sm text-primary font-medium">
+              {polygonPoints.length < MIN_POLYGON_POINTS
+                ? isArabic
+                  ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
+                  : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
+                : isArabic
+                  ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو اضغط 'تم'`
+                  : `${polygonPoints.length} points - Click near first point or press 'Done'`}
+            </p>
+          </div>
+        )}
 
         {/* Fullscreen map */}
         <div className="flex-1 relative">
