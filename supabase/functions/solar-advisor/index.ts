@@ -19,6 +19,13 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
+function errorResponse(message: string, status = 500): Response {
+  return new Response(
+    JSON.stringify({ success: false, error: message }),
+    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,32 +34,24 @@ serve(async (req) => {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     if (!checkRateLimit(ip)) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Rate limit exceeded", 429);
     }
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    console.log("Gemini key exists:", !!GEMINI_API_KEY);
     if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      throw new Error("Missing GEMINI_API_KEY");
     }
 
     let body: Record<string, unknown>;
     try {
       body = await req.json();
     } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Invalid JSON", 400);
     }
 
     const language = (body.language as string) === "ar" ? "ar" : "en";
-    const d = body.solarData as Record<string, unknown>;
+    const d = (body.solarData as Record<string, unknown>) || {};
 
     const prompt = language === "ar"
       ? `أنت مستشار طاقة شمسية خبير في السوق المصري. 
@@ -60,16 +59,16 @@ serve(async (req) => {
 قيّم هذه النتائج وفسرها باختصار.
 
 النتائج المحسوبة:
-- الموقع: ${d.locationName || "غير محدد"}
-- حجم النظام: ${d.kWInstalled} كيلوواط
-- الإنتاج السنوي: ${d.energyYear} كيلوواط/ساعة
-- نسبة تغطية الاستهلاك: ${Math.round((d.coverageRatio as number) * 100)}%
-- التكلفة الإجمالية: ${d.totalCost} جنيه
-- التوفير السنوي: ${d.savingsYear} جنيه
-- فترة الاسترداد: ${d.paybackYears} سنة
-- تخفيض CO2: ${d.co2Reduction} كجم/سنة
-- نوع المبنى: ${d.buildingType}
-- نوع الألواح: ${d.pvType}
+- الموقع: ${d?.locationName || "غير محدد"}
+- حجم النظام: ${d?.kWInstalled ?? "غير محدد"} كيلوواط
+- الإنتاج السنوي: ${d?.energyYear ?? "غير محدد"} كيلوواط/ساعة
+- نسبة تغطية الاستهلاك: ${d?.coverageRatio != null ? Math.round((d.coverageRatio as number) * 100) : "غير محدد"}%
+- التكلفة الإجمالية: ${d?.totalCost ?? "غير محدد"} جنيه
+- التوفير السنوي: ${d?.savingsYear ?? "غير محدد"} جنيه
+- فترة الاسترداد: ${d?.paybackYears ?? "غير محدد"} سنة
+- تخفيض CO2: ${d?.co2Reduction ?? "غير محدد"} كجم/سنة
+- نوع المبنى: ${d?.buildingType ?? "غير محدد"}
+- نوع الألواح: ${d?.pvType ?? "غير محدد"}
 
 قدم:
 1. جملة واحدة: هل يستحق التركيب؟ (بناءً على فترة الاسترداد ونسبة التغطية)
@@ -82,16 +81,16 @@ Below are pre-calculated solar feasibility results for a specific building.
 Interpret these results briefly and provide actionable insights.
 
 Calculated Results:
-- Location: ${d.locationName || "Not specified"}
-- System Size: ${d.kWInstalled} kW
-- Annual Production: ${d.energyYear} kWh
-- Consumption Coverage: ${Math.round((d.coverageRatio as number) * 100)}%
-- Total Cost: ${d.totalCost} EGP
-- Annual Savings: ${d.savingsYear} EGP
-- Payback Period: ${d.paybackYears} years
-- CO2 Reduction: ${d.co2Reduction} kg/year
-- Building Type: ${d.buildingType}
-- Panel Type: ${d.pvType}
+- Location: ${d?.locationName || "Not specified"}
+- System Size: ${d?.kWInstalled ?? "N/A"} kW
+- Annual Production: ${d?.energyYear ?? "N/A"} kWh
+- Consumption Coverage: ${d?.coverageRatio != null ? Math.round((d.coverageRatio as number) * 100) : "N/A"}%
+- Total Cost: ${d?.totalCost ?? "N/A"} EGP
+- Annual Savings: ${d?.savingsYear ?? "N/A"} EGP
+- Payback Period: ${d?.paybackYears ?? "N/A"} years
+- CO2 Reduction: ${d?.co2Reduction ?? "N/A"} kg/year
+- Building Type: ${d?.buildingType ?? "N/A"}
+- Panel Type: ${d?.pvType ?? "N/A"}
 
 Provide:
 1. One sentence verdict: is this worth installing? (based on payback and coverage)
@@ -100,7 +99,7 @@ Provide:
 
 Be concise. Do not repeat the numbers above. Focus on interpretation and advice.`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
@@ -121,22 +120,20 @@ Be concise. Do not repeat the numbers above. Focus on interpretation and advice.
       });
     } catch (err) {
       clearTimeout(timeoutId);
-      return new Response(
-        JSON.stringify({ error: "AI request timed out" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("Gemini fetch error:", err);
+      console.log("Fallback activated: Gemini request failed (timeout or network)");
+      return errorResponse("AI request timed out", 503);
     }
     clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Gemini error:", response.status, errText);
-      return new Response(
-        JSON.stringify({ error: "AI service error", status: response.status }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("Gemini error status:", response.status, errText);
+      console.log("Fallback activated: Gemini returned non-OK status");
+      return errorResponse(`AI service error: ${response.status}`, 502);
     }
 
+    // Stream the SSE response back to client
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
@@ -162,7 +159,8 @@ Be concise. Do not repeat the numbers above. Focus on interpretation and advice.
             if (!jsonStr || jsonStr === "[DONE]") continue;
             try {
               const parsed = JSON.parse(jsonStr);
-              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+              console.log("Parsed Gemini chunk:", JSON.stringify(parsed).slice(0, 200));
+              const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
               if (text) {
                 const chunk = {
                   choices: [{ delta: { content: text }, index: 0 }],
@@ -171,7 +169,8 @@ Be concise. Do not repeat the numbers above. Focus on interpretation and advice.
                   encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`)
                 );
               }
-            } catch {
+            } catch (parseErr) {
+              console.error("Failed to parse SSE chunk:", jsonStr?.slice(0, 200), parseErr);
               continue;
             }
           }
@@ -179,6 +178,7 @@ Be concise. Do not repeat the numbers above. Focus on interpretation and advice.
         await writer.write(encoder.encode("data: [DONE]\n\n"));
       } catch (e) {
         console.error("Stream error:", e);
+        console.log("Fallback activated: Stream processing failed");
       } finally {
         try { await writer.close(); } catch {}
       }
@@ -194,10 +194,8 @@ Be concise. Do not repeat the numbers above. Focus on interpretation and advice.
     });
 
   } catch (error) {
-    console.error("Unexpected error:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("Top-level error:", error);
+    console.log("Fallback activated: Top-level catch triggered");
+    return errorResponse(error?.message || "An unexpected error occurred");
   }
 });
