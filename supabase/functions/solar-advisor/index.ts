@@ -254,7 +254,8 @@ Important notes:
 - Egyptian market prices 2024-2025 range from 15,000 - 25,000 EGP/kW depending on panel type
 - Only set adjustments if there's a clear deviation of more than 20%
 - If values are within reasonable range, leave adjustments as null
-- The interpretation should be detailed, practical, and specific to this project`;
+- The interpretation should be detailed, practical, and specific to this project
+- If coverage ratio exceeds 150%, advise the client they could reduce system size to 100-120% coverage to save costs, and estimate how much they would save`;
 
       const result = await callGemini(GEMINI_API_KEY, reviewPrompt, true, 30000);
 
