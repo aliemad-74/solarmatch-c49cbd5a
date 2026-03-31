@@ -536,6 +536,15 @@ const Index = () => {
 
       <Footer />
 
+      <SolarChatBot
+        results={results}
+        locationName={locationName}
+        preloadedRecommendation={aiReviewText}
+        monthlyConsumption={effectiveMonthlyConsumption}
+        pvType={pvType}
+        buildingType={buildingType}
+      />
+
       <AuthModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
