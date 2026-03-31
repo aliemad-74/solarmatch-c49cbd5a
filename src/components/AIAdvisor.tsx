@@ -63,9 +63,9 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
         }
       );
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (!response.ok || !data.success) {
+      if (!result.success) {
         if (response.status === 429) {
           toast.error(t('ai.rateLimitError'));
           return;
@@ -74,10 +74,10 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
           toast.error(t('ai.paymentError'));
           return;
         }
-        throw new Error(data.error || "Failed to get AI advice");
+        throw new Error(result.error || "AI request failed");
       }
 
-      setAdvice(data.text || "");
+      setAdvice(result.text || "");
     } catch (error) {
       console.error("AI Advisor error:", error);
       toast.error(t('ai.error'));
