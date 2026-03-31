@@ -1,36 +1,68 @@
 
 
-## Plan: Fix AI Advisor Auto-Trigger and Verify Checkpoint
+## خطة: دمج AI Advisor مع شات بوت تفاعلي
 
-### Problem Analysis
+### الفكرة
+بدل ما يكون فيه AIAdvisor card في الداشبورد + شات بوت منفصل، نعمل **فقاعة عائمة واحدة** تشتغل كالتالي:
+1. لما المستخدم يدوس عليها، يفتح نافذة شات والرسالة الأولى تكون **تحليل الـ AI** (الـ preloadedRecommendation من الـ checkpoint)
+2. بعدها المستخدم يقدر يكمل محادثة ويسأل أسئلة عن التقرير والطاقة الشمسية
+3. الردود بتظهر كلمة كلمة (streaming)
 
-Based on the edge function logs and code inspection:
+### الملفات
 
-1. **Checkpoint IS working** -- logs show `mode: review` returning 200 with `confidenceScore: 98` and valid adjustments/interpretation
-2. **AI Advisor auto-displays** because `aiReviewText` from the checkpoint is passed as `preloadedRecommendation` to `AIAdvisor`, which auto-shows it via the `useEffect` on line 26-31
-3. **Prompt says "بصفتي"** because the review prompt says "بصفتي مهندس طاقة شمسية" -- needs rewording
+| ملف | عملية |
+|-----|-------|
+| `supabase/functions/solar-chat/index.ts` | إنشاء - Edge function للشات مع streaming |
+| `src/components/SolarChatBot.tsx` | إنشاء - الفقاعة العائمة + نافذة الشات |
+| `src/components/ResultsDashboard.tsx` | تعديل - شيل AIAdvisor card |
+| `src/pages/Index.tsx` | تعديل - إضافة SolarChatBot مع تمرير results و preloadedRecommendation |
+| `src/i18n/locales/en.json` | تعديل - مفاتيح الشات |
+| `src/i18n/locales/ar.json` | تعديل - مفاتيح الشات |
 
-### Changes
+---
 
-**File 1: `src/components/AIAdvisor.tsx`**
-- Remove the `useEffect` that auto-sets advice from `preloadedRecommendation` (lines 26-31)
-- Remove `preloadedRecommendation` from initial state of `advice` and `hasAsked`
-- The advisor will only activate when the user clicks the button
-- When clicked, if `preloadedRecommendation` exists, show it immediately instead of fetching again; otherwise fetch from solar-advisor
+### 1. Edge Function: `solar-chat`
+- تستخدم Lovable AI Gateway مع **streaming SSE**
+- Model: `google/gemini-3-flash-preview`
+- System prompt متخصص في الطاقة الشمسية في مصر + بيانات التقرير الحالي كـ context
+- بتستقبل `messages` array (تاريخ المحادثة) + `solarContext` (بيانات التقرير)
+- Rate limiting + معالجة أخطاء 429/402
 
-**File 2: `src/components/ResultsDashboard.tsx`**
-- Keep passing `aiReviewText` as `preloadedRecommendation` (so it can be used on-demand without re-fetching)
+### 2. Component: `SolarChatBot.tsx`
+- **فقاعة عائمة** (fixed bottom-left/right حسب RTL) - أيقونة Sparkles
+- لما تتفتح أول مرة ولو فيه `preloadedRecommendation`:
+  - بتحط التحليل كأول رسالة assistant تلقائياً
+  - المستخدم يقدر يرد عليها ويسأل أسئلة
+- لو مفيش تقرير: شات عادي عن الطاقة الشمسية
+- نافذة ~350×450px مع:
+  - Header + زرار إغلاق
+  - منطقة رسائل مع scroll + markdown
+  - أسئلة مقترحة سريعة (3 أزرار)
+  - Input + زرار إرسال
+- Streaming: token by token rendering
 
-**File 3: `supabase/functions/solar-advisor/index.ts`**
-- In the review mode Arabic prompt, change "بصفتي مهندس طاقة شمسية" to a direct instruction: "لا تبدأ بـ 'بصفتي' أو 'كـ'. ابدأ مباشرة بالتقييم"
-- In the advisor mode Arabic prompt, ensure the same instruction exists (it already does but verify)
+### 3. تعديل ResultsDashboard
+- شيل الـ `<AIAdvisor>` card من أسفل الداشبورد (سطر 722-733)
 
-### Technical Details
+### 4. تعديل Index.tsx
+- إضافة `<SolarChatBot>` مع props:
+  - `results` - نتائج التقرير
+  - `locationName` - اسم الموقع
+  - `preloadedRecommendation` - تحليل الـ checkpoint
+  - `solarContext` - بيانات التقرير للـ context
 
-The checkpoint flow (review mode) is confirmed working from logs:
-- Gemini returns `validated: true`, `confidenceScore: 98`
-- Adjustments are all `null` (local calculations are accurate)
-- Interpretation text is generated successfully
+---
 
-The only UI issue is the advisor auto-populating. Fix is to make `AIAdvisor` start in "not asked" state always, and use the preloaded text as a cache when the user clicks.
+### التفاصيل التقنية
+
+**الـ Flow:**
+```text
+المستخدم يدوس الفقاعة
+  → لو فيه preloadedRecommendation → تظهر كأول رسالة assistant
+  → المستخدم يكتب سؤال → يتبعت مع كل تاريخ المحادثة + solarContext
+  → Edge function تبني system prompt بالـ context → streaming response
+  → الرد يظهر token by token
+```
+
+**System Prompt** بيتضمن بيانات التقرير (حجم النظام، التكلفة، التوفير، الموقع) عشان الـ AI يرد بناءً على البيانات الفعلية.
 
