@@ -524,6 +524,7 @@ const Index = () => {
               electricityPrice={electricityPrice}
               solarEngineData={solarEngineData}
               solarEngineLoading={solarEngineLoading}
+              aiReviewText={aiReviewText}
             />
           </ScrollReveal>
         </div>
