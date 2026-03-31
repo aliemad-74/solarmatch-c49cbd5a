@@ -110,8 +110,7 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
               setAdvice(fullAdvice);
             }
           } catch {
-            buffer = line + "\n" + buffer;
-            break;
+            continue;
           }
         }
       }
