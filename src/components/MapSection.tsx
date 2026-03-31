@@ -35,7 +35,7 @@ const MapSection = ({
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
-  const [mapSize, setMapSize] = useState<MapSize>("normal");
+  const [drawingPhase, setDrawingPhase] = useState<DrawingPhase>("idle");
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
