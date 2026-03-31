@@ -79,17 +79,17 @@ const AIAnalysis = ({
         }
       );
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (!response.ok || !data.success) {
+      if (!result.success) {
         if (response.status === 429) {
           toast.error(isArabic ? "تم تجاوز الحد المسموح، حاول لاحقاً" : "Rate limit exceeded, try later");
           return;
         }
-        throw new Error(data.error || "Failed to get AI analysis");
+        throw new Error(result.error || "AI request failed");
       }
 
-      setAnalysis(data.text || "");
+      setAnalysis(result.text || "");
     } catch (error) {
       console.error("AI Analysis error:", error);
       toast.error(isArabic ? "حدث خطأ في التحليل الذكي" : "AI analysis error");
