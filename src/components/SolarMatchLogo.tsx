@@ -26,7 +26,7 @@ const SolarMatchLogo = ({ variant = "full", className = "", size = 36 }: SolarMa
       {/* Chart/zigzag line inside the house */}
       <polyline
         points="8,32 16,26 22,34 32,18 40,20"
-        className="stroke-foreground"
+        className="stroke-primary"
         strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
