@@ -60,8 +60,8 @@ const About = () => {
         {/* Hero Section */}
         <section className="container mx-auto px-4 mb-16">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="mx-auto mb-6">
-              <SolarMatchLogo variant="icon" size={64} />
+            <div className="flex justify-center mb-6">
+              <SolarMatchLogo variant="icon" size={56} />
             </div>
             <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">
               {t('about.hero.title')}
