@@ -20,6 +20,19 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
+// --- Safe value helper ---
+function safeValue(value: unknown, fallback = "N/A") {
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    (typeof value === "number" && isNaN(value))
+  ) {
+    return fallback;
+  }
+  return value;
+}
+
 // --- JSON response helpers ---
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -64,23 +77,43 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Missing solarData" }, 400);
     }
 
-    // Build prompt (kept exactly as-is)
+    // Sanitize all values
+    const locationName = safeValue(d.locationName, language === "ar" ? "غير محدد" : "Not specified");
+    const kWInstalled = safeValue(d.kWInstalled);
+    const energyYear = safeValue(d.energyYear);
+    const totalCost = safeValue(d.totalCost);
+    const savingsYear = safeValue(d.savingsYear);
+    const paybackYears = safeValue(d.paybackYears);
+    const co2Reduction = safeValue(d.co2Reduction);
+    const buildingType = safeValue(d.buildingType);
+    const pvType = safeValue(d.pvType);
+    const coverageRatio =
+      typeof d.coverageRatio === "number" && !isNaN(d.coverageRatio)
+        ? Math.round(d.coverageRatio * 100)
+        : "N/A";
+
+    console.log("Sanitized solar data:", {
+      locationName, kWInstalled, energyYear, coverageRatio,
+      totalCost, savingsYear, paybackYears, co2Reduction, buildingType, pvType,
+    });
+
+    // Build prompt
     const prompt = language === "ar"
       ? `أنت مستشار طاقة شمسية خبير في السوق المصري. 
 فيما يلي نتائج حسابات جدوى الطاقة الشمسية لمبنى محدد. 
 قيّم هذه النتائج وفسرها باختصار.
 
 النتائج المحسوبة:
-- الموقع: ${d?.locationName || "غير محدد"}
-- حجم النظام: ${d?.kWInstalled ?? "غير محدد"} كيلوواط
-- الإنتاج السنوي: ${d?.energyYear ?? "غير محدد"} كيلوواط/ساعة
-- نسبة تغطية الاستهلاك: ${d?.coverageRatio != null ? Math.round((d.coverageRatio as number) * 100) : "غير محدد"}%
-- التكلفة الإجمالية: ${d?.totalCost ?? "غير محدد"} جنيه
-- التوفير السنوي: ${d?.savingsYear ?? "غير محدد"} جنيه
-- فترة الاسترداد: ${d?.paybackYears ?? "غير محدد"} سنة
-- تخفيض CO2: ${d?.co2Reduction ?? "غير محدد"} كجم/سنة
-- نوع المبنى: ${d?.buildingType ?? "غير محدد"}
-- نوع الألواح: ${d?.pvType ?? "غير محدد"}
+- الموقع: ${locationName}
+- حجم النظام: ${kWInstalled} كيلوواط
+- الإنتاج السنوي: ${energyYear} كيلوواط/ساعة
+- نسبة تغطية الاستهلاك: ${coverageRatio}%
+- التكلفة الإجمالية: ${totalCost} جنيه
+- التوفير السنوي: ${savingsYear} جنيه
+- فترة الاسترداد: ${paybackYears} سنة
+- تخفيض CO2: ${co2Reduction} كجم/سنة
+- نوع المبنى: ${buildingType}
+- نوع الألواح: ${pvType}
 
 قدم:
 1. جملة واحدة: هل يستحق التركيب؟ (بناءً على فترة الاسترداد ونسبة التغطية)
@@ -93,16 +126,16 @@ Below are pre-calculated solar feasibility results for a specific building.
 Interpret these results briefly and provide actionable insights.
 
 Calculated Results:
-- Location: ${d?.locationName || "Not specified"}
-- System Size: ${d?.kWInstalled ?? "N/A"} kW
-- Annual Production: ${d?.energyYear ?? "N/A"} kWh
-- Consumption Coverage: ${d?.coverageRatio != null ? Math.round((d.coverageRatio as number) * 100) : "N/A"}%
-- Total Cost: ${d?.totalCost ?? "N/A"} EGP
-- Annual Savings: ${d?.savingsYear ?? "N/A"} EGP
-- Payback Period: ${d?.paybackYears ?? "N/A"} years
-- CO2 Reduction: ${d?.co2Reduction ?? "N/A"} kg/year
-- Building Type: ${d?.buildingType ?? "N/A"}
-- Panel Type: ${d?.pvType ?? "N/A"}
+- Location: ${locationName}
+- System Size: ${kWInstalled} kW
+- Annual Production: ${energyYear} kWh
+- Consumption Coverage: ${coverageRatio}%
+- Total Cost: ${totalCost} EGP
+- Annual Savings: ${savingsYear} EGP
+- Payback Period: ${paybackYears} years
+- CO2 Reduction: ${co2Reduction} kg/year
+- Building Type: ${buildingType}
+- Panel Type: ${pvType}
 
 Provide:
 1. One sentence verdict: is this worth installing? (based on payback and coverage)
