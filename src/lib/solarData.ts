@@ -410,11 +410,9 @@ export function calculateSolarFeasibility(
   const warnings: string[] = [];
 
   // ============================================
-  // RESIDENTIAL COVERAGE CAP CONSTANTS
+  // RESIDENTIAL TYPE CHECK (for warnings only, no cap)
   // ============================================
   const isResidentialType = buildingType === "residential" || buildingType === "apartment";
-  const MAX_RESIDENTIAL_COVERAGE = 1.5; // 150% cap for residential
-  const annualConsumptionForCap = effectiveMonthlyConsumption * 12;
 
   // ============================================
   // CALCULATE ALL THREE PACKAGE OPTIONS
@@ -428,17 +426,6 @@ export function calculateSolarFeasibility(
     
     // Step 3: Practical installed (with residential cap)
     let kWInstalled = Math.floor(kWMax * 0.95);
-    
-    // Apply residential coverage cap for package options
-    if (isResidentialType && annualConsumptionForCap > 0) {
-      const uncappedEnergyYear = kWInstalled * SPECIFIC_YIELD;
-      const uncappedCoverageRatio = uncappedEnergyYear / annualConsumptionForCap;
-      
-      if (uncappedCoverageRatio > MAX_RESIDENTIAL_COVERAGE) {
-        const requiredAnnualProduction = annualConsumptionForCap * MAX_RESIDENTIAL_COVERAGE;
-        kWInstalled = Math.max(1, Math.floor(requiredAnnualProduction / SPECIFIC_YIELD));
-      }
-    }
     
     // Step 4: Energy production
     const energyYear = kWInstalled * SPECIFIC_YIELD;
@@ -496,22 +483,6 @@ export function calculateSolarFeasibility(
   // ============================================
   let kWInstalled = Math.floor(kWMax * 0.95);
   let wasResized = false;
-  
-  // Apply residential coverage cap (using constants from above)
-  if (isResidentialType && effectiveMonthlyConsumption > 0) {
-    const uncappedEnergyYear = kWInstalled * SPECIFIC_YIELD;
-    const uncappedCoverageRatio = uncappedEnergyYear / annualConsumptionForCap;
-    
-    if (uncappedCoverageRatio > MAX_RESIDENTIAL_COVERAGE) {
-      // Calculate capped system size
-      const requiredAnnualProduction = annualConsumptionForCap * MAX_RESIDENTIAL_COVERAGE;
-      const cappedKW = Math.floor(requiredAnnualProduction / SPECIFIC_YIELD);
-      kWInstalled = Math.max(1, cappedKW); // Ensure at least 1 kW
-      wasResized = true;
-      warnings.push("⚠️ System size was automatically adjusted to avoid excessive oversizing for residential use.");
-      warnings.push("*System limited to 150% of annual demand to minimize unused generation.*");
-    }
-  }
 
   // Rule 4: Warning for unusually large systems
   if (kWInstalled > 15 && buildingType === "residential") {

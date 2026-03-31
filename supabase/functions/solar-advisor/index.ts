@@ -214,7 +214,8 @@ serve(async (req) => {
 - إذا كانت التكلفة ضمن النطاق المعقول، اترك adjustments بقيمة null
 - لا تعدل إلا إذا كان هناك انحراف واضح أكثر من 20%
 - التفسير يجب أن يكون مفصلاً وعملياً ومخصصاً لهذا المشروع
-- لا تبدأ التفسير بـ "بصفتي" أو "كـ" أو "أنا". ابدأ مباشرة بالتقييم`
+- لا تبدأ التفسير بـ "بصفتي" أو "كـ" أو "أنا". ابدأ مباشرة بالتقييم
+- إذا كانت نسبة التغطية أكثر من 150%، انصح العميل بإمكانية تقليل حجم النظام والاكتفاء بنسبة تغطية 100-120% لتوفير التكلفة، ووضح كم سيوفر تقريباً`
         : `You are an expert solar energy engineer for the Egyptian market, up-to-date with 2024-2025 prices.
 
 Task: Review the following solar feasibility calculation results and validate their accuracy.
@@ -253,7 +254,8 @@ Important notes:
 - Egyptian market prices 2024-2025 range from 15,000 - 25,000 EGP/kW depending on panel type
 - Only set adjustments if there's a clear deviation of more than 20%
 - If values are within reasonable range, leave adjustments as null
-- The interpretation should be detailed, practical, and specific to this project`;
+- The interpretation should be detailed, practical, and specific to this project
+- If coverage ratio exceeds 150%, advise the client they could reduce system size to 100-120% coverage to save costs, and estimate how much they would save`;
 
       const result = await callGemini(GEMINI_API_KEY, reviewPrompt, true, 30000);
 
