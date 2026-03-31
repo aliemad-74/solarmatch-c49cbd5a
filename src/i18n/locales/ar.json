@@ -296,7 +296,8 @@
     "kwMax": "الحد الأقصى ك.و",
     "kwInstalled": "ك.و مركب",
     "totalCost": "التكلفة الإجمالية (جنيه)",
-    "calculate": "احصل على التوصية الشمسية"
+    "calculate": "احصل على التوصية الشمسية",
+    "selectLocationFirst": "حدد الموقع أولاً"
   },
   "buildingTypes": {
     "residential": "منزل سكني",
