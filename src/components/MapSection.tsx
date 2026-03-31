@@ -7,6 +7,7 @@ import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/a
 import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
 const LIBRARIES: ("places")[] = ["places"];
