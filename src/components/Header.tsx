@@ -1,8 +1,9 @@
-import { Sun, Menu, Settings, LogOut, User, LogIn } from "lucide-react";
+import { Menu, Settings, LogOut, User, LogIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import LanguageToggle from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
+import SolarMatchLogo from "./SolarMatchLogo";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -38,33 +39,29 @@ const Header = () => {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50 print:hidden">
+    <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/40 print:hidden">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-solar flex items-center justify-center shadow-glow">
-            <Sun className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-display font-bold text-xl text-foreground">{t('header.title')}</h1>
-            <p className="text-xs text-muted-foreground -mt-0.5">{t('header.subtitle')}</p>
-          </div>
+        <Link to="/" className="flex items-center">
+          <SolarMatchLogo variant="full" size={36} />
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
-              className={`text-sm transition-colors ${
+              className={`text-sm px-3 py-2 rounded-md transition-colors ${
                 isActive(link.path)
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-accent font-semibold bg-accent/5"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
               {link.label}
             </Link>
           ))}
+
+          <div className="w-px h-6 bg-border/60 mx-2" />
           
           {/* User Menu */}
           {(user || admin) ? (
@@ -117,7 +114,7 @@ const Header = () => {
               variant="outline"
               size="sm"
               onClick={() => setShowAuthModal(true)}
-              className="gap-2"
+              className="gap-2 border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all"
             >
               <LogIn className="w-4 h-4" />
               {t('header.login')}
@@ -145,7 +142,7 @@ const Header = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`text-lg transition-colors ${
                       isActive(link.path)
-                        ? "text-primary font-medium"
+                        ? "text-accent font-semibold"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -153,7 +150,6 @@ const Header = () => {
                   </Link>
                 ))}
                 
-                {/* Account Link - Mobile */}
                 {user && (
                   <Link
                     to="/account"
@@ -165,12 +161,11 @@ const Header = () => {
                   </Link>
                 )}
                 
-                {/* Admin Dashboard Link - Mobile */}
                 {isAdmin && (
                   <Link
                     to="/admin"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-lg font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-2"
+                    className="text-lg font-medium text-accent hover:text-accent/80 transition-colors flex items-center gap-2"
                   >
                     <Settings className="w-5 h-5" />
                     {t('header.adminDashboard')}
