@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
-import { Sun, MapPin, Cpu, DollarSign, CheckCircle } from "lucide-react";
+import { Sparkles, MapPin, Cpu, DollarSign, CheckCircle, BrainCircuit } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const STEP_DURATION = 1250; // 5s / 4 steps
@@ -32,8 +32,14 @@ const ResultsSkeleton = () => {
         {/* Loading message with steps */}
         <div className="text-center mb-10">
           <div className="inline-flex flex-col items-center gap-4 px-8 py-6 rounded-2xl bg-primary/10 border border-primary/20">
-            <Sun className="w-8 h-8 text-primary animate-spin" style={{ animationDuration: '3s' }} />
+            <div className="relative">
+              <BrainCircuit className="w-9 h-9 text-primary animate-pulse" />
+              <Sparkles className="w-4 h-4 text-solar-gold absolute -top-1 -right-1 animate-bounce" style={{ animationDuration: '2s' }} />
+            </div>
             
+            <p className="text-sm font-semibold text-primary">{t("loading.analyzing")}</p>
+            <p className="text-xs text-muted-foreground -mt-2">{t("loading.subtitle")}</p>
+
             <div className="w-64">
               <Progress value={progress} className="h-2 mb-3" />
             </div>
