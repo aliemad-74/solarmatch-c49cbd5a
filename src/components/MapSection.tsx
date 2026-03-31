@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation, Satellite } from "lucide-react";
+import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Navigation, Satellite, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
