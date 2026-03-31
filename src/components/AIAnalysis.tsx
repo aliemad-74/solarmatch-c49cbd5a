@@ -32,7 +32,6 @@ const AIAnalysis = ({
   const [isLoading, setIsLoading] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
-  // Auto-trigger analysis when component becomes visible
   useEffect(() => {
     if (isVisible && !hasAnalyzed && !isLoading) {
       runAnalysis();
@@ -80,47 +79,17 @@ const AIAnalysis = ({
         }
       );
 
-      if (!response.ok) {
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
         if (response.status === 429) {
           toast.error(isArabic ? "تم تجاوز الحد المسموح، حاول لاحقاً" : "Rate limit exceeded, try later");
           return;
         }
-        throw new Error("Failed to get AI analysis");
+        throw new Error(data.error || "Failed to get AI analysis");
       }
 
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let fullText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              fullText += content;
-              setAnalysis(fullText);
-            }
-          } catch {
-            continue;
-          }
-        }
-      }
+      setAnalysis(data.text || "");
     } catch (error) {
       console.error("AI Analysis error:", error);
       toast.error(isArabic ? "حدث خطأ في التحليل الذكي" : "AI analysis error");
@@ -139,13 +108,13 @@ const AIAnalysis = ({
           {isArabic ? "🤖 تحليل ذكي مخصص لمبناك" : "🤖 AI-Powered Analysis for Your Building"}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          {isArabic 
-            ? "تحليل شامل بالذكاء الاصطناعي مبني على بيانات موقعك الفعلية" 
+          {isArabic
+            ? "تحليل شامل بالذكاء الاصطناعي مبني على بيانات موقعك الفعلية"
             : "Comprehensive AI analysis based on your actual location data"}
         </p>
       </CardHeader>
       <CardContent>
-        {isLoading && !analysis ? (
+        {isLoading ? (
           <div className="flex flex-col items-center gap-3 py-8">
             <div className="relative">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -159,11 +128,8 @@ const AIAnalysis = ({
           <div className="space-y-4">
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown>{analysis}</ReactMarkdown>
-              {isLoading && (
-                <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" />
-              )}
             </div>
-            {!isLoading && analysis && (
+            {analysis && (
               <Button
                 variant="outline"
                 size="sm"

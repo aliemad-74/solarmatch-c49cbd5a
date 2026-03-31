@@ -23,13 +23,13 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
   const [isLoading, setIsLoading] = useState(false);
   const [hasAsked, setHasAsked] = useState(!!preloadedRecommendation);
 
-  // Update when preloaded recommendation arrives
   useEffect(() => {
     if (preloadedRecommendation && preloadedRecommendation !== "AI analysis unavailable. Results are based on engineering calculations.") {
       setAdvice(preloadedRecommendation);
       setHasAsked(true);
     }
   }, [preloadedRecommendation]);
+
   const getAdvice = async () => {
     setIsLoading(true);
     setAdvice("");
@@ -63,7 +63,9 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
         }
       );
 
-      if (!response.ok) {
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
         if (response.status === 429) {
           toast.error(t('ai.rateLimitError'));
           return;
@@ -72,48 +74,10 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
           toast.error(t('ai.paymentError'));
           return;
         }
-        throw new Error("Failed to get AI advice");
+        throw new Error(data.error || "Failed to get AI advice");
       }
 
-      if (!response.body) {
-        throw new Error("No response body");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let fullAdvice = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              fullAdvice += content;
-              setAdvice(fullAdvice);
-            }
-          } catch {
-            continue;
-          }
-        }
-      }
+      setAdvice(data.text || "");
     } catch (error) {
       console.error("AI Advisor error:", error);
       toast.error(t('ai.error'));
@@ -157,7 +121,7 @@ const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, building
         ) : (
           <div className="space-y-4">
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              {isLoading && !advice ? (
+              {isLoading ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   {t('ai.analyzing')}
