@@ -296,6 +296,85 @@ const Index = () => {
         avgUnitConsumption
       );
 
+      // Step 2: AI Review checkpoint — validate calculations before showing to user
+      try {
+        const reviewResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/solar-advisor`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({
+              solarData: {
+                locationName,
+                usableArea: calculation.usableArea,
+                kWInstalled: calculation.kWInstalled,
+                energyYear: calculation.energyYear,
+                panelCount: calculation.panelCount,
+                coverageRatio: calculation.coverageRatio,
+                monthlyConsumption: effectiveMonthlyConsumption,
+                electricityPrice,
+                totalCost: calculation.totalCost,
+                costPerKW: calculation.costPerKW,
+                savingsYear: calculation.savingsYear,
+                paybackYears: calculation.paybackYears,
+                co2Saved: calculation.co2Saved,
+                buildingType,
+                pvType,
+              },
+              language: i18n.language,
+              mode: "review",
+            }),
+          }
+        );
+
+        if (reviewResponse.ok) {
+          const reviewData = await reviewResponse.json();
+          if (reviewData.success && reviewData.review) {
+            const review = reviewData.review;
+            console.log("AI Review:", review);
+
+            // Apply bounded adjustments if AI flagged issues
+            if (review.adjustments) {
+              const adj = review.adjustments;
+              if (adj.totalCost !== null && adj.totalCost !== undefined) {
+                const ratio = adj.totalCost / calculation.totalCost;
+                // Only apply if within ±30% to prevent hallucination damage
+                if (ratio > 0.7 && ratio < 1.3) {
+                  calculation.totalCost = Math.round(adj.totalCost);
+                  console.log("AI adjusted totalCost:", calculation.totalCost);
+                }
+              }
+              if (adj.costPerKW !== null && adj.costPerKW !== undefined) {
+                const ratio = adj.costPerKW / calculation.costPerKW;
+                if (ratio > 0.7 && ratio < 1.3) {
+                  calculation.costPerKW = Math.round(adj.costPerKW);
+                  console.log("AI adjusted costPerKW:", calculation.costPerKW);
+                }
+              }
+              if (adj.paybackYears !== null && adj.paybackYears !== undefined) {
+                const ratio = adj.paybackYears / calculation.paybackYears;
+                if (ratio > 0.7 && ratio < 1.3) {
+                  calculation.paybackYears = parseFloat(adj.paybackYears.toFixed(1));
+                  console.log("AI adjusted paybackYears:", calculation.paybackYears);
+                }
+              }
+            }
+
+            // Store interpretation text for display
+            if (review.interpretation) {
+              setAiReviewText(review.interpretation);
+            }
+          }
+        }
+      } catch (reviewError) {
+        console.warn("AI review failed, using local calculations as-is:", reviewError);
+        // Non-blocking: if AI review fails, we still show local results
+      }
+
+      // Step 3: Show results (after AI review completes or fails gracefully)
       setResults(calculation);
       setShowResults(true);
       setIsCalculating(false);
@@ -308,7 +387,7 @@ const Index = () => {
         document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } catch (error) {
-      console.error("Local calculation error:", error);
+      console.error("Calculation error:", error);
       toast.error(i18n.language === 'ar' ? "حدث خطأ في الحسابات" : "Calculation error");
       setIsCalculating(false);
     }
