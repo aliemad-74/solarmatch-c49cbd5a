@@ -714,32 +714,6 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   )}
                 </div>
 
-                {/* AI-Enhanced Estimate comparison */}
-                {results && solarEngineData && (
-                  <div className="p-4 rounded-xl bg-accent/50 border border-accent-foreground/10">
-                    <h5 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Crosshair className="w-3.5 h-3.5 text-primary" />
-                      {isAr ? "تقدير مُحسّن بالذكاء الاصطناعي" : "AI-Enhanced Estimate"}
-                    </h5>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
-                      {[
-                        { label: isAr ? "حجم النظام" : "System Size", value: `${solarEngineData.calculation.system_size_kw} kW` },
-                        { label: isAr ? "الإنتاج السنوي" : "Annual Production", value: `${formatNumber(solarEngineData.calculation.annual_production, 0)} kWh` },
-                        { label: isAr ? "التكلفة الإجمالية" : "Total Cost", value: formatCurrency(solarEngineData.calculation.total_cost) },
-                        { label: isAr ? "التوفير السنوي" : "Annual Savings", value: formatCurrency(solarEngineData.calculation.annual_savings) },
-                        { label: isAr ? "فترة الاسترداد" : "Payback", value: `${formatNumber(solarEngineData.calculation.payback_years, 1)} ${isAr ? "سنة" : "yrs"}` },
-                        { label: isAr ? "نسبة التغطية" : "Coverage", value: `${formatNumber(solarEngineData.calculation.coverage_ratio * 100, 0)}%` },
-                        { label: isAr ? "خفض CO₂" : "CO₂ Saved", value: `${formatNumber(solarEngineData.calculation.co2_saved, 1)} ${isAr ? "طن" : "tons"}` },
-                        { label: isAr ? "الإشعاع الشمسي" : "Irradiance", value: `${formatNumber(solarEngineData.solar_data.adjusted_irradiance, 2)} kWh/m²` },
-                      ].map((item, i) => (
-                        <div key={i} className="py-1">
-                          <p className="text-[10px] text-muted-foreground leading-tight">{item.label}</p>
-                          <p className="text-xs font-semibold text-foreground">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             ) : null}
           </div>
