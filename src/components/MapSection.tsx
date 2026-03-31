@@ -1,13 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Navigation, Satellite, X, Check, Sparkles, ScanEye } from "lucide-react";
+import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Navigation, Satellite, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
 import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
 const LIBRARIES: ("places")[] = ["places"];
@@ -21,7 +20,7 @@ interface MapSectionProps {
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
 
-type DrawingPhase = "idle" | "fullscreen" | "ai-detecting";
+type DrawingPhase = "idle" | "fullscreen";
 
 const MapSection = ({
   onAreaCalculated,
@@ -203,63 +202,6 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
-  // AI auto-detect rooftop
-  const [isAiDetecting, setIsAiDetecting] = useState(false);
-
-  const detectRooftopAI = useCallback(async (clickLat?: number, clickLng?: number) => {
-    const targetLat = clickLat ?? currentLocation.lat;
-    const targetLng = clickLng ?? currentLocation.lng;
-    
-    setIsAiDetecting(true);
-    setDrawingPhase("fullscreen");
-    
-    try {
-      toast.info(isArabic ? "جاري تحليل صورة القمر الصناعي بالذكاء الاصطناعي..." : "AI is analyzing satellite image...");
-      
-      const { data, error } = await supabase.functions.invoke('detect-rooftop', {
-        body: { lat: targetLat, lng: targetLng, zoom: 20 },
-      });
-
-      if (error) throw error;
-
-      if (data?.found && data.polygon?.length >= 4) {
-        const aiPoints: google.maps.LatLngLiteral[] = data.polygon.map((p: { lat: number; lng: number }) => ({
-          lat: p.lat,
-          lng: p.lng,
-        }));
-        setPolygonPoints(aiPoints);
-        setIsDrawingMode(false);
-        
-        const area = calculatePolygonArea(aiPoints);
-        setCalculatedArea(area);
-        if (onAreaCalculated && area > 0) onAreaCalculated(area);
-        
-        toast.success(
-          isArabic
-            ? `تم تحديد السطح بالذكاء الاصطناعي! المساحة: ${area.toFixed(1)} م²`
-            : `Rooftop detected by AI! Area: ${area.toFixed(1)} m²`
-        );
-      } else {
-        toast.error(
-          isArabic
-            ? "لم يتمكن الذكاء الاصطناعي من تحديد مبنى. حاول الرسم يدوياً."
-            : "AI couldn't detect a building. Try drawing manually."
-        );
-        setIsDrawingMode(true);
-      }
-    } catch (err) {
-      console.error('AI detection error:', err);
-      toast.error(
-        isArabic
-          ? "حدث خطأ أثناء التحليل. حاول مرة أخرى."
-          : "Analysis error. Please try again."
-      );
-      setIsDrawingMode(true);
-    } finally {
-      setIsAiDetecting(false);
-    }
-  }, [currentLocation, isArabic, calculatePolygonArea, onAreaCalculated]);
-
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
@@ -354,22 +296,11 @@ const MapSection = ({
             >
               <X className="w-5 h-5" />
             </Button>
-            <span className="font-semibold text-foreground text-sm">
+            <span className="font-semibold text-foreground">
               {isArabic ? "حدد سطح المبنى" : "Draw Your Rooftop"}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {!isAiDetecting && polygonPoints.length === 0 && (
-              <Button
-                onClick={() => detectRooftopAI()}
-                variant="outline"
-                size="sm"
-                className="gap-1"
-              >
-                <Sparkles className="w-4 h-4" />
-                {isArabic ? "تحديد AI" : "AI Detect"}
-              </Button>
-            )}
             {polygonPoints.length > 0 && (
               <Button onClick={undoLastPoint} variant="outline" size="sm" className="gap-1">
                 <Undo2 className="w-4 h-4" />
@@ -405,32 +336,18 @@ const MapSection = ({
           </div>
         </div>
 
-        {/* AI Detecting overlay */}
-        {isAiDetecting && (
-          <div className="text-center py-3 bg-accent/20 border-b border-accent/30">
-            <div className="flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              <p className="text-sm text-primary font-medium">
-                {isArabic ? "الذكاء الاصطناعي يحلل صورة القمر الصناعي..." : "AI analyzing satellite image..."}
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Drawing instructions */}
-        {!isAiDetecting && (
-          <div className="text-center py-2 bg-primary/10 border-b border-primary/20">
-            <p className="text-sm text-primary font-medium">
-              {polygonPoints.length < MIN_POLYGON_POINTS
-                ? isArabic
-                  ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
-                  : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
-                : isArabic
-                  ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو اضغط 'تم'`
-                  : `${polygonPoints.length} points - Click near first point or press 'Done'`}
-            </p>
-          </div>
-        )}
+        <div className="text-center py-2 bg-primary/10 border-b border-primary/20">
+          <p className="text-sm text-primary font-medium">
+            {polygonPoints.length < MIN_POLYGON_POINTS
+              ? isArabic
+                ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
+                : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
+              : isArabic
+                ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو اضغط 'تم'`
+                : `${polygonPoints.length} points - Click near first point or press 'Done'`}
+          </p>
+        </div>
 
         {/* Fullscreen map */}
         <div className="flex-1 relative">
@@ -537,23 +454,10 @@ const MapSection = ({
           </Button>
           <Button
             onClick={toggleDrawingMode}
-            variant="outline"
-            className="flex items-center gap-2 bg-card border-border hover:border-primary/50"
-          >
-            <PenTool className="w-4 h-4" />
-            {isArabic ? "ارسم يدوياً" : "Draw Manually"}
-          </Button>
-          <Button
-            onClick={() => detectRooftopAI()}
-            disabled={isAiDetecting}
             className="flex items-center gap-2 gradient-solar text-primary-foreground shadow-glow"
           >
-            {isAiDetecting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-            {isArabic ? "تحديد تلقائي بالـ AI" : "AI Auto-Detect"}
+            <PenTool className="w-4 h-4" />
+            {isArabic ? "ارسم السطح" : "Draw Rooftop"}
           </Button>
         </div>
 

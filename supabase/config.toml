@@ -14,6 +14,3 @@ verify_jwt = false
 
 [functions.google-solar]
 verify_jwt = false
-
-[functions.detect-rooftop]
-verify_jwt = false
