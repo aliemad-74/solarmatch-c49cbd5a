@@ -117,8 +117,7 @@ const AIAnalysis = ({
               setAnalysis(fullText);
             }
           } catch {
-            buffer = line + "\n" + buffer;
-            break;
+            continue;
           }
         }
       }
