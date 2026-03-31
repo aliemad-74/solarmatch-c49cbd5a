@@ -35,7 +35,10 @@ const ProgressIndicator = ({ hasLocation, hasConfigured, hasResults }: ProgressI
     }
     // Only scroll if we advanced exactly 1 step (prevent multi-step jumps)
     if (activeIndex === prevActiveRef.current + 1 && activeIndex <= sectionIds.length) {
-      const targetId = sectionIds[Math.min(activeIndex, sectionIds.length - 1)];
+      // When config is done (step 2), stay at config so user can press the button
+      // Don't scroll to empty results section
+      const targetIndex = activeIndex === 2 ? 1 : Math.min(activeIndex, sectionIds.length - 1);
+      const targetId = sectionIds[targetIndex];
       const el = document.getElementById(targetId);
       if (el) {
         setTimeout(() => {

@@ -296,7 +296,8 @@
     "kwMax": "kW Max",
     "kwInstalled": "kW Installed",
     "totalCost": "Total Cost (EGP)",
-    "calculate": "Get Solar Recommendation"
+    "calculate": "Get Solar Recommendation",
+    "selectLocationFirst": "Select location first"
   },
   "buildingTypes": {
     "residential": "Residential House",
