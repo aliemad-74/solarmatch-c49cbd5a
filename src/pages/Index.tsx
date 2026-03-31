@@ -11,7 +11,7 @@ import LimitReachedModal from "@/components/LimitReachedModal";
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
-import ProgressIndicator from "@/components/ProgressIndicator";
+
 import ScrollReveal from "@/components/ScrollReveal";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
 import LiveReportCounter from "@/components/LiveReportCounter";
@@ -432,14 +432,6 @@ const Index = () => {
     <div className="min-h-screen bg-background" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       
-      {/* Progress Indicator — sticky below header */}
-      <div className="sticky top-16 z-40">
-        <ProgressIndicator
-          hasLocation={hasLocation}
-          hasConfigured={hasConfigured}
-          hasResults={showResults}
-        />
-      </div>
 
       <main>
 

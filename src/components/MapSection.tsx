@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Maximize2, Minimize2, Navigation, Satellite } from "lucide-react";
+import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Navigation, Satellite, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
@@ -20,7 +20,7 @@ interface MapSectionProps {
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
 
-type MapSize = "normal" | "large";
+type DrawingPhase = "idle" | "fullscreen";
 
 const MapSection = ({
   onAreaCalculated,
@@ -35,7 +35,7 @@ const MapSection = ({
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
-  const [mapSize, setMapSize] = useState<MapSize>("normal");
+  const [drawingPhase, setDrawingPhase] = useState<DrawingPhase>("idle");
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
@@ -207,9 +207,11 @@ const MapSection = ({
     if (isDrawingMode) {
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
+      setDrawingPhase("idle");
     } else {
       clearPolygon();
       setIsDrawingMode(true);
+      setDrawingPhase("fullscreen");
     }
   }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
@@ -276,6 +278,133 @@ const MapSection = ({
     );
   }
 
+  // Fullscreen drawing overlay
+  if (drawingPhase === "fullscreen") {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => {
+                setIsDrawingMode(false);
+                setDrawingPhase("idle");
+                clearPolygon();
+              }}
+              variant="ghost"
+              size="icon"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+            <span className="font-semibold text-foreground">
+              {isArabic ? "حدد سطح المبنى" : "Draw Your Rooftop"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {polygonPoints.length > 0 && (
+              <Button onClick={undoLastPoint} variant="outline" size="sm" className="gap-1">
+                <Undo2 className="w-4 h-4" />
+                {isArabic ? "تراجع" : "Undo"}
+              </Button>
+            )}
+            {polygonPoints.length > 0 && (
+              <Button
+                onClick={clearPolygon}
+                variant="outline"
+                size="sm"
+                className="gap-1 text-destructive border-destructive/50 hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isArabic ? "مسح" : "Clear"}
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                if (polygonPoints.length >= MIN_POLYGON_POINTS) {
+                  completePolygon(polygonPoints);
+                }
+                setIsDrawingMode(false);
+                setDrawingPhase("idle");
+              }}
+              disabled={polygonPoints.length < MIN_POLYGON_POINTS}
+              className="gap-1 gradient-solar text-primary-foreground shadow-glow"
+              size="sm"
+            >
+              <Check className="w-4 h-4" />
+              {isArabic ? "تم" : "Done"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Drawing instructions */}
+        <div className="text-center py-2 bg-primary/10 border-b border-primary/20">
+          <p className="text-sm text-primary font-medium">
+            {polygonPoints.length < MIN_POLYGON_POINTS
+              ? isArabic
+                ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
+                : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
+              : isArabic
+                ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو اضغط 'تم'`
+                : `${polygonPoints.length} points - Click near first point or press 'Done'`}
+          </p>
+        </div>
+
+        {/* Fullscreen map */}
+        <div className="flex-1 relative">
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            zoom={20}
+            options={mapOptions}
+            onClick={handleMapClick}
+            onLoad={(map) => {
+              onMapLoad(map);
+              map.setCenter({ lat: currentLocation.lat, lng: currentLocation.lng });
+            }}
+          >
+            {polygonPoints.length >= 2 && (
+              <Polygon
+                paths={polygonPoints}
+                options={{
+                  fillColor: "#14b8a6",
+                  fillOpacity: 0.4,
+                  strokeColor: "#14b8a6",
+                  strokeWeight: 2,
+                  clickable: false,
+                }}
+              />
+            )}
+            {polygonPoints.map((point, index) => (
+              <Marker
+                key={`point-${index}-${point.lat}-${point.lng}`}
+                position={point}
+                draggable={true}
+                onDrag={(e) => handleMarkerDrag(index, e)}
+                icon={{
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 6,
+                  fillColor: index === 0 ? "#f59e0b" : "#14b8a6",
+                  fillOpacity: 1,
+                  strokeColor: "#ffffff",
+                  strokeWeight: 2,
+                }}
+              />
+            ))}
+          </GoogleMap>
+
+          {/* Area display overlay */}
+          {polygonPoints.length >= MIN_POLYGON_POINTS && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
+              <div className="inline-flex items-center gap-2 bg-solar-green/90 text-white px-5 py-2.5 rounded-full shadow-lg">
+                <span className="text-sm font-medium">{isArabic ? "المساحة:" : "Area:"}</span>
+                <span className="text-lg font-bold">{calculatePolygonArea(polygonPoints).toFixed(1)} m²</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="relative">
       <div className="absolute inset-0 gradient-hero" />
@@ -288,7 +417,7 @@ const MapSection = ({
           <p className="text-muted-foreground max-w-xl mx-auto">{t("map.subtitle")}</p>
         </div>
 
-        {/* Search Bar with Google Places Autocomplete */}
+        {/* Search Bar */}
         <div className="max-w-lg mx-auto mb-6 animate-slide-up relative z-50">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
@@ -303,7 +432,7 @@ const MapSection = ({
           </div>
         </div>
 
-        {/* GPS Location Button */}
+        {/* GPS + Draw Buttons */}
         <div className="flex justify-center gap-3 mb-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
           <Button
             onClick={detectLocation}
@@ -323,59 +452,14 @@ const MapSection = ({
               </>
             )}
           </Button>
-        </div>
-
-        {/* Drawing Controls */}
-        <div className="flex justify-center gap-3 mb-4 animate-slide-up" style={{ animationDelay: "0.15s" }}>
           <Button
             onClick={toggleDrawingMode}
-            variant={isDrawingMode ? "default" : "outline"}
-            className={`flex items-center gap-2 ${isDrawingMode ? "gradient-solar text-primary-foreground shadow-glow" : ""}`}
+            className="flex items-center gap-2 gradient-solar text-primary-foreground shadow-glow"
           >
-            {isDrawingMode ? (
-              <>
-                <MousePointer className="w-4 h-4" />
-                {isArabic ? "إنهاء الرسم" : "Finish Drawing"}
-              </>
-            ) : (
-              <>
-                <PenTool className="w-4 h-4" />
-                {isArabic ? "ارسم السطح" : "Draw Rooftop"}
-              </>
-            )}
+            <PenTool className="w-4 h-4" />
+            {isArabic ? "ارسم السطح" : "Draw Rooftop"}
           </Button>
-          {isDrawingMode && polygonPoints.length > 0 && (
-            <Button onClick={undoLastPoint} variant="outline" className="flex items-center gap-2">
-              <Undo2 className="w-4 h-4" />
-              {isArabic ? "تراجع" : "Undo"}
-            </Button>
-          )}
-          {(polygonPoints.length > 0 || calculatedArea !== null) && (
-            <Button
-              onClick={clearPolygon}
-              variant="outline"
-              className="flex items-center gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
-            >
-              <Trash2 className="w-4 h-4" />
-              {isArabic ? "مسح" : "Clear"}
-            </Button>
-          )}
         </div>
-
-        {/* Drawing Instructions */}
-        {isDrawingMode && (
-          <div className="text-center mb-4 animate-fade-in">
-            <p className="text-sm text-primary font-medium bg-primary/10 inline-block px-4 py-2 rounded-lg">
-              {polygonPoints.length < MIN_POLYGON_POINTS
-                ? isArabic
-                  ? `انقر على الخريطة لإضافة نقاط (${polygonPoints.length}/${MIN_POLYGON_POINTS} الحد الأدنى)`
-                  : `Click on the map to add points (${polygonPoints.length}/${MIN_POLYGON_POINTS} minimum)`
-                : isArabic
-                  ? `${polygonPoints.length} نقاط - انقر بالقرب من النقطة الأولى أو 'إنهاء الرسم'`
-                  : `${polygonPoints.length} points - Click near first point or 'Finish Drawing'`}
-            </p>
-          </div>
-        )}
 
         {/* Calculated Area Display */}
         {calculatedArea !== null && (
@@ -387,46 +471,17 @@ const MapSection = ({
           </div>
         )}
 
-
-        {/* Map Size Toggle */}
-        <div className="flex justify-center gap-2 mb-4">
-          <Button
-            onClick={() => setMapSize("normal")}
-            variant={mapSize === "normal" ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            <Minimize2 className="w-4 h-4" />
-            {isArabic ? "عادي" : "Normal"}
-          </Button>
-          <Button
-            onClick={() => setMapSize("large")}
-            variant={mapSize === "large" ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            <Maximize2 className="w-4 h-4" />
-            {isArabic ? "كبير" : "Large"}
-          </Button>
-        </div>
-
-        {/* Map Container */}
+        {/* Map Container (preview only) */}
         <div
           className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in transition-all duration-300"
           style={{ animationDelay: "0.2s" }}
         >
-          <div
-            className={`bg-muted relative ${
-              mapSize === "normal"
-                ? "aspect-[16/9] md:aspect-[21/9]"
-                : "aspect-square md:aspect-[16/9] min-h-[500px]"
-            }`}
-          >
+          <div className="aspect-[16/9] md:aspect-[21/9] bg-muted relative">
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
               zoom={20}
-              options={mapOptions}
-              onClick={handleMapClick}
+              options={{ ...mapOptions, draggableCursor: "grab" }}
+              onClick={() => {}}
               onLoad={(map) => {
                 onMapLoad(map);
                 map.setCenter({ lat: currentLocation.lat, lng: currentLocation.lng });
@@ -444,13 +499,11 @@ const MapSection = ({
                   }}
                 />
               )}
-
               {polygonPoints.map((point, index) => (
                 <Marker
                   key={`point-${index}-${point.lat}-${point.lng}`}
                   position={point}
-                  draggable={!isDrawingMode}
-                  onDrag={(e) => handleMarkerDrag(index, e)}
+                  draggable={false}
                   icon={{
                     path: google.maps.SymbolPath.CIRCLE,
                     scale: 5,
@@ -489,9 +542,7 @@ const MapSection = ({
           <div className="absolute bottom-4 end-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
             <p className="text-xs text-muted-foreground">
               {isArabic ? "البيانات:" : "Data:"}{" "}
-              <span className="text-foreground font-medium">
-                {"NASA POWER"}
-              </span>
+              <span className="text-foreground font-medium">NASA POWER</span>
             </p>
           </div>
         </div>
