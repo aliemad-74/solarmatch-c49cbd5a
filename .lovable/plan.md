@@ -1,81 +1,65 @@
 
 
-## خطة: استبدال AI Advisor بشات بوت تفاعلي كامل
+## خطة: هوية بصرية كاملة - Corporate/Enterprise لـ SolarMatch
 
-### الفكرة
-شيل كارت النصيحة الكتابية (`AIAdvisor`) واستبدلها بفقاعة شات عائمة. لما المستخدم يفتحها، أول رسالة تكون تحليل الـ AI اللي جاي من الـ checkpoint (`aiReviewText`). بعدها يقدر يسأل أي سؤال ويكمل محادثة حقيقية مع streaming.
+### الوضع الحالي
+- اللوجو حالياً: أيقونة Sun من Lucide في مربع gradient - شكل جنيريك جداً
+- الخطوط: Inter فقط - مفيش تمييز
+- الألوان: teal/green gradient - لطيف بس مش مميز
+- الكاردات والعناصر: شكل Shadcn الافتراضي
 
 ---
 
-### الملفات والتغييرات
+### 1. لوجو SVG مخصوص (Component جديد)
+إنشاء `SolarMatchLogo.tsx` - لوجو هندسي من ألواح شمسية مرتبة بشكل hexagonal/geometric مع شعاع شمس مدمج. يكون:
+- SVG مرسوم بالكود (مش أيقونة جاهزة)
+- يدعم light/dark mode
+- حجمين: كامل (مع النص) ومصغر (أيقونة فقط)
+- يُستخدم في Header + Footer + favicon
+
+### 2. لوجو AI-Generated للـ Favicon و OG Image
+استخدام `google/gemini-3-pro-image-preview` لتوليد:
+- Favicon (لوجو مربع 512x512)
+- OG Image للسوشيال ميديا (1200x630)
+
+### 3. نظام خطوط جديد
+- **Heading**: خط مميز زي `Plus Jakarta Sans` أو `Outfit` - أقوى وأكثر شخصية من Inter
+- **Body**: `Inter` يفضل للقراءة
+- **Arabic**: `IBM Plex Sans Arabic` أو `Noto Sans Arabic` - أنظف من الـ system font
+
+### 4. تحديث نظام الألوان - Corporate Solar
+تحويل من teal/green لباليت أكثر رسمية:
+- **Primary**: Deep Navy Blue (`#0F2B46`) - ثقة واحترافية
+- **Accent**: Solar Amber/Gold (`#E8A838`) - طاقة وتفاؤل  
+- **Success**: Emerald (`#10B981`) - نتائج إيجابية
+- تدرجات أرقى بدل الـ gradient الحالي
+
+### 5. تحسين العناصر البصرية
+- **Header**: لوجو جديد + تباعد أفضل + hover effects أنعم
+- **Cards**: borders أخف + shadows أدق + hover transitions
+- **Buttons**: أشكال أكثر رسمية (أقل rounded)
+- **Hero section**: خلفية هندسية خفيفة بدل الـ gradient البسيط
+- **Footer**: تصميم أنظف يليق بشركة طاقة
+
+### 6. تحديث index.html
+- Favicon جديد
+- OG Image جديدة
+
+---
+
+### الملفات
 
 | ملف | عملية |
 |-----|-------|
-| `supabase/functions/solar-chat/index.ts` | **إنشاء** - Edge function جديدة للشات مع streaming SSE |
-| `src/components/SolarChatBot.tsx` | **إنشاء** - الفقاعة العائمة + نافذة الشات |
-| `src/components/ResultsDashboard.tsx` | **تعديل** - حذف AIAdvisor (سطور 722-733) |
-| `src/pages/Index.tsx` | **تعديل** - إضافة SolarChatBot وتمرير البيانات |
-| `src/i18n/locales/en.json` | **تعديل** - مفاتيح ترجمة الشات |
-| `src/i18n/locales/ar.json` | **تعديل** - مفاتيح ترجمة الشات |
+| `src/components/SolarMatchLogo.tsx` | **إنشاء** - لوجو SVG مخصوص |
+| `src/index.css` | **تعديل** - ألوان + خطوط + متغيرات جديدة |
+| `tailwind.config.ts` | **تعديل** - خطوط + ألوان جديدة |
+| `src/components/Header.tsx` | **تعديل** - اللوجو الجديد |
+| `src/components/Footer.tsx` | **تعديل** - اللوجو الجديد + تصميم أنظف |
+| `index.html` | **تعديل** - خطوط Google + favicon |
+| `src/pages/About.tsx` | **تعديل** - تطبيق الهوية الجديدة |
+| `src/pages/HowItWorks.tsx` | **تعديل** - تطبيق الهوية الجديدة |
 
----
-
-### 1. Edge Function: `solar-chat`
-
-- **Model**: `google/gemini-3-flash-preview` عبر Lovable AI Gateway مع streaming
-- **Input**: `{ messages: [{role, content}], solarContext?: {...} }`
-- `solarContext` يحتوي بيانات التقرير (حجم النظام، التكلفة، التوفير، الموقع، فترة الاسترداد)
-- **System Prompt**: خبير طاقة شمسية في مصر، لو فيه `solarContext` يجاوب بناءً على بيانات التقرير الفعلية
-- **Output**: SSE stream يتمرر مباشرة للفرونت
-- Rate limiting (15 req/min) + معالجة 429/402
-
-### 2. Component: `SolarChatBot.tsx`
-
-- **فقاعة عائمة** (fixed، أسفل يسار LTR / أسفل يمين RTL) - أيقونة `Sparkles`
-- **نافذة شات** ~360×460px تظهر فوق الفقاعة:
-  - Header بعنوان "Solar AI Chat" + زرار إغلاق
-  - منطقة رسائل مع `ScrollArea` + `ReactMarkdown`
-  - 3 أسئلة مقترحة سريعة (أزرار صغيرة)
-  - Input + زرار إرسال
-- **أول فتحة**: لو فيه `preloadedRecommendation` → تتحط كأول رسالة assistant تلقائياً
-- **Streaming**: token-by-token rendering باستخدام SSE parsing
-- **RTL/LTR**: تلقائي حسب اللغة
-
-### 3. حذف AIAdvisor من ResultsDashboard
-
-- شيل import الـ `AIAdvisor` (سطر 9)
-- شيل الـ JSX بتاعه (سطور 722-733)
-- الملف `AIAdvisor.tsx` يفضل موجود مؤقتاً (مش هنمسحه عشان مفيش مشكلة)
-
-### 4. تعديل Index.tsx
-
-- إضافة `<SolarChatBot>` بعد `<Footer>` بالـ props:
-  - `results` - نتائج التقرير
-  - `locationName` - اسم الموقع
-  - `preloadedRecommendation` - الـ `aiReviewText` من الـ checkpoint
-
-### 5. الترجمة
-
-مفاتيح جديدة:
-- `chat.title` / `chat.placeholder` / `chat.send`
-- `chat.suggested1-3` (أسئلة مقترحة)
-- `chat.error` / `chat.rateLimit`
-
----
-
-### Flow
-
-```text
-المستخدم يحسب تقرير → checkpoint يرجع aiReviewText
-  ↓
-يدوس الفقاعة العائمة → الشات يفتح
-  ↓
-أول رسالة = aiReviewText (التحليل الجاهز)
-  ↓
-يكتب سؤال → يتبعت messages + solarContext للـ edge function
-  ↓
-streaming response → يظهر token by token
-  ↓
-يقدر يكمل محادثة بأي عدد رسائل
-```
+### النتيجة المتوقعة
+الموقع هيبان كأنه منتج **شركة طاقة محترفة** مش template جاهز - هوية بصرية موحدة من اللوجو للألوان للخطوط.
 
