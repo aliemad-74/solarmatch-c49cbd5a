@@ -21,7 +21,7 @@ interface MapSectionProps {
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
 
-type DrawingPhase = "idle" | "fullscreen";
+type DrawingPhase = "idle" | "fullscreen" | "ai-detecting";
 
 const MapSection = ({
   onAreaCalculated,
