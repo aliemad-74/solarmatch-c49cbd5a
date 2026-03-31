@@ -5,6 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// --- Rate limiting ---
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 function checkRateLimit(ip: string): boolean {
@@ -19,11 +20,12 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-function errorResponse(message: string, status = 500): Response {
-  return new Response(
-    JSON.stringify({ success: false, error: message }),
-    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+// --- JSON response helpers ---
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 serve(async (req) => {
@@ -32,27 +34,37 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limit
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     if (!checkRateLimit(ip)) {
-      return errorResponse("Rate limit exceeded", 429);
+      return jsonResponse({ success: false, error: "Rate limit exceeded" }, 429);
     }
 
+    // Validate API key
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    console.log("Gemini key exists:", !!GEMINI_API_KEY);
+    console.log("GEMINI_API_KEY exists:", !!GEMINI_API_KEY);
     if (!GEMINI_API_KEY) {
-      throw new Error("Missing GEMINI_API_KEY");
+      return jsonResponse({ success: false, error: "Missing GEMINI_API_KEY" }, 500);
     }
 
+    // Validate request body
     let body: Record<string, unknown>;
     try {
       body = await req.json();
     } catch {
-      return errorResponse("Invalid JSON", 400);
+      return jsonResponse({ success: false, error: "Invalid JSON body" }, 400);
     }
 
+    // Validate language
     const language = (body.language as string) === "ar" ? "ar" : "en";
-    const d = (body.solarData as Record<string, unknown>) || {};
 
+    // Validate solarData
+    const d = (body.solarData as Record<string, unknown>) || {};
+    if (!d || Object.keys(d).length === 0) {
+      return jsonResponse({ success: false, error: "Missing solarData" }, 400);
+    }
+
+    // Build prompt (kept exactly as-is)
     const prompt = language === "ar"
       ? `أنت مستشار طاقة شمسية خبير في السوق المصري. 
 فيما يلي نتائج حسابات جدوى الطاقة الشمسية لمبنى محدد. 
@@ -99,78 +111,70 @@ Provide:
 
 Be concise. Do not repeat the numbers above. Focus on interpretation and advice.`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    // --- Single Gemini call ---
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${GEMINI_API_KEY}`;
+    console.log("Gemini URL:", geminiUrl.replace(GEMINI_API_KEY, "REDACTED"));
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-    let response: Response;
+    let geminiResponse: Response;
     try {
-      response = await fetch(geminiUrl, {
+      geminiResponse = await fetch(geminiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.5,
-            maxOutputTokens: 1024,
-          },
+          generationConfig: { temperature: 0.5, maxOutputTokens: 1024 },
         }),
       });
     } catch (err) {
       clearTimeout(timeoutId);
       console.error("Gemini fetch error:", err);
-      console.log("Fallback activated: Gemini request failed (timeout or network)");
-      return errorResponse("AI request timed out", 503);
+      return jsonResponse({ success: false, error: "AI request failed (timeout or network)" }, 503);
     }
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Gemini error status:", response.status, errText);
-      console.log("Fallback activated: Gemini returned non-OK status");
-      return errorResponse(`AI service error: ${response.status}`, 502);
+    console.log("Gemini response status:", geminiResponse.status);
+
+    // Read raw text
+    const rawText = await geminiResponse.text();
+    console.log("Gemini raw response (first 200):", rawText.slice(0, 200));
+
+    // Handle non-200
+    if (!geminiResponse.ok) {
+      console.error("Gemini non-OK:", geminiResponse.status, rawText);
+      return jsonResponse({
+        success: false,
+        error: `AI service error: ${geminiResponse.status}`,
+        details: rawText,
+      }, 502);
     }
 
-    // Parse JSON response from generateContent
-    const rawText = await response.text();
-    console.log("Raw Gemini response:", rawText.slice(0, 500));
-
+    // Parse JSON
     let parsed: any;
     try {
       parsed = JSON.parse(rawText);
-    } catch (parseErr) {
-      console.error("Failed to parse Gemini JSON:", rawText.slice(0, 500));
-      throw new Error(`Invalid JSON from Gemini: ${rawText.slice(0, 200)}`);
+    } catch {
+      console.error("Gemini returned invalid JSON:", rawText.slice(0, 300));
+      return jsonResponse({ success: false, error: "Invalid JSON from AI service" }, 502);
     }
 
     console.log("Parsed Gemini response:", JSON.stringify(parsed).slice(0, 300));
 
+    // Extract text safely
     const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
-
     if (!text) {
-      console.log("Fallback activated: No text in Gemini response");
-      return errorResponse("AI returned empty response");
+      console.error("Invalid Gemini response structure:", JSON.stringify(parsed).slice(0, 300));
+      return jsonResponse({ success: false, error: "Invalid Gemini response structure" }, 502);
     }
 
-    // Return as SSE format for client compatibility
-    const encoder = new TextEncoder();
-    const chunk = { choices: [{ delta: { content: text }, index: 0 }] };
-    const sseData = `data: ${JSON.stringify(chunk)}\n\ndata: [DONE]\n\n`;
-
-    return new Response(encoder.encode(sseData), {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "X-Accel-Buffering": "no",
-      },
-    });
+    // Success
+    return jsonResponse({ success: true, text });
 
   } catch (error) {
     console.error("Top-level error:", error);
-    console.log("Fallback activated: Top-level catch triggered");
-    return errorResponse(error?.message || "An unexpected error occurred");
+    return jsonResponse({ success: false, error: error?.message || "An unexpected error occurred" }, 500);
   }
 });
