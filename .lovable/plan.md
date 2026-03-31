@@ -1,36 +1,81 @@
 
 
-## Plan: Fix AI Advisor Auto-Trigger and Verify Checkpoint
+## خطة: استبدال AI Advisor بشات بوت تفاعلي كامل
 
-### Problem Analysis
+### الفكرة
+شيل كارت النصيحة الكتابية (`AIAdvisor`) واستبدلها بفقاعة شات عائمة. لما المستخدم يفتحها، أول رسالة تكون تحليل الـ AI اللي جاي من الـ checkpoint (`aiReviewText`). بعدها يقدر يسأل أي سؤال ويكمل محادثة حقيقية مع streaming.
 
-Based on the edge function logs and code inspection:
+---
 
-1. **Checkpoint IS working** -- logs show `mode: review` returning 200 with `confidenceScore: 98` and valid adjustments/interpretation
-2. **AI Advisor auto-displays** because `aiReviewText` from the checkpoint is passed as `preloadedRecommendation` to `AIAdvisor`, which auto-shows it via the `useEffect` on line 26-31
-3. **Prompt says "بصفتي"** because the review prompt says "بصفتي مهندس طاقة شمسية" -- needs rewording
+### الملفات والتغييرات
 
-### Changes
+| ملف | عملية |
+|-----|-------|
+| `supabase/functions/solar-chat/index.ts` | **إنشاء** - Edge function جديدة للشات مع streaming SSE |
+| `src/components/SolarChatBot.tsx` | **إنشاء** - الفقاعة العائمة + نافذة الشات |
+| `src/components/ResultsDashboard.tsx` | **تعديل** - حذف AIAdvisor (سطور 722-733) |
+| `src/pages/Index.tsx` | **تعديل** - إضافة SolarChatBot وتمرير البيانات |
+| `src/i18n/locales/en.json` | **تعديل** - مفاتيح ترجمة الشات |
+| `src/i18n/locales/ar.json` | **تعديل** - مفاتيح ترجمة الشات |
 
-**File 1: `src/components/AIAdvisor.tsx`**
-- Remove the `useEffect` that auto-sets advice from `preloadedRecommendation` (lines 26-31)
-- Remove `preloadedRecommendation` from initial state of `advice` and `hasAsked`
-- The advisor will only activate when the user clicks the button
-- When clicked, if `preloadedRecommendation` exists, show it immediately instead of fetching again; otherwise fetch from solar-advisor
+---
 
-**File 2: `src/components/ResultsDashboard.tsx`**
-- Keep passing `aiReviewText` as `preloadedRecommendation` (so it can be used on-demand without re-fetching)
+### 1. Edge Function: `solar-chat`
 
-**File 3: `supabase/functions/solar-advisor/index.ts`**
-- In the review mode Arabic prompt, change "بصفتي مهندس طاقة شمسية" to a direct instruction: "لا تبدأ بـ 'بصفتي' أو 'كـ'. ابدأ مباشرة بالتقييم"
-- In the advisor mode Arabic prompt, ensure the same instruction exists (it already does but verify)
+- **Model**: `google/gemini-3-flash-preview` عبر Lovable AI Gateway مع streaming
+- **Input**: `{ messages: [{role, content}], solarContext?: {...} }`
+- `solarContext` يحتوي بيانات التقرير (حجم النظام، التكلفة، التوفير، الموقع، فترة الاسترداد)
+- **System Prompt**: خبير طاقة شمسية في مصر، لو فيه `solarContext` يجاوب بناءً على بيانات التقرير الفعلية
+- **Output**: SSE stream يتمرر مباشرة للفرونت
+- Rate limiting (15 req/min) + معالجة 429/402
 
-### Technical Details
+### 2. Component: `SolarChatBot.tsx`
 
-The checkpoint flow (review mode) is confirmed working from logs:
-- Gemini returns `validated: true`, `confidenceScore: 98`
-- Adjustments are all `null` (local calculations are accurate)
-- Interpretation text is generated successfully
+- **فقاعة عائمة** (fixed، أسفل يسار LTR / أسفل يمين RTL) - أيقونة `Sparkles`
+- **نافذة شات** ~360×460px تظهر فوق الفقاعة:
+  - Header بعنوان "Solar AI Chat" + زرار إغلاق
+  - منطقة رسائل مع `ScrollArea` + `ReactMarkdown`
+  - 3 أسئلة مقترحة سريعة (أزرار صغيرة)
+  - Input + زرار إرسال
+- **أول فتحة**: لو فيه `preloadedRecommendation` → تتحط كأول رسالة assistant تلقائياً
+- **Streaming**: token-by-token rendering باستخدام SSE parsing
+- **RTL/LTR**: تلقائي حسب اللغة
 
-The only UI issue is the advisor auto-populating. Fix is to make `AIAdvisor` start in "not asked" state always, and use the preloaded text as a cache when the user clicks.
+### 3. حذف AIAdvisor من ResultsDashboard
+
+- شيل import الـ `AIAdvisor` (سطر 9)
+- شيل الـ JSX بتاعه (سطور 722-733)
+- الملف `AIAdvisor.tsx` يفضل موجود مؤقتاً (مش هنمسحه عشان مفيش مشكلة)
+
+### 4. تعديل Index.tsx
+
+- إضافة `<SolarChatBot>` بعد `<Footer>` بالـ props:
+  - `results` - نتائج التقرير
+  - `locationName` - اسم الموقع
+  - `preloadedRecommendation` - الـ `aiReviewText` من الـ checkpoint
+
+### 5. الترجمة
+
+مفاتيح جديدة:
+- `chat.title` / `chat.placeholder` / `chat.send`
+- `chat.suggested1-3` (أسئلة مقترحة)
+- `chat.error` / `chat.rateLimit`
+
+---
+
+### Flow
+
+```text
+المستخدم يحسب تقرير → checkpoint يرجع aiReviewText
+  ↓
+يدوس الفقاعة العائمة → الشات يفتح
+  ↓
+أول رسالة = aiReviewText (التحليل الجاهز)
+  ↓
+يكتب سؤال → يتبعت messages + solarContext للـ edge function
+  ↓
+streaming response → يظهر token by token
+  ↓
+يقدر يكمل محادثة بأي عدد رسائل
+```
 
