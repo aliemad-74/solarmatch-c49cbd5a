@@ -214,7 +214,8 @@ serve(async (req) => {
 - إذا كانت التكلفة ضمن النطاق المعقول، اترك adjustments بقيمة null
 - لا تعدل إلا إذا كان هناك انحراف واضح أكثر من 20%
 - التفسير يجب أن يكون مفصلاً وعملياً ومخصصاً لهذا المشروع
-- لا تبدأ التفسير بـ "بصفتي" أو "كـ" أو "أنا". ابدأ مباشرة بالتقييم`
+- لا تبدأ التفسير بـ "بصفتي" أو "كـ" أو "أنا". ابدأ مباشرة بالتقييم
+- إذا كانت نسبة التغطية أكثر من 150%، انصح العميل بإمكانية تقليل حجم النظام والاكتفاء بنسبة تغطية 100-120% لتوفير التكلفة، ووضح كم سيوفر تقريباً`
         : `You are an expert solar energy engineer for the Egyptian market, up-to-date with 2024-2025 prices.
 
 Task: Review the following solar feasibility calculation results and validate their accuracy.
