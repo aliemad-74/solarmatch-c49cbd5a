@@ -159,7 +159,7 @@ Be concise. Do not repeat the numbers above. Focus on interpretation and advice.
         signal: controller.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.5, maxOutputTokens: 8192 },
         }),
       });
     } catch (err) {
