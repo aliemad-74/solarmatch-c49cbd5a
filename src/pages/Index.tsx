@@ -281,102 +281,23 @@ const Index = () => {
     callSolarEngine();
     
     try {
-      // Determine which package maps to the selected pvType + costScenario
-      const packageMap: Record<string, string> = {
-        'C_poly_economy': 'economy', 'low': 'economy',
-        'B_standard_mono': 'standard', 'medium': 'standard',
-        'A_high_power_mono': 'premium', 'high': 'premium',
-      };
-      const selectedPackage = packageMap[costScenario] || packageMap[pvType] || 'standard';
-      const building = buildingTypes[buildingType];
-
-      const solarData = {
-        locationName,
+      // Step 1: Always calculate locally first (source of truth)
+      const calculation = calculateSolarFeasibility(
         rooftopArea,
-        buildingType,
-        usableFraction: building?.usableFraction || 0.60,
-        monthlyConsumption: effectiveMonthlyConsumption,
+        climateData,
         electricityPrice,
         pvType,
-        costScenario,
-        lat: climateData?.location?.lat,
-        lng: climateData?.location?.lng,
-        climateData: climateData ? {
-          annualAvgIrradiance: climateData.annualAvgIrradiance,
-          monthlyIrradiance: climateData.monthlyIrradiance,
-          monthlyTemperature: climateData.monthlyTemperature,
-        } : null,
-      };
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/solar-advisor`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ solarData, language: i18n.language, mode: "report" }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        if (response.status === 429) {
-          toast.error(i18n.language === 'ar' ? "تم تجاوز الحد المسموح، حاول لاحقاً" : "Rate limit exceeded, try later");
-          return;
-        }
-        throw new Error(errorData.error || "AI calculation failed");
-      }
-
-      const aiResult = await response.json();
-
-      // Map AI result to SolarCalculation interface
-      const pkg = systemPackages[selectedPackage as keyof typeof systemPackages] || systemPackages.standard;
-      const calculation: SolarCalculation = {
-        usableArea: aiResult.usableArea,
-        kWMax: aiResult.kWMax,
-        kWInstalled: aiResult.kWInstalled,
-        energyYear: aiResult.energyYear,
-        energyMonth: aiResult.energyMonth,
-        monthlyProduction: aiResult.monthlyProduction || Array(12).fill(Math.round(aiResult.energyYear / 12)),
-        savingsYear: aiResult.savingsYear,
-        savingsMonth: aiResult.savingsMonth,
-        totalCost: aiResult.totalCost,
-        costPerKW: aiResult.costPerKW,
-        paybackYears: aiResult.paybackYears,
-        coverageRatio: aiResult.coverageRatio,
-        co2Saved: aiResult.co2Saved,
-        panelCount: aiResult.panelCount,
-        panelWattage: aiResult.panelWattage,
-        connectionRecommendation: aiResult.connectionRecommendation,
-        packageOptions: (aiResult.packageOptions || []).map((opt: any) => ({
-          packageKey: opt.packageKey,
-          package: systemPackages[opt.packageKey as keyof typeof systemPackages] || pkg,
-          kWInstalled: opt.kWInstalled,
-          totalCost: opt.totalCost,
-          energyYear: opt.energyYear,
-          savingsYear: opt.savingsYear,
-          paybackYears: opt.paybackYears,
-          coverageRatio: opt.coverageRatio,
-          panelCount: opt.panelCount,
-        })),
-        selectedPackage: selectedPackage as any,
-        buildingMode,
-        numberOfUnits,
-        avgUnitConsumption,
-        effectiveMonthlyConsumption,
-        annualConsumption: effectiveMonthlyConsumption * 12,
-        unitsCovered: buildingMode ? (aiResult.coverageRatio * numberOfUnits) : 0,
-        pvType,
         buildingType,
         costScenario,
-        climateData: climateData || undefined,
-        warnings: aiResult.warnings || [],
-      };
+        effectiveMonthlyConsumption,
+        buildingMode,
+        numberOfUnits,
+        avgUnitConsumption
+      );
 
       setResults(calculation);
       setShowResults(true);
+      setIsCalculating(false);
 
       if (user && profile) {
         await recordReportGeneration(locationName, calculation.kWInstalled);
@@ -386,25 +307,8 @@ const Index = () => {
         document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } catch (error) {
-      console.error("AI Calculation error:", error);
-      toast.error(i18n.language === 'ar' ? "حدث خطأ في الحسابات، جاري المحاولة بالطريقة التقليدية..." : "AI calculation error, falling back to local...");
-      
-      // Fallback to local calculation
-      const calculation = calculateSolarFeasibility(
-        rooftopArea, climateData, electricityPrice, pvType, buildingType,
-        costScenario, effectiveMonthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption
-      );
-      setResults(calculation);
-      setShowResults(true);
-
-      if (user && profile) {
-        await recordReportGeneration(locationName, calculation.kWInstalled);
-      }
-
-      setTimeout(() => {
-        document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    } finally {
+      console.error("Local calculation error:", error);
+      toast.error(i18n.language === 'ar' ? "حدث خطأ في الحسابات" : "Calculation error");
       setIsCalculating(false);
     }
   };
