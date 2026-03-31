@@ -1,4 +1,3 @@
-import logoFull from "@/assets/logo-full.png";
 import logoIcon from "@/assets/logo-icon.png";
 
 interface SolarMatchLogoProps {
@@ -22,13 +21,16 @@ const SolarMatchLogo = ({ variant = "full", className = "", size = 36 }: SolarMa
   }
 
   return (
-    <div className={className}>
+    <div className={`flex items-center gap-2 ${className}`}>
       <img
-        src={logoFull}
+        src={logoIcon}
         alt="SolarMatch"
-        style={{ height: size * 1.2 }}
+        style={{ height: size * 1.3, width: size * 1.3 }}
         className="object-contain"
       />
+      <span className="font-display font-bold text-lg tracking-tight text-foreground">
+        Solar<span className="text-secondary">Match</span>
+      </span>
     </div>
   );
 };
