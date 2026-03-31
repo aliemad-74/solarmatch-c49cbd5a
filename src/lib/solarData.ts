@@ -410,11 +410,9 @@ export function calculateSolarFeasibility(
   const warnings: string[] = [];
 
   // ============================================
-  // RESIDENTIAL COVERAGE CAP CONSTANTS
+  // RESIDENTIAL TYPE CHECK (for warnings only, no cap)
   // ============================================
   const isResidentialType = buildingType === "residential" || buildingType === "apartment";
-  const MAX_RESIDENTIAL_COVERAGE = 1.5; // 150% cap for residential
-  const annualConsumptionForCap = effectiveMonthlyConsumption * 12;
 
   // ============================================
   // CALCULATE ALL THREE PACKAGE OPTIONS
