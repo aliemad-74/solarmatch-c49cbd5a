@@ -512,10 +512,23 @@ const MapSection = ({
           </Button>
           <Button
             onClick={toggleDrawingMode}
-            className="flex items-center gap-2 gradient-solar text-primary-foreground shadow-glow"
+            variant="outline"
+            className="flex items-center gap-2 bg-card border-border hover:border-primary/50"
           >
             <PenTool className="w-4 h-4" />
-            {isArabic ? "ارسم السطح" : "Draw Rooftop"}
+            {isArabic ? "ارسم يدوياً" : "Draw Manually"}
+          </Button>
+          <Button
+            onClick={() => detectRooftopAI()}
+            disabled={isAiDetecting}
+            className="flex items-center gap-2 gradient-solar text-primary-foreground shadow-glow"
+          >
+            {isAiDetecting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            {isArabic ? "تحديد تلقائي بالـ AI" : "AI Auto-Detect"}
           </Button>
         </div>
 
