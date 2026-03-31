@@ -637,7 +637,7 @@ const InputPanel = ({
             className="w-full h-14 text-lg font-semibold gradient-solar text-primary-foreground shadow-glow hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Zap className="w-5 h-5 me-2" />
-            {!climateData ? (t('input.selectLocationFirst') || (i18n.language === 'ar' ? 'حدد الموقع أولاً' : 'Select location first')) : t('input.calculate')}
+            {!climateData ? t('input.selectLocationFirst') : t('input.calculate')}
           </Button>
         </div>
 
