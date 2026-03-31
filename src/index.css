@@ -83,23 +83,23 @@
     --popover: 220 18% 10%;
     --popover-foreground: 220 10% 92%;
 
-    --primary: 215 45% 35%;
+    --primary: 207 38% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 42 72% 55%;
+    --secondary: 40 55% 55%;
     --secondary-foreground: 220 20% 7%;
 
     --muted: 220 16% 13%;
     --muted-foreground: 220 10% 55%;
 
-    --accent: 42 72% 55%;
+    --accent: 40 55% 55%;
     --accent-foreground: 220 20% 7%;
 
     --solar-green: 153 42% 40%;
-    --solar-gold: 42 72% 58%;
+    --solar-gold: 40 55% 58%;
     --solar-orange: 36 60% 52%;
     --solar-teal: 175 40% 36%;
-    --solar-navy: 215 40% 30%;
+    --solar-navy: 207 38% 40%;
 
     --destructive: 1 45% 42%;
     --destructive-foreground: 0 0% 100%;
