@@ -19,21 +19,21 @@ interface AIAdvisorProps {
 
 const AIAdvisor = ({ results, locationName, monthlyConsumption, pvType, buildingType, preloadedRecommendation, preloadedLoading }: AIAdvisorProps) => {
   const { t, i18n } = useTranslation();
-  const [advice, setAdvice] = useState<string>(preloadedRecommendation || "");
+  const [advice, setAdvice] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [hasAsked, setHasAsked] = useState(!!preloadedRecommendation);
-
-  useEffect(() => {
-    if (preloadedRecommendation && preloadedRecommendation !== "AI analysis unavailable. Results are based on engineering calculations.") {
-      setAdvice(preloadedRecommendation);
-      setHasAsked(true);
-    }
-  }, [preloadedRecommendation]);
+  const [hasAsked, setHasAsked] = useState(false);
 
   const getAdvice = async () => {
+    setHasAsked(true);
+
+    // Use cached checkpoint interpretation if available
+    if (preloadedRecommendation && preloadedRecommendation !== "AI analysis unavailable. Results are based on engineering calculations.") {
+      setAdvice(preloadedRecommendation);
+      return;
+    }
+
     setIsLoading(true);
     setAdvice("");
-    setHasAsked(true);
 
     try {
       const solarData = {
