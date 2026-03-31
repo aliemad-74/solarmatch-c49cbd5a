@@ -6,7 +6,6 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  Sun, 
   Target, 
   Users, 
   Lightbulb,
@@ -15,6 +14,7 @@ import {
   ArrowRight,
   Heart
 } from "lucide-react";
+import SolarMatchLogo from "@/components/SolarMatchLogo";
 
 const About = () => {
   const { t, i18n } = useTranslation();
