@@ -823,5 +823,17 @@
     "location": "Location",
     "configure": "Configure",
     "results": "Results"
+  },
+  "chat": {
+    "title": "Solar AI Chat",
+    "placeholder": "Ask about solar energy...",
+    "send": "Send",
+    "welcome": "Ask me anything about solar energy or your report!",
+    "suggested1": "Is my location good for solar?",
+    "suggested2": "How to reduce installation cost?",
+    "suggested3": "What's the difference between panel types?",
+    "error": "Something went wrong. Please try again.",
+    "rateLimit": "Too many messages. Please wait a moment.",
+    "paymentError": "AI credits exhausted. Please try later."
   }
 }

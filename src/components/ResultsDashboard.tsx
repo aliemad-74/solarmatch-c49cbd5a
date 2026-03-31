@@ -6,7 +6,7 @@ import ResultCard from "./ResultCard";
 import ROITimeline from "./ROITimeline";
 import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
-import AIAdvisor from "./AIAdvisor";
+
 
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
@@ -719,18 +719,6 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         )}
 
-        {/* AI Advisor - Quick tips */}
-        <div className="mt-6 print:hidden">
-          <AIAdvisor
-            results={results}
-            locationName={locationName || ''}
-            monthlyConsumption={monthlyConsumption}
-            pvType={pvType}
-            buildingType={buildingType}
-            preloadedRecommendation={aiReviewText || solarEngineData?.ai_analysis?.recommendation}
-            preloadedLoading={solarEngineLoading}
-          />
-        </div>
       </div>
     </section>
   );

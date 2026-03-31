@@ -10,6 +10,7 @@ import AuthModal from "@/components/AuthModal";
 import LimitReachedModal from "@/components/LimitReachedModal";
 
 import MobileBottomNav from "@/components/MobileBottomNav";
+import SolarChatBot from "@/components/SolarChatBot";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import ScrollReveal from "@/components/ScrollReveal";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
@@ -535,6 +536,15 @@ const Index = () => {
       </main>
 
       <Footer />
+
+      <SolarChatBot
+        results={results}
+        locationName={locationName}
+        preloadedRecommendation={aiReviewText}
+        monthlyConsumption={effectiveMonthlyConsumption}
+        pvType={pvType}
+        buildingType={buildingType}
+      />
 
       <AuthModal
         open={showAuthModal}
