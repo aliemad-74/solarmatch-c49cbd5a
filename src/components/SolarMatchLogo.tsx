@@ -21,7 +21,7 @@ const SolarMatchLogo = ({ variant = "full", className = "", size = 36 }: SolarMa
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-end gap-2 ${className}`}>
       <img
         src={logoIcon}
         alt="SolarMatch"
