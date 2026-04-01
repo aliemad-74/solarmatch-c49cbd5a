@@ -81,13 +81,13 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: "You are an Egyptian electricity tariff analyst. Extract structured tariff data from web content." },
-          { role: "user", content: `Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt (2025/2026 if available, otherwise 2024/2025).
+          { role: "user", content: `Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt. PRIORITIZE 2025/2026 rates (after July 2025 increase). Only fall back to 2024/2025 if no newer data exists.
 
 IMPORTANT:
 - There should be 7 residential tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000 kWh.
 - Extract the ACTUAL rates from the content. DO NOT use placeholder values.
-- If the content mentions July 2025 new tariffs, use those. Otherwise use the latest available.
-- Set effective_date to the actual period (e.g. "2025/2026" or "2024/2025").
+- STRONGLY PREFER July 2025 / 2025-2026 tariffs over older ones.
+- Set effective_date to "2025/2026" if using post-July 2025 rates, or "2024/2025" if those are the latest available.
 
 Content to analyze:
 ${combinedContent}` },
