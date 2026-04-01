@@ -323,7 +323,7 @@ Provide:
 
 Keep response under 200 words. Be specific with numbers.`;
 
-    const aiText = await getAIAnalysis(aiPrompt, GEMINI_API_KEY);
+    const aiText = await getAIAnalysis(aiPrompt, LOVABLE_API_KEY);
 
     const confidence = solarData.source === "google_solar" ? "high" : (feasibility === "suitable" ? "medium" : "low");
 
