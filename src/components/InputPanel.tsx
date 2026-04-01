@@ -10,10 +10,11 @@ import { Switch } from "@/components/ui/switch";
 import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD, systemPackages, agriculturalActivities, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { getAllSolarInsights } from "@/lib/solarInsights";
 import { Card, CardContent } from "@/components/ui/card";
+import { getActiveTariffs } from "@/lib/egyptTariffs";
 
 interface InputPanelProps {
   rooftopArea: number;
