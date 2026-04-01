@@ -100,32 +100,17 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `You are a data extraction expert. From the following scraped web content about solar panel prices in Egypt, extract the average cost per kilowatt (EGP/kW) for three categories:
+            text: `Extract solar panel prices in Egypt (EGP per kW) from this content. Return ONLY valid JSON, no markdown fences:
+{"economy":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"standard":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"premium":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"currency":"EGP","market_date":"<date>","sources_analyzed":<number>}
 
-1. Economy (polycrystalline panels, budget options)
-2. Standard (standard monocrystalline panels, mid-range)  
-3. Premium (high-efficiency monocrystalline, top brands like Canadian Solar, LONGi, JA Solar)
+Economy=polycrystalline, Standard=mono, Premium=high-power mono (Canadian Solar, LONGi).
+Fallback if no data: Economy=15000, Standard=19000, Premium=26000 (confidence=low).
 
-Return ONLY a valid JSON object with this exact format, no other text:
-{
-  "economy": { "costPerKW": <number>, "confidence": "high|medium|low", "notes": "<brief note>" },
-  "standard": { "costPerKW": <number>, "confidence": "high|medium|low", "notes": "<brief note>" },
-  "premium": { "costPerKW": <number>, "confidence": "high|medium|low", "notes": "<brief note>" },
-  "currency": "EGP",
-  "market_date": "<approximate date of these prices>",
-  "sources_analyzed": <number of sources>
-}
-
-If you cannot find reliable prices, use these fallback values but mark confidence as "low":
-- Economy: 15000 EGP/kW
-- Standard: 19000 EGP/kW
-- Premium: 26000 EGP/kW
-
-Scraped content:
+Content:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 1500, temperature: 0.2 },
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.1, responseMimeType: "application/json" },
       }),
     });
 
