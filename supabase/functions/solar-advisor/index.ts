@@ -246,7 +246,7 @@ Important notes:
 - The interpretation should be detailed, practical, and specific to this project
 - If coverage ratio exceeds 150%, advise the client they could reduce system size to 100-120% coverage to save costs, and estimate how much they would save`;
 
-      const result = await callGemini(GEMINI_API_KEY, reviewPrompt, true, 30000);
+      const result = await callGemini(LOVABLE_API_KEY, reviewPrompt, true, 30000);
 
       if (!result.ok) {
         console.error("Review mode Gemini error:", result.error);
@@ -344,7 +344,7 @@ Provide a comprehensive interpretation including:
 
 Write in detail (4-6 paragraphs). Do NOT start with "As a" or "As your". Start directly with the assessment.`;
 
-    const result = await callGemini(GEMINI_API_KEY, advisorPrompt, false, 25000);
+    const result = await callGemini(LOVABLE_API_KEY, advisorPrompt, false, 25000);
 
     if (!result.ok) {
       return jsonResponse({ success: false, error: result.error || "AI request failed" }, 502);
