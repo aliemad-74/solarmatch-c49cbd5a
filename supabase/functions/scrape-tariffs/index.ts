@@ -45,7 +45,7 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        query: "أسعار شرائح الكهرباء الجديدة مصر 2025 2026 تعريفة الكهرباء المنزلية بعد الزيادة يوليو",
+        query: `أسعار شرائح الكهرباء الجديدة مصر ${new Date().getFullYear()} تعريفة الكهرباء المنزلية الحالية اليوم`,
         limit: 5,
         lang: "ar",
         country: "eg",
@@ -81,13 +81,13 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: "You are an Egyptian electricity tariff analyst. Extract structured tariff data from web content." },
-          { role: "user", content: `Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt. PRIORITIZE 2025/2026 rates (after July 2025 increase). Only fall back to 2024/2025 if no newer data exists.
+          { role: "user", content: `Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt as of today (${new Date().toISOString().split("T")[0]}).
 
 IMPORTANT:
 - There should be 7 residential tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000 kWh.
 - Extract the ACTUAL rates from the content. DO NOT use placeholder values.
-- STRONGLY PREFER July 2025 / 2025-2026 tariffs over older ones.
-- Set effective_date to "2025/2026" if using post-July 2025 rates, or "2024/2025" if those are the latest available.
+- Always use the NEWEST rates available. Prefer ${new Date().getFullYear()} rates.
+- Set effective_date to the year of the rates you extracted (e.g. "2026").
 
 Content to analyze:
 ${combinedContent}` },
