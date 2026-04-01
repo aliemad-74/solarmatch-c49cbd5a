@@ -286,6 +286,13 @@ const Index = () => {
     callSolarEngine();
     
     try {
+      // Build market price overrides from live data
+      const marketPriceOverrides: MarketPriceOverrides = {
+        economy: getCostPerKW("economy"),
+        standard: getCostPerKW("standard"),
+        premium: getCostPerKW("premium"),
+      };
+
       // Step 1: Always calculate locally first (source of truth)
       const calculation = calculateSolarFeasibility(
         rooftopArea,
@@ -297,7 +304,8 @@ const Index = () => {
         effectiveMonthlyConsumption,
         buildingMode,
         numberOfUnits,
-        avgUnitConsumption
+        avgUnitConsumption,
+        marketPriceOverrides
       );
 
       // Step 2: AI Review checkpoint — validate calculations before showing to user
