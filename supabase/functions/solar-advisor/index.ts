@@ -41,68 +41,57 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   });
 }
 
-// --- Call Gemini ---
+// --- Call AI via Lovable AI Gateway ---
 async function callGemini(
-  apiKey: string,
+  _apiKey: string,
   prompt: string,
   jsonMode: boolean,
   timeoutMs = 30000
 ): Promise<{ ok: boolean; text?: string; error?: string }> {
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  console.log("Gemini URL:", geminiUrl.replace(apiKey, "REDACTED"));
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return { ok: false, error: "LOVABLE_API_KEY not configured" };
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const generationConfig: Record<string, unknown> = {
-    temperature: 0.4,
-    maxOutputTokens: 8192,
-  };
-
-  if (jsonMode) {
-    generationConfig.responseMimeType = "application/json";
-  }
-
-  let geminiResponse: Response;
+  let response: Response;
   try {
-    geminiResponse = await fetch(geminiUrl, {
+    const body: any = {
+      model: "google/gemini-2.5-flash",
+      messages: [{ role: "user", content: prompt }],
+    };
+    if (jsonMode) {
+      body.response_format = { type: "json_object" };
+    }
+    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       signal: controller.signal,
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig,
-      }),
+      body: JSON.stringify(body),
     });
   } catch (err) {
     clearTimeout(timeoutId);
-    console.error("Gemini fetch error:", err);
+    console.error("AI fetch error:", err);
     return { ok: false, error: "AI request failed (timeout or network)" };
   }
   clearTimeout(timeoutId);
 
-  console.log("Gemini response status:", geminiResponse.status);
+  console.log("Lovable AI response status:", response.status);
 
-  const rawText = await geminiResponse.text();
-  console.log("Gemini raw response (first 300):", rawText.slice(0, 300));
-
-  if (!geminiResponse.ok) {
-    console.error("Gemini non-OK:", geminiResponse.status, rawText);
-    return { ok: false, error: `AI service error: ${geminiResponse.status}` };
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("AI non-OK:", response.status, errText);
+    return { ok: false, error: `AI service error: ${response.status}` };
   }
 
-  let parsed: any;
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    console.error("Gemini returned invalid JSON:", rawText.slice(0, 300));
-    return { ok: false, error: "Invalid JSON from AI service" };
-  }
-
-  const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const data = await response.json();
+  const text = data?.choices?.[0]?.message?.content;
   if (!text) {
-    console.error("Invalid Gemini response structure:", JSON.stringify(parsed).slice(0, 300));
-    return { ok: false, error: "Invalid Gemini response structure" };
+    console.error("Invalid AI response structure:", JSON.stringify(data).slice(0, 300));
+    return { ok: false, error: "Invalid AI response structure" };
   }
 
   return { ok: true, text };
@@ -121,10 +110,10 @@ serve(async (req) => {
     }
 
     // Validate API key
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    console.log("GEMINI_API_KEY exists:", !!GEMINI_API_KEY);
-    if (!GEMINI_API_KEY) {
-      return jsonResponse({ success: false, error: "Missing GEMINI_API_KEY" }, 500);
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    console.log("LOVABLE_API_KEY exists:", !!LOVABLE_API_KEY);
+    if (!LOVABLE_API_KEY) {
+      return jsonResponse({ success: false, error: "Missing LOVABLE_API_KEY" }, 500);
     }
 
     // Validate request body
@@ -257,7 +246,7 @@ Important notes:
 - The interpretation should be detailed, practical, and specific to this project
 - If coverage ratio exceeds 150%, advise the client they could reduce system size to 100-120% coverage to save costs, and estimate how much they would save`;
 
-      const result = await callGemini(GEMINI_API_KEY, reviewPrompt, true, 30000);
+      const result = await callGemini(LOVABLE_API_KEY, reviewPrompt, true, 30000);
 
       if (!result.ok) {
         console.error("Review mode Gemini error:", result.error);
@@ -355,7 +344,7 @@ Provide a comprehensive interpretation including:
 
 Write in detail (4-6 paragraphs). Do NOT start with "As a" or "As your". Start directly with the assessment.`;
 
-    const result = await callGemini(GEMINI_API_KEY, advisorPrompt, false, 25000);
+    const result = await callGemini(LOVABLE_API_KEY, advisorPrompt, false, 25000);
 
     if (!result.ok) {
       return jsonResponse({ success: false, error: result.error || "AI request failed" }, 502);
