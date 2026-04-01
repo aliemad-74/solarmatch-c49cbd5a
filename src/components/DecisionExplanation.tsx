@@ -160,7 +160,17 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
     },
   ];
 
-  // --- Grouped Assumptions ---
+  // --- Dynamic Assumptions from market data ---
+  const priceSource = panelPrices.isLive
+    ? (isAr ? "أسعار محدّثة من السوق" : "Live market prices")
+    : (isAr ? "أسعار تقديرية" : "Estimated prices");
+  const tariffSource = tariffs.isLive
+    ? (isAr ? `تعريفة محدّثة (${tariffs.data?.effective_date || "2024/2025"})` : `Updated tariff (${tariffs.data?.effective_date || "2024/2025"})`)
+    : (isAr ? "تعريفة 2024/2025 (ثابتة)" : "2024/2025 tariff (static)");
+  const costPerKwDisplay = panelPrices.data
+    ? `${panelPrices.data.economy.costPerKW.toLocaleString()} - ${panelPrices.data.premium.costPerKW.toLocaleString()} EGP/kW`
+    : (isAr ? "15,000 - 26,000 جنيه/ك.و" : "15,000 - 26,000 EGP/kW");
+
   const assumptionGroups = [
     {
       category: isAr ? "الطاقة" : "Energy",
@@ -175,8 +185,9 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
     {
       category: isAr ? "المالية" : "Financial",
       items: [
-        { label: isAr ? "ثبات الأسعار" : "Tariff Stability", value: isAr ? "التعريفة الحالية (2024/2025) ثابتة" : "Current tariff (2024/2025) held constant" },
-        { label: isAr ? "تكلفة الكيلووات" : "Cost per kW", value: isAr ? "ثابتة حسب الباقة المختارة" : "Held constant per selected package" },
+        { label: isAr ? "تعريفة الكهرباء" : "Electricity Tariff", value: tariffSource },
+        { label: isAr ? "تكلفة الكيلووات" : "Cost per kW", value: `${costPerKwDisplay} (${priceSource})` },
+        ...(panelPrices.scraped_at ? [{ label: isAr ? "آخر تحديث للأسعار" : "Prices Last Updated", value: new Date(panelPrices.scraped_at).toLocaleDateString(isAr ? "ar-EG" : "en-US") }] : []),
       ],
     },
     {
