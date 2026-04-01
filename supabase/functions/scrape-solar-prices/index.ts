@@ -40,35 +40,52 @@ serve(async (req) => {
     }
 
     // Search for solar panel prices in Egypt
+    // Search with both Arabic and English queries for better results
     console.log("Searching for solar panel prices...");
-    const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: "أسعار ألواح شمسية مصر 2025 2026 سعر كيلو وات طاقة شمسية",
-        limit: 5,
-        lang: "ar",
-        country: "eg",
-        scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
-      }),
-    });
+    const queries = [
+      { query: "solar panel prices Egypt 2025 2026 cost per kilowatt EGP", lang: "en", country: "eg" },
+      { query: "أسعار ألواح شمسية مصر 2025 2026 سعر كيلو وات طاقة شمسية", lang: "ar", country: "eg" },
+    ];
 
-    if (!searchRes.ok) {
-      const errText = await searchRes.text();
-      console.error("Firecrawl search error:", searchRes.status, errText);
-      throw new Error(`Firecrawl search failed: ${searchRes.status}`);
+    let allResults: any[] = [];
+    const allSourceUrls: string[] = [];
+
+    for (const q of queries) {
+      try {
+        const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: q.query,
+            limit: 3,
+            lang: q.lang,
+            country: q.country,
+            scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
+          }),
+        });
+
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          const results = searchData.data || [];
+          console.log(`Query "${q.query.slice(0, 30)}..." returned ${results.length} results`);
+          allResults = [...allResults, ...results];
+          allSourceUrls.push(...results.map((r: any) => r.url).filter(Boolean));
+        } else {
+          const errText = await searchRes.text();
+          console.error(`Firecrawl search error for query "${q.lang}":`, searchRes.status, errText);
+        }
+      } catch (e) {
+        console.error(`Search error for "${q.lang}" query:`, e);
+      }
     }
 
-    const searchData = await searchRes.json();
-    const results = searchData.data || [];
-    console.log(`Firecrawl returned ${results.length} results`);
-    const sourceUrls = results.map((r: any) => r.url).filter(Boolean);
+    console.log(`Total results: ${allResults.length}`);
 
     // Combine all markdown content
-    const combinedContent = results
+    const combinedContent = allResults
       .map((r: any) => `--- Source: ${r.url} ---\n${r.markdown || r.description || ""}`)
       .join("\n\n")
-      .slice(0, 8000);
+      .slice(0, 10000);
 
     console.log(`Combined content length: ${combinedContent.length} chars`);
     if (combinedContent.length < 100) {
