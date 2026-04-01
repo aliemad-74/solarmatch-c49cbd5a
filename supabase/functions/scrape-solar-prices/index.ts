@@ -115,7 +115,7 @@ Content to analyze:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.2, responseMimeType: "application/json" },
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.2, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
       }),
     });
 
