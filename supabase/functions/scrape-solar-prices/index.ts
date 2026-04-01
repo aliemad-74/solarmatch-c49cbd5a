@@ -146,7 +146,6 @@ ${combinedContent}`
     } else {
       console.error("Gemini error:", geminiRes.status, await geminiRes.text());
     }
-    }
 
     // Fallback if extraction failed
     if (!priceData) {
