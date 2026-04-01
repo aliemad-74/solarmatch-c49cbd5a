@@ -125,7 +125,7 @@ Scraped content:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 500, temperature: 0.2 },
+        generationConfig: { maxOutputTokens: 1500, temperature: 0.2 },
       }),
     });
 
