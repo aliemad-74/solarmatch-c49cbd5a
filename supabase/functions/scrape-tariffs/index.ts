@@ -45,7 +45,7 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        query: "شرائح أسعار الكهرباء الجديدة مصر يوليو 2025 2026 تعريفة الكهرباء المنزلية",
+        query: "أسعار شرائح الكهرباء الجديدة مصر 2025 2026 تعريفة الكهرباء المنزلية بعد الزيادة يوليو",
         limit: 5,
         lang: "ar",
         country: "eg",
