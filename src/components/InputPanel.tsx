@@ -280,7 +280,9 @@ const InputPanel = ({
                   <p className="text-xs opacity-70 mt-1">{pkg.efficiency}</p>
                   <p className="text-xs opacity-70">{pkg.areaPerKW} m²/kW</p>
                   <div className="mt-2 pt-2 border-t border-border/50">
-                    <p className="text-xs font-medium">{pkg.costRange} {t('common.EGP')}/kW</p>
+                    <p className="text-xs font-medium">
+                      {(dynamicCosts?.[key === "C_poly_economy" ? "economy" : key === "B_standard_mono" ? "standard" : "premium"] ?? pkg.costPerKW).toLocaleString()} {t('common.EGP')}/kW
+                    </p>
                   </div>
                 </button>
               ))}
