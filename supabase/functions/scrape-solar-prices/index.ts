@@ -110,7 +110,7 @@ Content:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 1000, temperature: 0.1, responseMimeType: "application/json" },
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.1, responseMimeType: "application/json" },
       }),
     });
 
