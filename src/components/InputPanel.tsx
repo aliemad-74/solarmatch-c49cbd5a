@@ -14,7 +14,13 @@ import { useState, useEffect, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { getAllSolarInsights } from "@/lib/solarInsights";
 import { Card, CardContent } from "@/components/ui/card";
-import { getActiveTariffs } from "@/lib/egyptTariffs";
+import { TariffTier } from "@/lib/egyptTariffs";
+
+interface TariffInfo {
+  tiers: TariffTier[];
+  source: "static" | "live";
+  effectiveDate: string;
+}
 
 interface InputPanelProps {
   rooftopArea: number;
@@ -47,6 +53,8 @@ interface InputPanelProps {
   onCalculate: () => void;
   locationName?: string;
   climateData?: ClimateData | null;
+  tariffInfo?: TariffInfo;
+  dynamicCosts?: { economy: number; standard: number; premium: number };
 }
 
 const InputPanel = ({
@@ -79,6 +87,8 @@ const InputPanel = ({
   onCalculate,
   locationName,
   climateData,
+  tariffInfo,
+  dynamicCosts,
 }: InputPanelProps) => {
   const { t, i18n } = useTranslation();
   const [showInsights, setShowInsights] = useState(false);
@@ -270,7 +280,9 @@ const InputPanel = ({
                   <p className="text-xs opacity-70 mt-1">{pkg.efficiency}</p>
                   <p className="text-xs opacity-70">{pkg.areaPerKW} m²/kW</p>
                   <div className="mt-2 pt-2 border-t border-border/50">
-                    <p className="text-xs font-medium">{pkg.costRange} {t('common.EGP')}/kW</p>
+                    <p className="text-xs font-medium">
+                      {(dynamicCosts?.[key === "C_poly_economy" ? "economy" : key === "B_standard_mono" ? "standard" : "premium"] ?? pkg.costPerKW).toLocaleString()} {t('common.EGP')}/kW
+                    </p>
                   </div>
                 </button>
               ))}
@@ -279,9 +291,13 @@ const InputPanel = ({
 
           {/* Electricity Price Slider - Dynamic from tariff data */}
           {(() => {
-            const tariffInfo = getActiveTariffs();
-            const minRate = Math.floor(Math.min(...tariffInfo.tiers.map(t => t.rateEGP)) * 100) / 100;
-            const maxRate = Math.ceil(Math.max(...tariffInfo.tiers.filter(t => t.rateEGP < Infinity).map(t => t.rateEGP)) * 100) / 100;
+            const defaultTiers = [
+              { minKWh: 0, maxKWh: 50, rateEGP: 0.68, tierName: "", tierNameAr: "" },
+              { minKWh: 1001, maxKWh: Infinity, rateEGP: 2.23, tierName: "", tierNameAr: "" },
+            ];
+            const tiers = tariffInfo?.tiers ?? defaultTiers;
+            const minRate = Math.floor(Math.min(...tiers.map(t => t.rateEGP)) * 100) / 100;
+            const maxRate = Math.ceil(Math.max(...tiers.filter(t => t.rateEGP < Infinity).map(t => t.rateEGP)) * 100) / 100;
             return (
               <div className="space-y-4 mb-6">
                 <Label className="text-sm font-medium text-foreground flex items-center justify-between">
@@ -292,10 +308,10 @@ const InputPanel = ({
                   </span>
                   <span className="text-lg font-semibold text-primary">{electricityPrice.toFixed(2)} {t('common.EGP')}</span>
                 </Label>
-                {tariffInfo.source === "live" && (
+                {tariffInfo?.source === "live" && (
                   <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    {tariffInfo.effectiveDate} - بيانات حية
+                    {tariffInfo?.effectiveDate} - بيانات حية
                   </div>
                 )}
                 <div className="px-2">
