@@ -163,7 +163,7 @@ ${combinedContent}`
     await supabase.from("market_data").insert({
       type: "panel_price",
       data: priceData,
-      source_urls: sourceUrls,
+      source_urls: allSourceUrls,
       scraped_at: new Date().toISOString(),
     });
 
