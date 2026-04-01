@@ -1,5 +1,5 @@
-// Egypt Electricity Tariff System (2024/2025)
-// Based on Egyptian Electricity Holding Company tiered pricing
+// Egypt Electricity Tariff System
+// Supports dynamic tariffs from market_data scraping with static fallback
 
 export interface TariffTier {
   minKWh: number;
@@ -9,9 +9,8 @@ export interface TariffTier {
   tierNameAr: string;
 }
 
-// Residential tariff tiers (EGP per kWh)
-// Updated for 2024/2025 rates
-export const RESIDENTIAL_TARIFFS: TariffTier[] = [
+// Static fallback tariff tiers (2024/2025 rates)
+export const DEFAULT_RESIDENTIAL_TARIFFS: TariffTier[] = [
   { minKWh: 0, maxKWh: 50, rateEGP: 0.58, tierName: "Tier 1 (0-50 kWh)", tierNameAr: "الشريحة الأولى (0-50 ك.و.س)" },
   { minKWh: 51, maxKWh: 100, rateEGP: 0.73, tierName: "Tier 2 (51-100 kWh)", tierNameAr: "الشريحة الثانية (51-100 ك.و.س)" },
   { minKWh: 101, maxKWh: 200, rateEGP: 1.12, tierName: "Tier 3 (101-200 kWh)", tierNameAr: "الشريحة الثالثة (101-200 ك.و.س)" },
@@ -21,9 +20,48 @@ export const RESIDENTIAL_TARIFFS: TariffTier[] = [
   { minKWh: 1001, maxKWh: Infinity, rateEGP: 2.28, tierName: "Tier 7 (>1000 kWh)", tierNameAr: "الشريحة السابعة (>1000 ك.و.س)" },
 ];
 
-// Commercial tariff rates
-export const COMMERCIAL_RATE = 1.85; // EGP per kWh (simplified)
-export const INDUSTRIAL_RATE = 1.65; // EGP per kWh (simplified)
+// Kept for backward compatibility
+export const RESIDENTIAL_TARIFFS = DEFAULT_RESIDENTIAL_TARIFFS;
+
+// Commercial tariff rates (fallback)
+export const COMMERCIAL_RATE = 1.85;
+export const INDUSTRIAL_RATE = 1.65;
+
+// Active tariffs - can be overridden by scraped data
+let _activeTariffs: TariffTier[] = DEFAULT_RESIDENTIAL_TARIFFS;
+let _activeCommercialRate = COMMERCIAL_RATE;
+let _activeIndustrialRate = INDUSTRIAL_RATE;
+let _tariffSource: "static" | "live" = "static";
+let _tariffEffectiveDate = "2024/2025";
+
+export function setActiveTariffs(
+  tiers: TariffTier[],
+  commercialRate?: number,
+  industrialRate?: number,
+  effectiveDate?: string,
+) {
+  if (tiers && tiers.length >= 5) {
+    // Normalize maxKWh: null → Infinity for last tier
+    _activeTariffs = tiers.map((t, i) => ({
+      ...t,
+      maxKWh: t.maxKWh == null || t.maxKWh === 0 ? (i === tiers.length - 1 ? Infinity : t.maxKWh) : t.maxKWh,
+    }));
+    _tariffSource = "live";
+    if (commercialRate) _activeCommercialRate = commercialRate;
+    if (industrialRate) _activeIndustrialRate = industrialRate;
+    if (effectiveDate) _tariffEffectiveDate = effectiveDate;
+  }
+}
+
+export function getActiveTariffs() {
+  return {
+    tiers: _activeTariffs,
+    commercialRate: _activeCommercialRate,
+    industrialRate: _activeIndustrialRate,
+    source: _tariffSource,
+    effectiveDate: _tariffEffectiveDate,
+  };
+}
 
 export interface TariffCalculation {
   totalCost: number;
@@ -34,14 +72,15 @@ export interface TariffCalculation {
   monthlySavings?: number;
 }
 
-// Calculate electricity bill using tiered pricing
-export function calculateTieredBill(monthlyKWh: number): TariffCalculation {
+// Calculate electricity bill using tiered pricing (uses active tariffs)
+export function calculateTieredBill(monthlyKWh: number, customTiers?: TariffTier[]): TariffCalculation {
+  const tiers = customTiers || _activeTariffs;
   let remaining = monthlyKWh;
   let totalCost = 0;
   const breakdown: { tier: TariffTier; kWh: number; cost: number }[] = [];
-  let currentTier = RESIDENTIAL_TARIFFS[0];
+  let currentTier = tiers[0];
 
-  for (const tier of RESIDENTIAL_TARIFFS) {
+  for (const tier of tiers) {
     if (remaining <= 0) break;
     
     const tierRange = tier.maxKWh === Infinity ? remaining : tier.maxKWh - tier.minKWh + 1;
@@ -52,7 +91,6 @@ export function calculateTieredBill(monthlyKWh: number): TariffCalculation {
     totalCost += tierCost;
     remaining -= kWhInTier;
     
-    // Track the highest tier used
     if (monthlyKWh >= tier.minKWh) {
       currentTier = tier;
     }
@@ -60,12 +98,7 @@ export function calculateTieredBill(monthlyKWh: number): TariffCalculation {
 
   const effectiveRate = monthlyKWh > 0 ? totalCost / monthlyKWh : 0;
 
-  return {
-    totalCost,
-    effectiveRate,
-    currentTier,
-    tierBreakdown: breakdown,
-  };
+  return { totalCost, effectiveRate, currentTier, tierBreakdown: breakdown };
 }
 
 // Calculate bill after solar offset
@@ -90,12 +123,12 @@ export function calculateBillAfterSolar(
 
 // Get tier for a given consumption level
 export function getTierForConsumption(monthlyKWh: number): TariffTier {
-  for (const tier of RESIDENTIAL_TARIFFS) {
+  for (const tier of _activeTariffs) {
     if (monthlyKWh <= tier.maxKWh) {
       return tier;
     }
   }
-  return RESIDENTIAL_TARIFFS[RESIDENTIAL_TARIFFS.length - 1];
+  return _activeTariffs[_activeTariffs.length - 1];
 }
 
 // Get effective electricity price based on consumption tier

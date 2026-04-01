@@ -45,7 +45,7 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        query: "شرائح أسعار الكهرباء مصر 2025 2026 تعريفة الكهرباء المنزلية الجديدة",
+        query: "شرائح أسعار الكهرباء الجديدة مصر يوليو 2025 2026 تعريفة الكهرباء المنزلية",
         limit: 5,
         lang: "ar",
         country: "eg",
@@ -78,14 +78,17 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `You are an Egyptian electricity tariff analyst. Analyze the following scraped web content and extract the ACTUAL residential electricity tariff tiers in Egypt.
+            text: `You are an Egyptian electricity tariff analyst. Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt (2025/2026 if available, otherwise 2024/2025).
 
 Return a JSON object with this exact structure:
-{"tiers":[{"minKWh":0,"maxKWh":50,"rateEGP":<actual_rate>,"tierName":"Tier 1 (0-50 kWh)","tierNameAr":"الشريحة الأولى (0-50 ك.و.س)"},...],"commercial_rate":<actual_rate>,"industrial_rate":<actual_rate>,"effective_date":"<year_period>","confidence":"high","sources_analyzed":<number>}
+{"tiers":[{"minKWh":0,"maxKWh":50,"rateEGP":<actual_rate>,"tierName":"Tier 1 (0-50 kWh)","tierNameAr":"الشريحة الأولى (0-50 ك.و.س)"},...],"commercial_rate":<actual_rate>,"industrial_rate":<actual_rate>,"effective_date":"2025/2026","confidence":"high","sources_analyzed":<number>}
 
-There should be 7 residential tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000 kWh.
-Extract the ACTUAL rates from the content. DO NOT use placeholder values.
-Include tier names in both English and Arabic.
+IMPORTANT:
+- There should be 7 residential tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000 kWh.
+- Extract the ACTUAL rates from the content. DO NOT use placeholder values.
+- If the content mentions July 2025 new tariffs, use those. Otherwise use the latest available.
+- Set effective_date to the actual period (e.g. "2025/2026" or "2024/2025").
+- Include tier names in both English and Arabic.
 
 Content to analyze:
 ${combinedContent}`
