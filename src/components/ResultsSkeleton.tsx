@@ -1,95 +1,89 @@
 import { useState, useEffect } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
-import { Sparkles, MapPin, Cpu, DollarSign, CheckCircle, BrainCircuit } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import SolarMatchLogo from "./SolarMatchLogo";
 
-const STEP_DURATION = 1250; // 5s / 4 steps
+const MESSAGES_EN = [
+  "Analyzing solar potential…",
+  "Calculating optimal system size…",
+  "Estimating costs & savings…",
+  "Finalizing AI recommendation…",
+];
+
+const MESSAGES_AR = [
+  "جاري تحليل إمكانات الطاقة الشمسية…",
+  "حساب الحجم الأمثل للنظام…",
+  "تقدير التكاليف والتوفير…",
+  "إعداد التوصية النهائية…",
+];
 
 const ResultsSkeleton = () => {
-  const { t } = useTranslation();
-  const [currentStep, setCurrentStep] = useState(0);
-
-  const steps = [
-    { icon: MapPin, label: t("loading.step1") },
-    { icon: Cpu, label: t("loading.step2") },
-    { icon: DollarSign, label: t("loading.step3") },
-    { icon: CheckCircle, label: t("loading.step4") },
-  ];
+  const { i18n } = useTranslation();
+  const isAr = i18n.language === "ar";
+  const messages = isAr ? MESSAGES_AR : MESSAGES_EN;
+  const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, STEP_DURATION);
+      setMsgIndex((prev) => (prev + 1) % messages.length);
+    }, 2200);
     return () => clearInterval(interval);
-  }, [steps.length]);
-
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  }, [messages.length]);
 
   return (
-    <section className="container mx-auto px-4 py-12">
-      <div className="max-w-6xl mx-auto">
-        {/* Loading message with steps */}
-        <div className="text-center mb-10">
-          <div className="inline-flex flex-col items-center gap-4 px-8 py-6 rounded-2xl bg-primary/10 border border-primary/20">
-            <div className="relative">
-              <BrainCircuit className="w-9 h-9 text-primary animate-pulse" />
-              <Sparkles className="w-4 h-4 text-solar-gold absolute -top-1 -right-1 animate-bounce" style={{ animationDuration: '2s' }} />
-            </div>
-            
-            <p className="text-sm font-semibold text-primary">{t("loading.analyzing")}</p>
-            <p className="text-xs text-muted-foreground -mt-2">{t("loading.subtitle")}</p>
+    <section className="container mx-auto px-4 py-20">
+      <div className="flex flex-col items-center justify-center gap-6">
+        {/* Spinning ring with logo */}
+        <div className="relative w-32 h-32 flex items-center justify-center">
+          {/* Outer spinning ring */}
+          <svg
+            className="absolute inset-0 w-full h-full animate-spin"
+            style={{ animationDuration: "2.5s" }}
+            viewBox="0 0 128 128"
+          >
+            <defs>
+              <linearGradient id="loader-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+                <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="64"
+              cy="64"
+              r="58"
+              fill="none"
+              stroke="url(#loader-grad)"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray="270 365"
+            />
+          </svg>
 
-            <div className="w-64">
-              <Progress value={progress} className="h-2 mb-3" />
-            </div>
+          {/* Static subtle track */}
+          <div className="absolute inset-0 rounded-full border-2 border-primary/10" />
 
-            <div className="space-y-2">
-              {steps.map((step, i) => {
-                const StepIcon = step.icon;
-                const isActive = i === currentStep;
-                const isDone = i < currentStep;
-
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 transition-all duration-500 ${
-                      isActive
-                        ? "text-primary font-semibold scale-105"
-                        : isDone
-                          ? "text-primary/50 line-through"
-                          : "text-muted-foreground/40"
-                    }`}
-                  >
-                    <StepIcon className="w-4 h-4 shrink-0" />
-                    <span className="text-sm">{step.label}</span>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Logo in center */}
+          <div className="relative z-10 animate-pulse" style={{ animationDuration: "2s" }}>
+            <SolarMatchLogo size={52} />
           </div>
         </div>
 
-        {/* Metric cards skeleton */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-card rounded-2xl border border-border/50 p-5">
-              <Skeleton className="w-10 h-10 rounded-xl mb-3" />
-              <Skeleton className="h-4 w-20 mb-2" />
-              <Skeleton className="h-7 w-24 mb-1" />
-              <Skeleton className="h-3 w-16" />
-            </div>
-          ))}
-        </div>
+        {/* Rotating status message */}
+        <p
+          key={msgIndex}
+          className="text-sm font-medium text-muted-foreground animate-fade-in"
+        >
+          {messages[msgIndex]}
+        </p>
 
-        {/* Charts skeleton */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="bg-card rounded-2xl border border-border/50 p-6">
-              <Skeleton className="h-5 w-40 mb-1" />
-              <Skeleton className="h-3 w-32 mb-6" />
-              <Skeleton className="h-64 w-full rounded-lg" />
-            </div>
+        {/* Subtle dots */}
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
+              style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
+            />
           ))}
         </div>
       </div>
