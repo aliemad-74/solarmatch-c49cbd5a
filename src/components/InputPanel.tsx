@@ -14,7 +14,13 @@ import { useState, useEffect, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { getAllSolarInsights } from "@/lib/solarInsights";
 import { Card, CardContent } from "@/components/ui/card";
-import { getActiveTariffs } from "@/lib/egyptTariffs";
+import { TariffTier } from "@/lib/egyptTariffs";
+
+interface TariffInfo {
+  tiers: TariffTier[];
+  source: "static" | "live";
+  effectiveDate: string;
+}
 
 interface InputPanelProps {
   rooftopArea: number;
