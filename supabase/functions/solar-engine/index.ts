@@ -196,25 +196,33 @@ async function getElevation(lat: number, lng: number, apiKey: string) {
   return 50;
 }
 
-/* ───── STEP 6: Gemini AI ───── */
-async function getAIAnalysis(prompt: string, geminiKey: string) {
+/* ───── STEP 6: AI Analysis via Lovable AI ───── */
+async function getAIAnalysis(prompt: string, _unused: string) {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-    const res = await fetchWithTimeout(url, {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) return null;
+    
+    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 400, temperature: 0.7 },
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "You are a solar energy expert for Egypt. Be concise and specific with numbers." },
+          { role: "user", content: prompt },
+        ],
       }),
     }, 15000);
     if (res.ok) {
       const data = await res.json();
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+      return data?.choices?.[0]?.message?.content ?? null;
     }
-    console.error("Gemini status:", res.status, await res.text());
+    console.error("Lovable AI status:", res.status, await res.text());
   } catch (e) {
-    console.error("Gemini error:", e);
+    console.error("Lovable AI error:", e);
   }
   return null;
 }
