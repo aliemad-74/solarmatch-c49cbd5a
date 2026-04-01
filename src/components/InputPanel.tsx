@@ -173,8 +173,15 @@ const InputPanel = ({
               <Input
                 id="rooftop-area"
                 type="number"
-                value={rooftopArea}
-                onChange={(e) => setRooftopArea(Math.max(1, Number(e.target.value)))}
+                value={rooftopArea || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setRooftopArea(0);
+                  } else {
+                    setRooftopArea(Math.max(1, Number(val)));
+                  }
+                }}
                 min={1}
                 max={10000}
                 className="h-12 text-lg font-medium"
