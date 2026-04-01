@@ -17,7 +17,8 @@ import ResultsSkeleton from "@/components/ResultsSkeleton";
 import LiveReportCounter from "@/components/LiveReportCounter";
 
 import { useUserAuth } from "@/contexts/UserAuthContext";
-import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM, buildingTypes, systemPackages } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM, buildingTypes, systemPackages, MarketPriceOverrides } from "@/lib/solarData";
+import { useMarketData } from "@/hooks/useMarketData";
 import { toast } from "sonner";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
