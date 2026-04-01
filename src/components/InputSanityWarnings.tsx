@@ -10,6 +10,8 @@ interface InputSanityWarningsProps {
   rooftopArea: number;
   monthlyConsumption: number;
   electricityPrice: number;
+  electricityPriceMin?: number;
+  electricityPriceMax?: number;
   buildingMode: boolean;
   numberOfUnits: number;
   avgUnitConsumption: number;
@@ -22,6 +24,7 @@ export function getInputWarnings(props: InputSanityWarningsProps, isAr: boolean)
   const warnings: Warning[] = [];
   const {
     rooftopArea, monthlyConsumption, electricityPrice,
+    electricityPriceMin = 0.68, electricityPriceMax = 2.23,
     buildingMode, numberOfUnits, avgUnitConsumption,
     farmMode, farmEquipmentConsumption, areaInFeddans,
   } = props;
@@ -74,12 +77,12 @@ export function getInputWarnings(props: InputSanityWarningsProps, isAr: boolean)
   }
 
   // Electricity price
-  if (electricityPrice < 0.8 || electricityPrice > 2.5) {
+  if (electricityPrice < electricityPriceMin || electricityPrice > electricityPriceMax) {
     warnings.push({
       type: "warn",
       message: isAr
-        ? `سعر الكهرباء (${electricityPrice} جنيه/ك.و.س) خارج النطاق المصري المعتاد (0.80–2.30 جنيه).`
-        : `Electricity price (${electricityPrice} EGP/kWh) is outside Egypt's typical range (0.80–2.30 EGP).`,
+        ? `سعر الكهرباء (${electricityPrice} جنيه/ك.و.س) خارج النطاق المصري المعتاد (${electricityPriceMin.toFixed(2)}–${electricityPriceMax.toFixed(2)} جنيه).`
+        : `Electricity price (${electricityPrice} EGP/kWh) is outside Egypt's typical range (${electricityPriceMin.toFixed(2)}–${electricityPriceMax.toFixed(2)} EGP).`,
     });
   }
 
