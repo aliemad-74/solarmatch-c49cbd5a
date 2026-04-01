@@ -1,65 +1,51 @@
 
 
-## خطة: هوية بصرية كاملة - Corporate/Enterprise لـ SolarMatch
+# خطة استخدام Firecrawl في SolarMatch
 
-### الوضع الحالي
-- اللوجو حالياً: أيقونة Sun من Lucide في مربع gradient - شكل جنيريك جداً
-- الخطوط: Inter فقط - مفيش تمييز
-- الألوان: teal/green gradient - لطيف بس مش مميز
-- الكاردات والعناصر: شكل Shadcn الافتراضي
+## الهدف
+استخدام Firecrawl لجلب بيانات حقيقية بدل القيم الثابتة الموجودة حالياً في الكود:
+1. **أسعار الألواح الشمسية** من مواقع الموردين المصريين
+2. **تعريفة الكهرباء المحدّثة** من المصادر الرسمية
 
----
-
-### 1. لوجو SVG مخصوص (Component جديد)
-إنشاء `SolarMatchLogo.tsx` - لوجو هندسي من ألواح شمسية مرتبة بشكل hexagonal/geometric مع شعاع شمس مدمج. يكون:
-- SVG مرسوم بالكود (مش أيقونة جاهزة)
-- يدعم light/dark mode
-- حجمين: كامل (مع النص) ومصغر (أيقونة فقط)
-- يُستخدم في Header + Footer + favicon
-
-### 2. لوجو AI-Generated للـ Favicon و OG Image
-استخدام `google/gemini-3-pro-image-preview` لتوليد:
-- Favicon (لوجو مربع 512x512)
-- OG Image للسوشيال ميديا (1200x630)
-
-### 3. نظام خطوط جديد
-- **Heading**: خط مميز زي `Plus Jakarta Sans` أو `Outfit` - أقوى وأكثر شخصية من Inter
-- **Body**: `Inter` يفضل للقراءة
-- **Arabic**: `IBM Plex Sans Arabic` أو `Noto Sans Arabic` - أنظف من الـ system font
-
-### 4. تحديث نظام الألوان - Corporate Solar
-تحويل من teal/green لباليت أكثر رسمية:
-- **Primary**: Deep Navy Blue (`#0F2B46`) - ثقة واحترافية
-- **Accent**: Solar Amber/Gold (`#E8A838`) - طاقة وتفاؤل  
-- **Success**: Emerald (`#10B981`) - نتائج إيجابية
-- تدرجات أرقى بدل الـ gradient الحالي
-
-### 5. تحسين العناصر البصرية
-- **Header**: لوجو جديد + تباعد أفضل + hover effects أنعم
-- **Cards**: borders أخف + shadows أدق + hover transitions
-- **Buttons**: أشكال أكثر رسمية (أقل rounded)
-- **Hero section**: خلفية هندسية خفيفة بدل الـ gradient البسيط
-- **Footer**: تصميم أنظف يليق بشركة طاقة
-
-### 6. تحديث index.html
-- Favicon جديد
-- OG Image جديدة
+## الوضع الحالي
+- الأسعار ثابتة في `src/lib/solarData.ts`: Economy = 15,000 جنيه/kW، Standard = 19,000، Premium = 23,000
+- التعريفة ثابتة في `src/lib/egyptTariffs.ts`: 7 شرائح من 0.58 إلى 2.28 جنيه/kWh
 
 ---
 
-### الملفات
+## خطوات التنفيذ
 
-| ملف | عملية |
-|-----|-------|
-| `src/components/SolarMatchLogo.tsx` | **إنشاء** - لوجو SVG مخصوص |
-| `src/index.css` | **تعديل** - ألوان + خطوط + متغيرات جديدة |
-| `tailwind.config.ts` | **تعديل** - خطوط + ألوان جديدة |
-| `src/components/Header.tsx` | **تعديل** - اللوجو الجديد |
-| `src/components/Footer.tsx` | **تعديل** - اللوجو الجديد + تصميم أنظف |
-| `index.html` | **تعديل** - خطوط Google + favicon |
-| `src/pages/About.tsx` | **تعديل** - تطبيق الهوية الجديدة |
-| `src/pages/HowItWorks.tsx` | **تعديل** - تطبيق الهوية الجديدة |
+### 1. ربط Firecrawl Connector
+- توصيل Firecrawl بالمشروع عبر الـ connector
 
-### النتيجة المتوقعة
-الموقع هيبان كأنه منتج **شركة طاقة محترفة** مش template جاهز - هوية بصرية موحدة من اللوجو للألوان للخطوط.
+### 2. إنشاء Edge Function: `scrape-solar-prices`
+- تستخدم Firecrawl Search للبحث عن "أسعار ألواح شمسية مصر 2025/2026"
+- تعمل scrape لمواقع مثل جوميا، أمازون مصر، ومواقع شركات الطاقة الشمسية المصرية
+- تستخرج الأسعار وتحسب متوسطات لكل فئة (Economy/Standard/Premium)
+- تستخدم Gemini لتحليل المحتوى المسحوب واستخراج الأسعار بشكل منظم
+
+### 3. إنشاء Edge Function: `scrape-tariffs`
+- تعمل scrape لموقع وزارة الكهرباء أو المصادر الإخبارية المصرية
+- تستخرج شرائح التعريفة المحدّثة
+- تستخدم Gemini لتحويل النص لبيانات منظمة (JSON)
+
+### 4. جدول في قاعدة البيانات: `market_data`
+- يخزن آخر أسعار وتعريفات تم جلبها
+- أعمدة: `type` (panel_price / tariff)، `data` (JSON)، `source_url`، `scraped_at`
+- يمنع إعادة السحب كل مرة - cache لمدة 24 ساعة مثلاً
+
+### 5. Cron Job (اختياري)
+- جدولة تحديث الأسعار يومياً أو أسبوعياً تلقائياً
+
+### 6. تعديل الكود الحالي
+- `solarData.ts`: يجلب الأسعار من `market_data` أولاً، لو مفيش يستخدم القيم الثابتة كـ fallback
+- `egyptTariffs.ts`: نفس المنطق - بيانات محدّثة أو fallback للقيم الحالية
+- إضافة بادج "أسعار محدّثة" في الواجهة لما البيانات تكون من scraping حقيقي
+
+---
+
+## ملاحظات تقنية
+- Firecrawl لا يستخدم gateway، فنستخدم الـ API key مباشرة في Edge Functions
+- نستخدم Gemini (متاح بالفعل) لتحليل المحتوى المسحوب واستخراج بيانات منظمة
+- القيم الثابتة الحالية تظل كـ fallback لضمان عمل التطبيق حتى لو فشل الـ scraping
 
