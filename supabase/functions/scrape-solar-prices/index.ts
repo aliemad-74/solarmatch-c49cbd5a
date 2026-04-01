@@ -181,8 +181,8 @@ ${combinedContent}`
       console.error("Gemini HTTP error:", geminiRes.status, errBody.slice(0, 300));
     }
 
-    // Fallback if extraction failed
-    if (!priceData) {
+    // Fallback if extraction failed or returned null values
+    if (!priceData || !priceData.economy?.costPerKW) {
       priceData = {
         economy: { costPerKW: 15000, confidence: "low", notes: "Fallback value" },
         standard: { costPerKW: 19000, confidence: "low", notes: "Fallback value" },
