@@ -86,6 +86,7 @@ const InputPanel = ({
   onCalculate,
   locationName,
   climateData,
+  tariffInfo,
 }: InputPanelProps) => {
   const { t, i18n } = useTranslation();
   const [showInsights, setShowInsights] = useState(false);
