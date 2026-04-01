@@ -480,8 +480,9 @@ export function calculateSolarFeasibility(
     pvType === "A_high_power_mono" ? "premium" :
     pvType === "C_poly_economy" ? "economy" : "standard";
   
-  const selectedPkg = systemPackages[selectedPackage];
+  const selectedPkg = dynamicPackages[selectedPackage];
   const pv = pvTypes[pvType];
+  const dynamicCostPerKW = selectedPkg.costPerKW;
   const scenario = costScenarios[costScenario];
 
   // ============================================
