@@ -116,15 +116,19 @@ ${combinedContent}`
     if (geminiRes.ok) {
       const geminiData = await geminiRes.json();
       const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      // Extract JSON from response
+      console.log("Gemini raw response:", text.slice(0, 500));
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           priceData = JSON.parse(jsonMatch[0]);
+          console.log("Extracted prices:", JSON.stringify(priceData));
         } catch (e) {
           console.error("Failed to parse Gemini JSON:", e);
         }
       }
+    } else {
+      console.error("Gemini error:", geminiRes.status, await geminiRes.text());
+    }
     }
 
     // Fallback if extraction failed
