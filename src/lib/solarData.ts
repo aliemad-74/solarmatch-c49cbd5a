@@ -1,4 +1,5 @@
 import { ClimateData } from "./climateApi";
+import { calculateBillAfterSolar } from "./egyptTariffs";
 
 // ================================================
 // GLOBAL CONSTANTS (Egypt defaults)
