@@ -393,6 +393,12 @@ export interface SolarCalculation {
 // MAIN CALCULATION ENGINE (kW-based method)
 // ================================================
 
+export interface MarketPriceOverrides {
+  economy?: number;   // costPerKW override
+  standard?: number;
+  premium?: number;
+}
+
 export function calculateSolarFeasibility(
   rooftopArea: number,
   climateData: ClimateData | null,
@@ -403,10 +409,20 @@ export function calculateSolarFeasibility(
   effectiveMonthlyConsumption: number,
   buildingMode: boolean = false,
   numberOfUnits: number = 1,
-  avgUnitConsumption: number = 300
+  avgUnitConsumption: number = 300,
+  marketPriceOverrides?: MarketPriceOverrides
 ): SolarCalculation {
   const climate = climateData || defaultClimateData;
   const building = buildingTypes[buildingType];
+
+  // Apply market price overrides to packages for this calculation
+  const dynamicPackages: Record<string, SystemPackage> = {};
+  for (const [key, pkg] of Object.entries(systemPackages)) {
+    dynamicPackages[key] = {
+      ...pkg,
+      costPerKW: marketPriceOverrides?.[key as keyof MarketPriceOverrides] ?? pkg.costPerKW,
+    };
+  }
   const warnings: string[] = [];
 
   // ============================================
