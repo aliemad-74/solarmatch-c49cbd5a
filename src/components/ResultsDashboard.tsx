@@ -41,6 +41,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>(isAr ? "ar" : "en");
+  const { panelPrices, tariffs, refresh: refreshMarketData } = useMarketData();
+
+  useEffect(() => {
+    if (isVisible) refreshMarketData();
+  }, [isVisible]);
 
   if (!results || !isVisible) return null;
 
