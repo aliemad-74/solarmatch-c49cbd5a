@@ -29,6 +29,9 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [showSensitivity, setShowSensitivity] = useState(false);
   const [showInputTrace, setShowInputTrace] = useState(false);
+  const { panelPrices, tariffs, refresh: refreshMarketData } = useMarketData();
+
+  useEffect(() => { refreshMarketData(); }, []);
 
   const feasibilityStatus =
     results.coverageRatio >= 0.7 && results.paybackYears <= 10
