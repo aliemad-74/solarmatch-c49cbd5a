@@ -249,26 +249,27 @@ serve(async (req) => {
 
     const pkg = (["economy", "standard", "premium"].includes(pvPackage) ? pvPackage : "standard") as string;
 
-    // STEP 1-4: parallel API calls
-    const [geo, solarData, weather, aqi, elevation] = await Promise.all([
+    // STEP 1-4: parallel API calls + market prices
+    const [geo, solarData, weather, aqi, elevation, marketPrices] = await Promise.all([
       geocode(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getSolarData(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getWeather(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getAirQuality(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getElevation(latitude, longitude, GOOGLE_MAPS_API_KEY),
+      getMarketPrices(),
     ]);
 
     // STEP 5: Enhanced calculation
     const dust = dustLoss(aqi);
     const tf = tempFactor(elevation);
     const effectiveArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
-    const base_irradiance = solarData.irradiance * 365; // kWh/m²/year
+    const base_irradiance = solarData.irradiance * 365;
     const adjusted_irradiance_factor =
       solarData.irradiance * (1 - dust) * tf * (1 - weather.cloudCover / 200);
     const adjusted_irradiance = adjusted_irradiance_factor * 365;
 
     const areaPerKw = AREA_PER_KW[pkg] ?? 7;
-    const costPerKw = COST_PER_KW[pkg] ?? 19000;
+    const costPerKw = marketPrices[pkg] ?? DEFAULT_COST_PER_KW[pkg] ?? 19000;
 
     const system_size_kw = Math.round((effectiveArea * 0.60 / areaPerKw) * 100) / 100;
     const annual_production = Math.round(system_size_kw * adjusted_irradiance_factor * 365 * 0.80);
