@@ -33,7 +33,36 @@ function tempFactor(elevation: number): number {
 }
 
 const AREA_PER_KW: Record<string, number> = { economy: 8.5, standard: 7, premium: 6 };
-const COST_PER_KW: Record<string, number> = { economy: 15000, standard: 19000, premium: 26000 };
+const DEFAULT_COST_PER_KW: Record<string, number> = { economy: 15000, standard: 19000, premium: 26000 };
+
+/* ───── Fetch live market prices from DB ───── */
+async function getMarketPrices(): Promise<Record<string, number>> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return DEFAULT_COST_PER_KW;
+
+    const res = await fetchWithTimeout(
+      `${supabaseUrl}/rest/v1/market_data?type=eq.panel_price&order=scraped_at.desc&limit=1`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+      5000
+    );
+    if (res.ok) {
+      const rows = await res.json();
+      if (rows?.length && rows[0]?.data) {
+        const d = rows[0].data;
+        return {
+          economy: d.economy?.costPerKW ?? DEFAULT_COST_PER_KW.economy,
+          standard: d.standard?.costPerKW ?? DEFAULT_COST_PER_KW.standard,
+          premium: d.premium?.costPerKW ?? DEFAULT_COST_PER_KW.premium,
+        };
+      }
+    }
+  } catch (e) {
+    console.error("Market price fetch error:", e);
+  }
+  return DEFAULT_COST_PER_KW;
+}
 
 /* ───── STEP 1: Geocoding ───── */
 async function geocode(lat: number, lng: number, apiKey: string) {
