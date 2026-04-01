@@ -528,16 +528,17 @@ export function calculateSolarFeasibility(
   });
 
   // ============================================
-  // STEP 6: Annual savings
-  // Savings_year = Energy_year × electricity_price
+  // STEP 6: Annual savings (tiered tariff billing)
+  // Uses active tariffs (live or fallback) for accurate tier-based savings
   // ============================================
-  const savingsYear = energyYear * electricityPrice;
+  const mainMonthlySolarProd = energyYear / 12;
+  const mainTieredResult = calculateBillAfterSolar(effectiveMonthlyConsumption, mainMonthlySolarProd);
+  const savingsYear = mainTieredResult.savingsAmount * 12;
 
   // ============================================
   // STEP 7: Monthly savings
-  // Savings_month = Savings_year / 12
   // ============================================
-  const savingsMonth = savingsYear / 12;
+  const savingsMonth = mainTieredResult.savingsAmount;
 
   // Rule 1 & 2 validation (mathematical integrity)
   const savingsYearCheck = savingsMonth * 12;
