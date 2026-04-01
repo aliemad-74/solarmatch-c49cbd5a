@@ -54,6 +54,7 @@ interface InputPanelProps {
   locationName?: string;
   climateData?: ClimateData | null;
   tariffInfo?: TariffInfo;
+  dynamicCosts?: { economy: number; standard: number; premium: number };
 }
 
 const InputPanel = ({
