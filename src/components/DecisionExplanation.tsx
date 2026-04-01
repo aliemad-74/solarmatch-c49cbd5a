@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Info, TrendingUp, AlertTriangle, CheckCircle2, BarChart3, Settings2, ArrowUp, ArrowDown, Crosshair } from "lucide-react";
 import { SolarCalculation, formatCurrency, formatNumber } from "@/lib/solarData";
 import { useTranslation } from "react-i18next";
+import { useMarketData } from "@/hooks/useMarketData";
+import { MarketDataBadge } from "@/components/MarketDataBadge";
 
 interface DecisionExplanationProps {
   results: SolarCalculation;
@@ -27,6 +29,9 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [showSensitivity, setShowSensitivity] = useState(false);
   const [showInputTrace, setShowInputTrace] = useState(false);
+  const { panelPrices, tariffs, refresh: refreshMarketData } = useMarketData();
+
+  useEffect(() => { refreshMarketData(); }, []);
 
   const feasibilityStatus =
     results.coverageRatio >= 0.7 && results.paybackYears <= 10
@@ -155,7 +160,17 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
     },
   ];
 
-  // --- Grouped Assumptions ---
+  // --- Dynamic Assumptions from market data ---
+  const priceSource = panelPrices.isLive
+    ? (isAr ? "أسعار محدّثة من السوق" : "Live market prices")
+    : (isAr ? "أسعار تقديرية" : "Estimated prices");
+  const tariffSource = tariffs.isLive
+    ? (isAr ? `تعريفة محدّثة (${tariffs.data?.effective_date || "2024/2025"})` : `Updated tariff (${tariffs.data?.effective_date || "2024/2025"})`)
+    : (isAr ? "تعريفة 2024/2025 (ثابتة)" : "2024/2025 tariff (static)");
+  const costPerKwDisplay = panelPrices.data
+    ? `${panelPrices.data.economy.costPerKW.toLocaleString()} - ${panelPrices.data.premium.costPerKW.toLocaleString()} EGP/kW`
+    : (isAr ? "15,000 - 26,000 جنيه/ك.و" : "15,000 - 26,000 EGP/kW");
+
   const assumptionGroups = [
     {
       category: isAr ? "الطاقة" : "Energy",
@@ -170,8 +185,9 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
     {
       category: isAr ? "المالية" : "Financial",
       items: [
-        { label: isAr ? "ثبات الأسعار" : "Tariff Stability", value: isAr ? "التعريفة الحالية (2024/2025) ثابتة" : "Current tariff (2024/2025) held constant" },
-        { label: isAr ? "تكلفة الكيلووات" : "Cost per kW", value: isAr ? "ثابتة حسب الباقة المختارة" : "Held constant per selected package" },
+        { label: isAr ? "تعريفة الكهرباء" : "Electricity Tariff", value: tariffSource },
+        { label: isAr ? "تكلفة الكيلووات" : "Cost per kW", value: `${costPerKwDisplay} (${priceSource})` },
+        ...(panelPrices.scraped_at ? [{ label: isAr ? "آخر تحديث للأسعار" : "Prices Last Updated", value: new Date(panelPrices.scraped_at).toLocaleDateString(isAr ? "ar-EG" : "en-US") }] : []),
       ],
     },
     {
@@ -329,6 +345,7 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
                 <span className="text-sm font-semibold text-foreground">
                   {isAr ? "الافتراضات الرئيسية المستخدمة في التحليل" : "Key Assumptions Used in This Analysis"}
                 </span>
+                <MarketDataBadge isLive={panelPrices.isLive || tariffs.isLive} scrapedAt={panelPrices.scraped_at || tariffs.scraped_at} type="prices" />
               </div>
               {showAssumptions ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </button>

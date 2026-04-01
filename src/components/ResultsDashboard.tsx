@@ -1,5 +1,7 @@
 import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone, Satellite, Wind, Mountain } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useMarketData } from "@/hooks/useMarketData";
+import { MarketDataBadge } from "@/components/MarketDataBadge";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
 import ResultCard from "./ResultCard";
@@ -12,7 +14,7 @@ import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { generateSolarReport, ReportLanguage } from "@/lib/pdfReport";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,6 +41,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>(isAr ? "ar" : "en");
+  const { panelPrices, tariffs, refresh: refreshMarketData } = useMarketData();
+
+  useEffect(() => {
+    if (isVisible) refreshMarketData();
+  }, [isVisible]);
 
   if (!results || !isVisible) return null;
 
@@ -142,7 +149,17 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
     { name: isAr ? "متفائل" : "Optimistic", desc: isAr ? "استهلاك -20%، تكلفة -15%" : "Consumption -20%, Cost -15%", paybackRange: `${formatNumber(basePayback * 0.8, 1)}–${formatNumber(basePayback * 0.9, 1)} ${isAr ? "سنة" : "yrs"}`, savingsRange: `${formatCurrency(baseSavings)}–${formatCurrency(baseSavings * 1.1)}`, color: "text-solar-green bg-solar-green/10 border-solar-green/30" },
   ];
 
-  // Assumptions
+  // Dynamic assumptions based on market data
+  const priceSource = panelPrices.isLive
+    ? (isAr ? "أسعار محدّثة من السوق" : "Live market prices")
+    : (isAr ? "أسعار تقديرية" : "Estimated prices");
+  const tariffSource = tariffs.isLive
+    ? (isAr ? `تعريفة محدّثة (${tariffs.data?.effective_date || "2024/2025"})` : `Updated tariff (${tariffs.data?.effective_date || "2024/2025"})`)
+    : (isAr ? "تعريفة 2024/2025 (ثابتة)" : "2024/2025 tariff (static)");
+  const costPerKwDisplay = panelPrices.data
+    ? `${panelPrices.data.economy.costPerKW.toLocaleString()} - ${panelPrices.data.premium.costPerKW.toLocaleString()} EGP/kW`
+    : (isAr ? "15,000 - 26,000 جنيه/ك.و" : "15,000 - 26,000 EGP/kW");
+
   const assumptionGroups = [
     { category: isAr ? "افتراضات الطاقة" : "Energy Assumptions", items: [
       { label: isAr ? "العائد النوعي" : "Specific Yield", value: isAr ? "1,800 ك.و.س/ك.و.ذ/سنة" : "1,800 kWh/kWp/year" },
@@ -152,8 +169,9 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
       { label: isAr ? "عامل CO₂" : "CO₂ Factor", value: "0.55 kg/kWh" },
     ]},
     { category: isAr ? "افتراضات مالية" : "Financial Assumptions", items: [
-      { label: isAr ? "ثبات الأسعار" : "Tariff Stability", value: isAr ? "التعريفة الحالية ثابتة" : "Current tariff held constant" },
-      { label: isAr ? "تكلفة الكيلووات" : "Cost per kW", value: isAr ? "ثابتة حسب الباقة" : "Per selected package" },
+      { label: isAr ? "تعريفة الكهرباء" : "Electricity Tariff", value: tariffSource },
+      { label: isAr ? "تكلفة الكيلووات" : "Cost per kW", value: `${costPerKwDisplay} (${priceSource})` },
+      ...(panelPrices.scraped_at ? [{ label: isAr ? "آخر تحديث للأسعار" : "Prices Last Updated", value: new Date(panelPrices.scraped_at).toLocaleDateString(isAr ? "ar-EG" : "en-US") }] : []),
     ]},
     { category: isAr ? "افتراضات تشغيلية" : "Operational Assumptions", items: [
       { label: isAr ? "العمر التشغيلي" : "System Lifetime", value: isAr ? "25 سنة" : "25 years" },
