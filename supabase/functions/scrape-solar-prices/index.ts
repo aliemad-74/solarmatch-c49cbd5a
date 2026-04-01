@@ -111,15 +111,18 @@ serve(async (req) => {
       console.warn("Very little content scraped, likely no useful data found");
     }
 
-    // Use Gemini to extract structured pricing data
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    const geminiRes = await fetch(geminiUrl, {
+    // Use Lovable AI Gateway to extract structured pricing data
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `You are a solar energy market analyst specializing in Egypt. Analyze the following content and extract the TOTAL INSTALLED SYSTEM cost per kW in EGP for solar panel systems in Egypt.
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "You are a solar energy market analyst specializing in Egypt. Extract structured pricing data from web content. Always respond with valid JSON only." },
+          { role: "user", content: `Analyze the following content and extract the TOTAL INSTALLED SYSTEM cost per kW in EGP for solar panel systems in Egypt.
 
 IMPORTANT DISTINCTION:
 - "Panel price per watt" (e.g., 7 EGP/W) is ONLY the panel cost, NOT the full system
@@ -127,61 +130,49 @@ IMPORTANT DISTINCTION:
 - We need the FULL SYSTEM installed cost per kW, not just panel price
 - Typical full system costs in Egypt 2024-2025: Economy 13,000-17,000, Standard 17,000-22,000, Premium 22,000-30,000 EGP/kW
 
-Return JSON:
-{"economy":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"standard":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"premium":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"currency":"EGP","market_date":"2025","sources_analyzed":<number>}
-
 Economy = basic polycrystalline system, Standard = mono PERC system, Premium = high-efficiency (Canadian Solar, LONGi, Jinko).
 
 Content:
-${combinedContent}`
-          }]
+${combinedContent}` },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_solar_prices",
+            description: "Extract solar panel system prices from analyzed content",
+            parameters: {
+              type: "object",
+              properties: {
+                economy: { type: "object", properties: { costPerKW: { type: "number" }, confidence: { type: "string", enum: ["high", "medium", "low"] }, notes: { type: "string" } }, required: ["costPerKW", "confidence", "notes"] },
+                standard: { type: "object", properties: { costPerKW: { type: "number" }, confidence: { type: "string", enum: ["high", "medium", "low"] }, notes: { type: "string" } }, required: ["costPerKW", "confidence", "notes"] },
+                premium: { type: "object", properties: { costPerKW: { type: "number" }, confidence: { type: "string", enum: ["high", "medium", "low"] }, notes: { type: "string" } }, required: ["costPerKW", "confidence", "notes"] },
+                currency: { type: "string" },
+                market_date: { type: "string" },
+                sources_analyzed: { type: "number" },
+              },
+              required: ["economy", "standard", "premium", "currency", "market_date", "sources_analyzed"],
+            },
+          },
         }],
-        generationConfig: { maxOutputTokens: 4096, temperature: 0.2, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
+        tool_choice: { type: "function", function: { name: "extract_solar_prices" } },
       }),
     });
 
     let priceData: any = null;
-    if (geminiRes.ok) {
-      const geminiData = await geminiRes.json();
-      const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      console.log("Gemini full response length:", rawText.length);
-      console.log("Gemini raw start:", rawText.slice(0, 300));
-      console.log("Gemini raw end:", rawText.slice(-300));
-      
-      // Try multiple extraction methods
-      let jsonStr = "";
-      
-      // Method 1: Extract from code fences
-      const fenceMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenceMatch) {
-        jsonStr = fenceMatch[1].trim();
-        console.log("Extracted from code fence, length:", jsonStr.length);
-      }
-      
-      // Method 2: Find first { to last }
-      if (!jsonStr) {
-        const firstBrace = rawText.indexOf("{");
-        const lastBrace = rawText.lastIndexOf("}");
-        if (firstBrace !== -1 && lastBrace > firstBrace) {
-          jsonStr = rawText.slice(firstBrace, lastBrace + 1);
-          console.log("Extracted braces, length:", jsonStr.length);
-        }
-      }
-      
-      if (jsonStr) {
+    if (aiRes.ok) {
+      const aiData = await aiRes.json();
+      const toolCall = aiData?.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
         try {
-          priceData = JSON.parse(jsonStr);
-          console.log("✅ Parsed prices:", JSON.stringify(priceData).slice(0, 400));
+          priceData = JSON.parse(toolCall.function.arguments);
+          console.log("✅ Parsed prices via Lovable AI:", JSON.stringify(priceData).slice(0, 400));
         } catch (e) {
           console.error("❌ JSON parse failed:", (e as Error).message);
-          console.error("JSON snippet:", jsonStr.slice(0, 200));
         }
-      } else {
-        console.error("❌ No JSON found in Gemini response");
       }
     } else {
-      const errBody = await geminiRes.text();
-      console.error("Gemini HTTP error:", geminiRes.status, errBody.slice(0, 300));
+      const errBody = await aiRes.text();
+      console.error("Lovable AI error:", aiRes.status, errBody.slice(0, 300));
     }
 
     // Fallback if extraction failed or returned null values
