@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Info, TrendingUp, AlertTriangle, CheckCircle2, BarChart3, Settings2, ArrowUp, ArrowDown, Crosshair } from "lucide-react";
 import { SolarCalculation, formatCurrency, formatNumber } from "@/lib/solarData";
 import { useTranslation } from "react-i18next";
+import { useMarketData } from "@/hooks/useMarketData";
+import { MarketDataBadge } from "@/components/MarketDataBadge";
 
 interface DecisionExplanationProps {
   results: SolarCalculation;
