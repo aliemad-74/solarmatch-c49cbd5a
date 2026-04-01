@@ -88,6 +88,7 @@ serve(async (req) => {
       .slice(0, 4000);
 
     console.log(`Combined content length: ${combinedContent.length} chars`);
+    console.log("Content preview:", combinedContent.slice(0, 500));
     if (combinedContent.length < 100) {
       console.warn("Very little content scraped, likely no useful data found");
     }
