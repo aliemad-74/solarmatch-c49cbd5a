@@ -551,7 +551,7 @@ export function calculateSolarFeasibility(
   // STEP 8: System cost
   // Total_cost = kW_installed × cost_per_kW[cost_scenario]
   // ============================================
-  const totalCost = kWInstalled * scenario.costPerKW;
+  const totalCost = kWInstalled * dynamicCostPerKW;
   const costPerKW = kWInstalled > 0 ? totalCost / kWInstalled : 0;
 
   // Rule 3 validation
