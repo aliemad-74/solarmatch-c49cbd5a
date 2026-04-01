@@ -111,15 +111,21 @@ ${combinedContent}`
     let tariffData: any = null;
     if (geminiRes.ok) {
       const geminiData = await geminiRes.json();
-      const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      console.log("Gemini tariff response:", text.slice(0, 800));
+      text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           tariffData = JSON.parse(jsonMatch[0]);
+          console.log("Extracted tariffs successfully:", JSON.stringify(tariffData).slice(0, 300));
         } catch (e) {
-          console.error("Failed to parse Gemini JSON:", e);
+          console.error("Failed to parse tariff JSON:", e);
         }
       }
+    } else {
+      console.error("Gemini error:", geminiRes.status, await geminiRes.text());
+    }
     }
 
     // Fallback
