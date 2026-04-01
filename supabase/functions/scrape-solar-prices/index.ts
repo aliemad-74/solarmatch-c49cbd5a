@@ -83,9 +83,9 @@ serve(async (req) => {
 
     // Combine all markdown content
     const combinedContent = allResults
-      .map((r: any) => `--- Source: ${r.url} ---\n${r.markdown || r.description || ""}`)
+      .map((r: any) => `--- ${r.url} ---\n${(r.markdown || r.description || "").slice(0, 1500)}`)
       .join("\n\n")
-      .slice(0, 10000);
+      .slice(0, 4000);
 
     console.log(`Combined content length: ${combinedContent.length} chars`);
     if (combinedContent.length < 100) {
