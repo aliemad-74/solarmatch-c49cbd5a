@@ -447,8 +447,10 @@ export function calculateSolarFeasibility(
     // Step 4: Energy production
     const energyYear = kWInstalled * SPECIFIC_YIELD;
     
-    // Step 6: Savings
-    const savingsYear = energyYear * electricityPrice;
+    // Step 6: Savings (using tiered tariff billing)
+    const monthlySolarProd = energyYear / 12;
+    const tieredResult = calculateBillAfterSolar(effectiveMonthlyConsumption, monthlySolarProd);
+    const savingsYear = tieredResult.savingsAmount * 12;
     
     // Step 8: Cost
     const totalCost = kWInstalled * pkg.costPerKW;
