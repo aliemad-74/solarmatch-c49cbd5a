@@ -287,9 +287,13 @@ const InputPanel = ({
 
           {/* Electricity Price Slider - Dynamic from tariff data */}
           {(() => {
-            const tariffInfo = getActiveTariffs();
-            const minRate = Math.floor(Math.min(...tariffInfo.tiers.map(t => t.rateEGP)) * 100) / 100;
-            const maxRate = Math.ceil(Math.max(...tariffInfo.tiers.filter(t => t.rateEGP < Infinity).map(t => t.rateEGP)) * 100) / 100;
+            const defaultTiers = [
+              { minKWh: 0, maxKWh: 50, rateEGP: 0.68, tierName: "", tierNameAr: "" },
+              { minKWh: 1001, maxKWh: Infinity, rateEGP: 2.23, tierName: "", tierNameAr: "" },
+            ];
+            const tiers = tariffInfo?.tiers ?? defaultTiers;
+            const minRate = Math.floor(Math.min(...tiers.map(t => t.rateEGP)) * 100) / 100;
+            const maxRate = Math.ceil(Math.max(...tiers.filter(t => t.rateEGP < Infinity).map(t => t.rateEGP)) * 100) / 100;
             return (
               <div className="space-y-4 mb-6">
                 <Label className="text-sm font-medium text-foreground flex items-center justify-between">
