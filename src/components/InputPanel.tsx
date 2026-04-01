@@ -277,31 +277,44 @@ const InputPanel = ({
             </div>
           </div>
 
-          {/* Electricity Price Slider */}
-          <div className="space-y-4 mb-6">
-            <Label className="text-sm font-medium text-foreground flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-muted-foreground" />
-                {t('input.electricityPrice')}
-                <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.electricityPriceTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
-              </span>
-              <span className="text-lg font-semibold text-primary">{electricityPrice.toFixed(2)} {t('common.EGP')}</span>
-            </Label>
-            <div className="px-2">
-              <Slider
-                value={[electricityPrice]}
-                onValueChange={(v) => setElectricityPrice(v[0])}
-                min={0.8}
-                max={2.3}
-                step={0.05}
-                className="w-full"
-              />
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>0.80 {t('common.EGP')}</span>
-              <span>2.30 {t('common.EGP')}</span>
-            </div>
-          </div>
+          {/* Electricity Price Slider - Dynamic from tariff data */}
+          {(() => {
+            const tariffInfo = getActiveTariffs();
+            const minRate = Math.floor(Math.min(...tariffInfo.tiers.map(t => t.rateEGP)) * 100) / 100;
+            const maxRate = Math.ceil(Math.max(...tariffInfo.tiers.filter(t => t.rateEGP < Infinity).map(t => t.rateEGP)) * 100) / 100;
+            return (
+              <div className="space-y-4 mb-6">
+                <Label className="text-sm font-medium text-foreground flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-muted-foreground" />
+                    {t('input.electricityPrice')}
+                    <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.electricityPriceTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
+                  </span>
+                  <span className="text-lg font-semibold text-primary">{electricityPrice.toFixed(2)} {t('common.EGP')}</span>
+                </Label>
+                {tariffInfo.source === "live" && (
+                  <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    {tariffInfo.effectiveDate} - بيانات حية
+                  </div>
+                )}
+                <div className="px-2">
+                  <Slider
+                    value={[electricityPrice]}
+                    onValueChange={(v) => setElectricityPrice(v[0])}
+                    min={minRate}
+                    max={maxRate}
+                    step={0.05}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{minRate.toFixed(2)} {t('common.EGP')}</span>
+                  <span>{maxRate.toFixed(2)} {t('common.EGP')}</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ==================== FARM MODE SECTION ==================== */}
           <div className="border-t border-border pt-6 mb-6">

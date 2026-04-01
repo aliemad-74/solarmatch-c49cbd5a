@@ -32,7 +32,7 @@ let _activeTariffs: TariffTier[] = DEFAULT_RESIDENTIAL_TARIFFS;
 let _activeCommercialRate = COMMERCIAL_RATE;
 let _activeIndustrialRate = INDUSTRIAL_RATE;
 let _tariffSource: "static" | "live" = "static";
-let _tariffEffectiveDate = "2024/2025";
+let _tariffEffectiveDate = "2025/2026";
 
 export function setActiveTariffs(
   tiers: TariffTier[],
