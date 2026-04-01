@@ -1,5 +1,7 @@
 import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone, Satellite, Wind, Mountain } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useMarketData } from "@/hooks/useMarketData";
+import { MarketDataBadge } from "@/components/MarketDataBadge";
 import { SolarCalculation, formatCurrency, formatNumber, MONTH_NAMES, costScenarios, systemPackages, PackageType } from "@/lib/solarData";
 import { ShareableParams } from "@/lib/shareUtils";
 import ResultCard from "./ResultCard";
