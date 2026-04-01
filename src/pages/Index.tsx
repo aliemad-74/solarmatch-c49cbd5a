@@ -118,7 +118,8 @@ const Index = () => {
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
 
-  // Persist inputs whenever they change
+  // Fetch market data on mount
+  useEffect(() => { refreshMarketData(); }, [refreshMarketData]);
   useEffect(() => {
     saveInputs({
       rooftopArea, pvType, buildingType, costScenario, electricityPrice,
