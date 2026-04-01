@@ -83,7 +83,7 @@ serve(async (req) => {
         method: "POST",
         headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: "أسعار تركيب الطاقة الشمسية للمنازل مصر 2025 سعر الكيلو وات",
+          query: `أسعار تركيب الطاقة الشمسية للمنازل مصر ${new Date().getFullYear()} سعر الكيلو وات اليوم`,
           limit: 3,
           lang: "ar",
           country: "eg",
@@ -128,7 +128,8 @@ IMPORTANT DISTINCTION:
 - "Panel price per watt" (e.g., 7 EGP/W) is ONLY the panel cost, NOT the full system
 - "System cost per kW" (e.g., 18,000 EGP/kW) includes panels + inverter + mounting + installation + wiring
 - We need the FULL SYSTEM installed cost per kW, not just panel price
-- Typical full system costs in Egypt 2024-2025: Economy 13,000-17,000, Standard 17,000-22,000, Premium 22,000-30,000 EGP/kW
+- Use the most recent prices as of today (${new Date().toISOString().split("T")[0]})
+- Typical full system costs in Egypt: Economy 15,000-20,000, Standard 18,000-23,000, Premium 23,000-30,000 EGP/kW
 
 Economy = basic polycrystalline system, Standard = mono PERC system, Premium = high-efficiency (Canadian Solar, LONGi, Jinko).
 
