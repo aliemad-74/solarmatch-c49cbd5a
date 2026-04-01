@@ -433,7 +433,7 @@ export function calculateSolarFeasibility(
   // ============================================
   // CALCULATE ALL THREE PACKAGE OPTIONS
   // ============================================
-  const packageOptions: PackageCalculation[] = (Object.entries(systemPackages) as [PackageType, SystemPackage][]).map(([key, pkg]) => {
+  const packageOptions: PackageCalculation[] = (Object.entries(dynamicPackages) as [PackageType, SystemPackage][]).map(([key, pkg]) => {
     // Step 1: Usable area
     const usableArea = rooftopArea * building.usableFraction;
     
