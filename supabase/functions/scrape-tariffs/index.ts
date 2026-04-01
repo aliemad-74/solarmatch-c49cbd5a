@@ -45,7 +45,7 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        query: "شرائح أسعار الكهرباء الجديدة مصر يوليو 2025 2026 تعريفة الكهرباء المنزلية",
+        query: "أسعار شرائح الكهرباء الجديدة مصر 2025 2026 تعريفة الكهرباء المنزلية بعد الزيادة يوليو",
         limit: 5,
         lang: "ar",
         country: "eg",
@@ -81,13 +81,13 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: "You are an Egyptian electricity tariff analyst. Extract structured tariff data from web content." },
-          { role: "user", content: `Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt (2025/2026 if available, otherwise 2024/2025).
+          { role: "user", content: `Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt. PRIORITIZE 2025/2026 rates (after July 2025 increase). Only fall back to 2024/2025 if no newer data exists.
 
 IMPORTANT:
 - There should be 7 residential tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000 kWh.
 - Extract the ACTUAL rates from the content. DO NOT use placeholder values.
-- If the content mentions July 2025 new tariffs, use those. Otherwise use the latest available.
-- Set effective_date to the actual period (e.g. "2025/2026" or "2024/2025").
+- STRONGLY PREFER July 2025 / 2025-2026 tariffs over older ones.
+- Set effective_date to "2025/2026" if using post-July 2025 rates, or "2024/2025" if those are the latest available.
 
 Content to analyze:
 ${combinedContent}` },
@@ -131,21 +131,21 @@ ${combinedContent}` },
       console.error("Lovable AI error:", aiRes.status, await aiRes.text());
     }
 
-    // Fallback
+    // Fallback - 2025/2026 rates
     if (!tariffData) {
       tariffData = {
         tiers: [
-          { minKWh: 0, maxKWh: 50, rateEGP: 0.58, tierName: "Tier 1 (0-50 kWh)", tierNameAr: "الشريحة الأولى (0-50 ك.و.س)" },
-          { minKWh: 51, maxKWh: 100, rateEGP: 0.73, tierName: "Tier 2 (51-100 kWh)", tierNameAr: "الشريحة الثانية (51-100 ك.و.س)" },
-          { minKWh: 101, maxKWh: 200, rateEGP: 1.12, tierName: "Tier 3 (101-200 kWh)", tierNameAr: "الشريحة الثالثة (101-200 ك.و.س)" },
+          { minKWh: 0, maxKWh: 50, rateEGP: 0.68, tierName: "Tier 1 (0-50 kWh)", tierNameAr: "الشريحة الأولى (0-50 ك.و.س)" },
+          { minKWh: 51, maxKWh: 100, rateEGP: 0.83, tierName: "Tier 2 (51-100 kWh)", tierNameAr: "الشريحة الثانية (51-100 ك.و.س)" },
+          { minKWh: 101, maxKWh: 200, rateEGP: 1.11, tierName: "Tier 3 (101-200 kWh)", tierNameAr: "الشريحة الثالثة (101-200 ك.و.س)" },
           { minKWh: 201, maxKWh: 350, rateEGP: 1.41, tierName: "Tier 4 (201-350 kWh)", tierNameAr: "الشريحة الرابعة (201-350 ك.و.س)" },
-          { minKWh: 351, maxKWh: 650, rateEGP: 1.69, tierName: "Tier 5 (351-650 kWh)", tierNameAr: "الشريحة الخامسة (351-650 ك.و.س)" },
+          { minKWh: 351, maxKWh: 650, rateEGP: 1.70, tierName: "Tier 5 (351-650 kWh)", tierNameAr: "الشريحة الخامسة (351-650 ك.و.س)" },
           { minKWh: 651, maxKWh: 1000, rateEGP: 1.95, tierName: "Tier 6 (651-1000 kWh)", tierNameAr: "الشريحة السادسة (651-1000 ك.و.س)" },
           { minKWh: 1001, maxKWh: null, rateEGP: 2.28, tierName: "Tier 7 (>1000 kWh)", tierNameAr: "الشريحة السابعة (>1000 ك.و.س)" },
         ],
-        commercial_rate: 1.85,
-        industrial_rate: 1.65,
-        effective_date: "2024/2025",
+        commercial_rate: 1.95,
+        industrial_rate: 1.75,
+        effective_date: "2025/2026",
         confidence: "low",
         sources_analyzed: 0,
       };
