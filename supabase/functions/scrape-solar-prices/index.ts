@@ -132,23 +132,45 @@ ${combinedContent}`
     let priceData: any = null;
     if (geminiRes.ok) {
       const geminiData = await geminiRes.json();
-      let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      console.log("Gemini raw response:", text.slice(0, 800));
-      // Strip markdown code fences
-      text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
+      const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      console.log("Gemini full response length:", rawText.length);
+      console.log("Gemini raw start:", rawText.slice(0, 300));
+      console.log("Gemini raw end:", rawText.slice(-300));
+      
+      // Try multiple extraction methods
+      let jsonStr = "";
+      
+      // Method 1: Extract from code fences
+      const fenceMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) {
+        jsonStr = fenceMatch[1].trim();
+        console.log("Extracted from code fence, length:", jsonStr.length);
+      }
+      
+      // Method 2: Find first { to last }
+      if (!jsonStr) {
+        const firstBrace = rawText.indexOf("{");
+        const lastBrace = rawText.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          jsonStr = rawText.slice(firstBrace, lastBrace + 1);
+          console.log("Extracted braces, length:", jsonStr.length);
+        }
+      }
+      
+      if (jsonStr) {
         try {
-          priceData = JSON.parse(jsonMatch[0]);
-          console.log("Extracted prices successfully:", JSON.stringify(priceData).slice(0, 300));
+          priceData = JSON.parse(jsonStr);
+          console.log("✅ Parsed prices:", JSON.stringify(priceData).slice(0, 400));
         } catch (e) {
-          console.error("Failed to parse Gemini JSON:", e, "Raw match:", jsonMatch[0].slice(0, 200));
+          console.error("❌ JSON parse failed:", (e as Error).message);
+          console.error("JSON snippet:", jsonStr.slice(0, 200));
         }
       } else {
-        console.error("No JSON found in Gemini response");
+        console.error("❌ No JSON found in Gemini response");
       }
     } else {
-      console.error("Gemini error:", geminiRes.status, await geminiRes.text());
+      const errBody = await geminiRes.text();
+      console.error("Gemini HTTP error:", geminiRes.status, errBody.slice(0, 300));
     }
 
     // Fallback if extraction failed
