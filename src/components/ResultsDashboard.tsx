@@ -154,8 +154,8 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
     ? (isAr ? "أسعار محدّثة من السوق" : "Live market prices")
     : (isAr ? "أسعار تقديرية" : "Estimated prices");
   const tariffSource = tariffs.isLive
-    ? (isAr ? `تعريفة محدّثة (${tariffs.data?.effective_date || "2024/2025"})` : `Updated tariff (${tariffs.data?.effective_date || "2024/2025"})`)
-    : (isAr ? "تعريفة 2024/2025 (ثابتة)" : "2024/2025 tariff (static)");
+    ? (isAr ? `تعريفة محدّثة (${tariffs.data?.effective_date || "2026"})` : `Updated tariff (${tariffs.data?.effective_date || "2026"})`)
+    : (isAr ? "تعريفة 2026 (ثابتة)" : "2026 tariff (static)");
   const costPerKwDisplay = panelPrices.data
     ? `${panelPrices.data.economy.costPerKW.toLocaleString()} - ${panelPrices.data.premium.costPerKW.toLocaleString()} EGP/kW`
     : (isAr ? "15,000 - 26,000 جنيه/ك.و" : "15,000 - 26,000 EGP/kW");
