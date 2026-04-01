@@ -40,34 +40,57 @@ serve(async (req) => {
     }
 
     // Search for solar panel prices in Egypt
+    // Search with both Arabic and English queries for better results
     console.log("Searching for solar panel prices...");
-    const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: "أسعار ألواح شمسية مصر 2025 2026 سعر كيلو وات طاقة شمسية",
-        limit: 5,
-        lang: "ar",
-        country: "eg",
-        scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
-      }),
-    });
+    const queries = [
+      { query: "solar panel prices Egypt 2025 2026 cost per kilowatt EGP", lang: "en", country: "eg" },
+      { query: "أسعار ألواح شمسية مصر 2025 2026 سعر كيلو وات طاقة شمسية", lang: "ar", country: "eg" },
+    ];
 
-    if (!searchRes.ok) {
-      const errText = await searchRes.text();
-      console.error("Firecrawl search error:", searchRes.status, errText);
-      throw new Error(`Firecrawl search failed: ${searchRes.status}`);
+    let allResults: any[] = [];
+    const allSourceUrls: string[] = [];
+
+    for (const q of queries) {
+      try {
+        const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: q.query,
+            limit: 3,
+            lang: q.lang,
+            country: q.country,
+            scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
+          }),
+        });
+
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          const results = searchData.data || [];
+          console.log(`Query "${q.query.slice(0, 30)}..." returned ${results.length} results`);
+          allResults = [...allResults, ...results];
+          allSourceUrls.push(...results.map((r: any) => r.url).filter(Boolean));
+        } else {
+          const errText = await searchRes.text();
+          console.error(`Firecrawl search error for query "${q.lang}":`, searchRes.status, errText);
+        }
+      } catch (e) {
+        console.error(`Search error for "${q.lang}" query:`, e);
+      }
     }
 
-    const searchData = await searchRes.json();
-    const results = searchData.data || [];
-    const sourceUrls = results.map((r: any) => r.url).filter(Boolean);
+    console.log(`Total results: ${allResults.length}`);
 
     // Combine all markdown content
-    const combinedContent = results
-      .map((r: any) => `--- Source: ${r.url} ---\n${r.markdown || r.description || ""}`)
+    const combinedContent = allResults
+      .map((r: any) => `--- ${r.url} ---\n${(r.markdown || r.description || "").slice(0, 1500)}`)
       .join("\n\n")
-      .slice(0, 8000);
+      .slice(0, 4000);
+
+    console.log(`Combined content length: ${combinedContent.length} chars`);
+    if (combinedContent.length < 100) {
+      console.warn("Very little content scraped, likely no useful data found");
+    }
 
     // Use Gemini to extract structured pricing data
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -77,48 +100,62 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `You are a data extraction expert. From the following scraped web content about solar panel prices in Egypt, extract the average cost per kilowatt (EGP/kW) for three categories:
+            text: `Extract solar panel prices in Egypt (EGP per kW) from this content. Return ONLY valid JSON, no markdown fences:
+{"economy":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"standard":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"premium":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"currency":"EGP","market_date":"<date>","sources_analyzed":<number>}
 
-1. Economy (polycrystalline panels, budget options)
-2. Standard (standard monocrystalline panels, mid-range)  
-3. Premium (high-efficiency monocrystalline, top brands like Canadian Solar, LONGi, JA Solar)
+Economy=polycrystalline, Standard=mono, Premium=high-power mono (Canadian Solar, LONGi).
+Fallback if no data: Economy=15000, Standard=19000, Premium=26000 (confidence=low).
 
-Return ONLY a valid JSON object with this exact format, no other text:
-{
-  "economy": { "costPerKW": <number>, "confidence": "high|medium|low", "notes": "<brief note>" },
-  "standard": { "costPerKW": <number>, "confidence": "high|medium|low", "notes": "<brief note>" },
-  "premium": { "costPerKW": <number>, "confidence": "high|medium|low", "notes": "<brief note>" },
-  "currency": "EGP",
-  "market_date": "<approximate date of these prices>",
-  "sources_analyzed": <number of sources>
-}
-
-If you cannot find reliable prices, use these fallback values but mark confidence as "low":
-- Economy: 15000 EGP/kW
-- Standard: 19000 EGP/kW
-- Premium: 26000 EGP/kW
-
-Scraped content:
+Content:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 500, temperature: 0.2 },
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.1, responseMimeType: "application/json" },
       }),
     });
 
     let priceData: any = null;
     if (geminiRes.ok) {
       const geminiData = await geminiRes.json();
-      const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          priceData = JSON.parse(jsonMatch[0]);
-        } catch (e) {
-          console.error("Failed to parse Gemini JSON:", e);
+      const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      console.log("Gemini full response length:", rawText.length);
+      console.log("Gemini raw start:", rawText.slice(0, 300));
+      console.log("Gemini raw end:", rawText.slice(-300));
+      
+      // Try multiple extraction methods
+      let jsonStr = "";
+      
+      // Method 1: Extract from code fences
+      const fenceMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) {
+        jsonStr = fenceMatch[1].trim();
+        console.log("Extracted from code fence, length:", jsonStr.length);
+      }
+      
+      // Method 2: Find first { to last }
+      if (!jsonStr) {
+        const firstBrace = rawText.indexOf("{");
+        const lastBrace = rawText.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          jsonStr = rawText.slice(firstBrace, lastBrace + 1);
+          console.log("Extracted braces, length:", jsonStr.length);
         }
       }
+      
+      if (jsonStr) {
+        try {
+          priceData = JSON.parse(jsonStr);
+          console.log("✅ Parsed prices:", JSON.stringify(priceData).slice(0, 400));
+        } catch (e) {
+          console.error("❌ JSON parse failed:", (e as Error).message);
+          console.error("JSON snippet:", jsonStr.slice(0, 200));
+        }
+      } else {
+        console.error("❌ No JSON found in Gemini response");
+      }
+    } else {
+      const errBody = await geminiRes.text();
+      console.error("Gemini HTTP error:", geminiRes.status, errBody.slice(0, 300));
     }
 
     // Fallback if extraction failed
@@ -137,7 +174,7 @@ ${combinedContent}`
     await supabase.from("market_data").insert({
       type: "panel_price",
       data: priceData,
-      source_urls: sourceUrls,
+      source_urls: allSourceUrls,
       scraped_at: new Date().toISOString(),
     });
 

@@ -64,9 +64,11 @@ serve(async (req) => {
     const sourceUrls = results.map((r: any) => r.url).filter(Boolean);
 
     const combinedContent = results
-      .map((r: any) => `--- Source: ${r.url} ---\n${r.markdown || r.description || ""}`)
+      .map((r: any) => `--- ${r.url} ---\n${(r.markdown || r.description || "").slice(0, 1500)}`)
       .join("\n\n")
-      .slice(0, 8000);
+      .slice(0, 4000);
+
+    console.log(`Combined tariff content length: ${combinedContent.length} chars, ${results.length} results`);
 
     // Use Gemini to extract tariff tiers
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -76,50 +78,37 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `You are a data extraction expert. From the following scraped content about Egyptian electricity tariffs, extract the residential tiered pricing structure.
+            text: `Extract Egyptian residential electricity tariff tiers from this content. Return valid JSON only:
+{"tiers":[{"minKWh":0,"maxKWh":50,"rateEGP":<n>,"tierName":"Tier 1","tierNameAr":"الشريحة الأولى"},...],"commercial_rate":<n>,"industrial_rate":<n>,"effective_date":"<period>","confidence":"high|medium|low","sources_analyzed":<n>}
 
-Return ONLY a valid JSON object with this exact format, no other text:
-{
-  "tiers": [
-    { "minKWh": 0, "maxKWh": 50, "rateEGP": <number>, "tierName": "Tier 1 (0-50 kWh)", "tierNameAr": "الشريحة الأولى (0-50 ك.و.س)" },
-    { "minKWh": 51, "maxKWh": 100, "rateEGP": <number>, "tierName": "Tier 2 (51-100 kWh)", "tierNameAr": "الشريحة الثانية (51-100 ك.و.س)" },
-    { "minKWh": 101, "maxKWh": 200, "rateEGP": <number>, "tierName": "Tier 3 (101-200 kWh)", "tierNameAr": "الشريحة الثالثة (101-200 ك.و.س)" },
-    { "minKWh": 201, "maxKWh": 350, "rateEGP": <number>, "tierName": "Tier 4 (201-350 kWh)", "tierNameAr": "الشريحة الرابعة (201-350 ك.و.س)" },
-    { "minKWh": 351, "maxKWh": 650, "rateEGP": <number>, "tierName": "Tier 5 (351-650 kWh)", "tierNameAr": "الشريحة الخامسة (351-650 ك.و.س)" },
-    { "minKWh": 651, "maxKWh": 1000, "rateEGP": <number>, "tierName": "Tier 6 (651-1000 kWh)", "tierNameAr": "الشريحة السادسة (651-1000 ك.و.س)" },
-    { "minKWh": 1001, "maxKWh": null, "rateEGP": <number>, "tierName": "Tier 7 (>1000 kWh)", "tierNameAr": "الشريحة السابعة (>1000 ك.و.س)" }
-  ],
-  "commercial_rate": <number>,
-  "industrial_rate": <number>,
-  "effective_date": "<date or period like 2025/2026>",
-  "confidence": "high|medium|low",
-  "sources_analyzed": <number>
-}
+7 tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000.
+Fallback: 0.58, 0.73, 1.12, 1.41, 1.69, 1.95, 2.28. Commercial: 1.85, Industrial: 1.65 (confidence=low).
 
-If you cannot find reliable rates, use these fallback values but mark confidence as "low":
-Tier rates: 0.58, 0.73, 1.12, 1.41, 1.69, 1.95, 2.28
-Commercial: 1.85, Industrial: 1.65
-
-Scraped content:
+Content:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 800, temperature: 0.2 },
+        generationConfig: { maxOutputTokens: 1500, temperature: 0.1, responseMimeType: "application/json" },
       }),
     });
 
     let tariffData: any = null;
     if (geminiRes.ok) {
       const geminiData = await geminiRes.json();
-      const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      console.log("Gemini tariff response:", text.slice(0, 800));
+      text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           tariffData = JSON.parse(jsonMatch[0]);
+          console.log("Extracted tariffs successfully:", JSON.stringify(tariffData).slice(0, 300));
         } catch (e) {
-          console.error("Failed to parse Gemini JSON:", e);
+          console.error("Failed to parse tariff JSON:", e);
         }
       }
+    } else {
+      console.error("Gemini error:", geminiRes.status, await geminiRes.text());
     }
 
     // Fallback
