@@ -39,55 +39,74 @@ serve(async (req) => {
       }
     }
 
-    // Search for solar panel prices in Egypt
-    // Search with both Arabic and English queries for better results
-    console.log("Searching for solar panel prices...");
-    const queries = [
-      { query: "solar panel prices Egypt 2025 2026 cost per kilowatt EGP", lang: "en", country: "eg" },
-      { query: "أسعار ألواح شمسية مصر 2025 2026 سعر كيلو وات طاقة شمسية", lang: "ar", country: "eg" },
+    // Strategy: Scrape known Egyptian solar price pages directly, then search as backup
+    console.log("Scraping known solar price pages...");
+
+    const knownUrls = [
+      "https://solar-egy.com/%D8%AA%D9%83%D9%84%D9%81%D8%A9-%D8%A7%D9%84%D8%B7%D8%A7%D9%82%D8%A9-%D8%A7%D9%84%D8%B4%D9%85%D8%B3%D9%8A%D8%A9-%D9%84%D9%84%D9%85%D9%86%D8%A7%D8%B2%D9%84/",
+      "https://attaqa.net/2025/01/30/%D8%A3%D8%B3%D8%B9%D8%A7%D8%B1-%D8%A3%D9%84%D9%88%D8%A7%D8%AD-%D8%A7%D9%84%D8%B7%D8%A7%D9%82%D8%A9-%D8%A7%D9%84%D8%B4%D9%85%D8%B3%D9%8A%D8%A9-%D9%81%D9%8A-%D9%85%D8%B5%D8%B1-2025/",
     ];
 
-    let allResults: any[] = [];
+    let allContent: string[] = [];
     const allSourceUrls: string[] = [];
 
-    for (const q of queries) {
+    // Step 1: Scrape known pages directly
+    for (const url of knownUrls) {
       try {
-        const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
+        const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
           method: "POST",
           headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            query: q.query,
-            limit: 3,
-            lang: q.lang,
-            country: q.country,
-            scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
+            url,
+            formats: ["markdown"],
+            onlyMainContent: true,
           }),
         });
-
-        if (searchRes.ok) {
-          const searchData = await searchRes.json();
-          const results = searchData.data || [];
-          console.log(`Query "${q.query.slice(0, 30)}..." returned ${results.length} results`);
-          allResults = [...allResults, ...results];
-          allSourceUrls.push(...results.map((r: any) => r.url).filter(Boolean));
-        } else {
-          const errText = await searchRes.text();
-          console.error(`Firecrawl search error for query "${q.lang}":`, searchRes.status, errText);
+        if (scrapeRes.ok) {
+          const scrapeData = await scrapeRes.json();
+          const md = scrapeData?.data?.markdown || scrapeData?.markdown || "";
+          if (md.length > 50) {
+            console.log(`Scraped ${url.slice(0, 50)}... -> ${md.length} chars`);
+            allContent.push(`--- ${url} ---\n${md.slice(0, 3000)}`);
+            allSourceUrls.push(url);
+          }
         }
       } catch (e) {
-        console.error(`Search error for "${q.lang}" query:`, e);
+        console.error(`Scrape error for ${url.slice(0, 40)}:`, e);
       }
     }
 
-    console.log(`Total results: ${allResults.length}`);
+    // Step 2: Search as backup
+    if (allContent.length < 2) {
+      console.log("Searching for more solar prices...");
+      const searchRes = await fetch("https://api.firecrawl.dev/v1/search", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: "أسعار تركيب الطاقة الشمسية للمنازل مصر 2025 سعر الكيلو وات",
+          limit: 3,
+          lang: "ar",
+          country: "eg",
+          scrapeOptions: { formats: ["markdown"] },
+        }),
+      });
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        const results = searchData.data || [];
+        for (const r of results) {
+          if (r.markdown && r.markdown.length > 50) {
+            allContent.push(`--- ${r.url} ---\n${r.markdown.slice(0, 2000)}`);
+            allSourceUrls.push(r.url);
+          }
+        }
+      }
+    }
 
-    // Combine all markdown content
-    const combinedContent = allResults
-      .map((r: any) => `--- ${r.url} ---\n${(r.markdown || r.description || "").slice(0, 1500)}`)
-      .join("\n\n")
-      .slice(0, 4000);
+    console.log(`Total content pieces: ${allContent.length}`);
 
+    const combinedContent = allContent.join("\n\n").slice(0, 8000);
     console.log(`Combined content length: ${combinedContent.length} chars`);
+    console.log("Content preview:", combinedContent.slice(0, 500));
     if (combinedContent.length < 100) {
       console.warn("Very little content scraped, likely no useful data found");
     }
@@ -100,17 +119,24 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Extract solar panel prices in Egypt (EGP per kW) from this content. Return ONLY valid JSON, no markdown fences:
-{"economy":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"standard":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"premium":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"currency":"EGP","market_date":"<date>","sources_analyzed":<number>}
+            text: `You are a solar energy market analyst specializing in Egypt. Analyze the following content and extract the TOTAL INSTALLED SYSTEM cost per kW in EGP for solar panel systems in Egypt.
 
-Economy=polycrystalline, Standard=mono, Premium=high-power mono (Canadian Solar, LONGi).
-Fallback if no data: Economy=15000, Standard=19000, Premium=26000 (confidence=low).
+IMPORTANT DISTINCTION:
+- "Panel price per watt" (e.g., 7 EGP/W) is ONLY the panel cost, NOT the full system
+- "System cost per kW" (e.g., 18,000 EGP/kW) includes panels + inverter + mounting + installation + wiring
+- We need the FULL SYSTEM installed cost per kW, not just panel price
+- Typical full system costs in Egypt 2024-2025: Economy 13,000-17,000, Standard 17,000-22,000, Premium 22,000-30,000 EGP/kW
+
+Return JSON:
+{"economy":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"standard":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"premium":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"currency":"EGP","market_date":"2025","sources_analyzed":<number>}
+
+Economy = basic polycrystalline system, Standard = mono PERC system, Premium = high-efficiency (Canadian Solar, LONGi, Jinko).
 
 Content:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 1000, temperature: 0.1, responseMimeType: "application/json" },
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.2, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
       }),
     });
 
@@ -158,8 +184,8 @@ ${combinedContent}`
       console.error("Gemini HTTP error:", geminiRes.status, errBody.slice(0, 300));
     }
 
-    // Fallback if extraction failed
-    if (!priceData) {
+    // Fallback if extraction failed or returned null values
+    if (!priceData || !priceData.economy?.costPerKW) {
       priceData = {
         economy: { costPerKW: 15000, confidence: "low", notes: "Fallback value" },
         standard: { costPerKW: 19000, confidence: "low", notes: "Fallback value" },

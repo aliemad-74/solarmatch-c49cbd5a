@@ -78,17 +78,20 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Extract Egyptian residential electricity tariff tiers from this content. Return valid JSON only:
-{"tiers":[{"minKWh":0,"maxKWh":50,"rateEGP":<n>,"tierName":"Tier 1","tierNameAr":"الشريحة الأولى"},...],"commercial_rate":<n>,"industrial_rate":<n>,"effective_date":"<period>","confidence":"high|medium|low","sources_analyzed":<n>}
+            text: `You are an Egyptian electricity tariff analyst. Analyze the following scraped web content and extract the ACTUAL residential electricity tariff tiers in Egypt.
 
-7 tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000.
-Fallback: 0.58, 0.73, 1.12, 1.41, 1.69, 1.95, 2.28. Commercial: 1.85, Industrial: 1.65 (confidence=low).
+Return a JSON object with this exact structure:
+{"tiers":[{"minKWh":0,"maxKWh":50,"rateEGP":<actual_rate>,"tierName":"Tier 1 (0-50 kWh)","tierNameAr":"الشريحة الأولى (0-50 ك.و.س)"},...],"commercial_rate":<actual_rate>,"industrial_rate":<actual_rate>,"effective_date":"<year_period>","confidence":"high","sources_analyzed":<number>}
 
-Content:
+There should be 7 residential tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000 kWh.
+Extract the ACTUAL rates from the content. DO NOT use placeholder values.
+Include tier names in both English and Arabic.
+
+Content to analyze:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 1500, temperature: 0.1, responseMimeType: "application/json" },
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.2, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
       }),
     });
 
