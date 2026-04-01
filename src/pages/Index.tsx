@@ -17,7 +17,8 @@ import ResultsSkeleton from "@/components/ResultsSkeleton";
 import LiveReportCounter from "@/components/LiveReportCounter";
 
 import { useUserAuth } from "@/contexts/UserAuthContext";
-import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM, buildingTypes, systemPackages } from "@/lib/solarData";
+import { calculateSolarFeasibility, SolarCalculation, PVType, BuildingType, CostScenario, defaultClimateData, AgriculturalActivity, FEDDAN_TO_SQM, buildingTypes, systemPackages, MarketPriceOverrides } from "@/lib/solarData";
+import { useMarketData } from "@/hooks/useMarketData";
 import { toast } from "sonner";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
@@ -82,6 +83,7 @@ const Index = () => {
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
   const [userEditedConfig, setUserEditedConfig] = useState(false);
+  const { panelPrices, tariffs, getCostPerKW, refresh: refreshMarketData } = useMarketData();
   const [polygonDrawn, setPolygonDrawn] = useState(false);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
@@ -116,7 +118,8 @@ const Index = () => {
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
 
-  // Persist inputs whenever they change
+  // Fetch market data on mount
+  useEffect(() => { refreshMarketData(); }, [refreshMarketData]);
   useEffect(() => {
     saveInputs({
       rooftopArea, pvType, buildingType, costScenario, electricityPrice,
@@ -283,6 +286,13 @@ const Index = () => {
     callSolarEngine();
     
     try {
+      // Build market price overrides from live data
+      const marketPriceOverrides: MarketPriceOverrides = {
+        economy: getCostPerKW("economy"),
+        standard: getCostPerKW("standard"),
+        premium: getCostPerKW("premium"),
+      };
+
       // Step 1: Always calculate locally first (source of truth)
       const calculation = calculateSolarFeasibility(
         rooftopArea,
@@ -294,7 +304,8 @@ const Index = () => {
         effectiveMonthlyConsumption,
         buildingMode,
         numberOfUnits,
-        avgUnitConsumption
+        avgUnitConsumption,
+        marketPriceOverrides
       );
 
       // Step 2: AI Review checkpoint — validate calculations before showing to user
