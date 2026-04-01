@@ -88,6 +88,7 @@ const InputPanel = ({
   locationName,
   climateData,
   tariffInfo,
+  dynamicCosts,
 }: InputPanelProps) => {
   const { t, i18n } = useTranslation();
   const [showInsights, setShowInsights] = useState(false);
