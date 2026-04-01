@@ -70,51 +70,65 @@ serve(async (req) => {
 
     console.log(`Combined tariff content length: ${combinedContent.length} chars, ${results.length} results`);
 
-    // Use Gemini to extract tariff tiers
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    const geminiRes = await fetch(geminiUrl, {
+    // Use Lovable AI Gateway to extract tariff tiers
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `You are an Egyptian electricity tariff analyst. Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt (2025/2026 if available, otherwise 2024/2025).
-
-Return a JSON object with this exact structure:
-{"tiers":[{"minKWh":0,"maxKWh":50,"rateEGP":<actual_rate>,"tierName":"Tier 1 (0-50 kWh)","tierNameAr":"الشريحة الأولى (0-50 ك.و.س)"},...],"commercial_rate":<actual_rate>,"industrial_rate":<actual_rate>,"effective_date":"2025/2026","confidence":"high","sources_analyzed":<number>}
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "You are an Egyptian electricity tariff analyst. Extract structured tariff data from web content." },
+          { role: "user", content: `Analyze the following scraped web content and extract the MOST RECENT residential electricity tariff tiers in Egypt (2025/2026 if available, otherwise 2024/2025).
 
 IMPORTANT:
 - There should be 7 residential tiers: 0-50, 51-100, 101-200, 201-350, 351-650, 651-1000, >1000 kWh.
 - Extract the ACTUAL rates from the content. DO NOT use placeholder values.
 - If the content mentions July 2025 new tariffs, use those. Otherwise use the latest available.
 - Set effective_date to the actual period (e.g. "2025/2026" or "2024/2025").
-- Include tier names in both English and Arabic.
 
 Content to analyze:
-${combinedContent}`
-          }]
+${combinedContent}` },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_tariffs",
+            description: "Extract electricity tariff tiers from analyzed content",
+            parameters: {
+              type: "object",
+              properties: {
+                tiers: { type: "array", items: { type: "object", properties: { minKWh: { type: "number" }, maxKWh: { type: "number" }, rateEGP: { type: "number" }, tierName: { type: "string" }, tierNameAr: { type: "string" } }, required: ["minKWh", "maxKWh", "rateEGP", "tierName", "tierNameAr"] } },
+                commercial_rate: { type: "number" },
+                industrial_rate: { type: "number" },
+                effective_date: { type: "string" },
+                confidence: { type: "string", enum: ["high", "medium", "low"] },
+                sources_analyzed: { type: "number" },
+              },
+              required: ["tiers", "commercial_rate", "industrial_rate", "effective_date", "confidence", "sources_analyzed"],
+            },
+          },
         }],
-        generationConfig: { maxOutputTokens: 4096, temperature: 0.2, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
+        tool_choice: { type: "function", function: { name: "extract_tariffs" } },
       }),
     });
 
     let tariffData: any = null;
-    if (geminiRes.ok) {
-      const geminiData = await geminiRes.json();
-      let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      console.log("Gemini tariff response:", text.slice(0, 800));
-      text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
+    if (aiRes.ok) {
+      const aiData = await aiRes.json();
+      const toolCall = aiData?.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
         try {
-          tariffData = JSON.parse(jsonMatch[0]);
-          console.log("Extracted tariffs successfully:", JSON.stringify(tariffData).slice(0, 300));
+          tariffData = JSON.parse(toolCall.function.arguments);
+          console.log("✅ Extracted tariffs via Lovable AI:", JSON.stringify(tariffData).slice(0, 300));
         } catch (e) {
           console.error("Failed to parse tariff JSON:", e);
         }
       }
     } else {
-      console.error("Gemini error:", geminiRes.status, await geminiRes.text());
+      console.error("Lovable AI error:", aiRes.status, await aiRes.text());
     }
 
     // Fallback
