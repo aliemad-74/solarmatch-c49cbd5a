@@ -110,10 +110,10 @@ serve(async (req) => {
     }
 
     // Validate API key
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    console.log("GEMINI_API_KEY exists:", !!GEMINI_API_KEY);
-    if (!GEMINI_API_KEY) {
-      return jsonResponse({ success: false, error: "Missing GEMINI_API_KEY" }, 500);
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    console.log("LOVABLE_API_KEY exists:", !!LOVABLE_API_KEY);
+    if (!LOVABLE_API_KEY) {
+      return jsonResponse({ success: false, error: "Missing LOVABLE_API_KEY" }, 500);
     }
 
     // Validate request body
