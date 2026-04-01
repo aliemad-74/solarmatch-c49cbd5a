@@ -23,11 +23,14 @@ const ResultsSkeleton = () => {
   const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMsgIndex((prev) => (prev + 1) % messages.length);
-    }, 2200);
-    return () => clearInterval(interval);
-  }, [messages.length]);
+    // Show first 3 messages for 3s each, then stay on the last one
+    if (msgIndex < messages.length - 1) {
+      const timer = setTimeout(() => {
+        setMsgIndex((prev) => prev + 1);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [msgIndex, messages.length]);
 
   return (
     <section className="container mx-auto px-4 py-20">
