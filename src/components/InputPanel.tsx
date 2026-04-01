@@ -304,10 +304,10 @@ const InputPanel = ({
                   </span>
                   <span className="text-lg font-semibold text-primary">{electricityPrice.toFixed(2)} {t('common.EGP')}</span>
                 </Label>
-                {tariffInfo.source === "live" && (
+                {tariffInfo?.source === "live" && (
                   <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    {tariffInfo.effectiveDate} - بيانات حية
+                    {tariffInfo?.effectiveDate} - بيانات حية
                   </div>
                 )}
                 <div className="px-2">

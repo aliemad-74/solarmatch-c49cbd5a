@@ -509,6 +509,7 @@ const Index = () => {
             onCalculate={handleCalculate}
             locationName={locationName}
             climateData={climateData}
+            tariffInfo={tariffs.data ? { tiers: tariffs.data.tiers as any, source: tariffs.isLive ? "live" : "static", effectiveDate: tariffs.data.effective_date } : undefined}
           />
         </ScrollReveal>
         </div>
