@@ -53,6 +53,7 @@ interface InputPanelProps {
   onCalculate: () => void;
   locationName?: string;
   climateData?: ClimateData | null;
+  tariffInfo?: TariffInfo;
 }
 
 const InputPanel = ({
