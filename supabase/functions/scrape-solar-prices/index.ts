@@ -132,16 +132,20 @@ ${combinedContent}`
     let priceData: any = null;
     if (geminiRes.ok) {
       const geminiData = await geminiRes.json();
-      const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      console.log("Gemini raw response:", text.slice(0, 500));
+      let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      console.log("Gemini raw response:", text.slice(0, 800));
+      // Strip markdown code fences
+      text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           priceData = JSON.parse(jsonMatch[0]);
-          console.log("Extracted prices:", JSON.stringify(priceData));
+          console.log("Extracted prices successfully:", JSON.stringify(priceData).slice(0, 300));
         } catch (e) {
-          console.error("Failed to parse Gemini JSON:", e);
+          console.error("Failed to parse Gemini JSON:", e, "Raw match:", jsonMatch[0].slice(0, 200));
         }
+      } else {
+        console.error("No JSON found in Gemini response");
       }
     } else {
       console.error("Gemini error:", geminiRes.status, await geminiRes.text());
