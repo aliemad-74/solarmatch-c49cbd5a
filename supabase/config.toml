@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.google-solar]
 verify_jwt = false
+
+[functions.scrape-solar-prices]
+verify_jwt = false
+
+[functions.scrape-tariffs]
+verify_jwt = false

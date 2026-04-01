@@ -137,6 +137,33 @@ export type Database = {
         }
         Relationships: []
       }
+      market_data: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          scraped_at: string
+          source_urls: string[] | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          scraped_at?: string
+          source_urls?: string[] | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          scraped_at?: string
+          source_urls?: string[] | null
+          type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
