@@ -93,24 +93,28 @@ serve(async (req) => {
     }
 
     // Use Gemini to extract structured pricing data
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const geminiRes = await fetch(geminiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Extract solar panel prices in Egypt (EGP per kW) from this content. Return ONLY valid JSON, no markdown fences:
-{"economy":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"standard":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"premium":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<note>"},"currency":"EGP","market_date":"<date>","sources_analyzed":<number>}
+            text: `You are a solar energy market analyst. Analyze the following scraped web content about solar panel prices in Egypt and extract ACTUAL prices mentioned in the content.
 
-Economy=polycrystalline, Standard=mono, Premium=high-power mono (Canadian Solar, LONGi).
-Fallback if no data: Economy=15000, Standard=19000, Premium=26000 (confidence=low).
+Return a JSON object with this exact structure:
+{"economy":{"costPerKW":<actual_number>,"confidence":"high","notes":"<source_info>"},"standard":{"costPerKW":<actual_number>,"confidence":"high","notes":"<source_info>"},"premium":{"costPerKW":<actual_number>,"confidence":"high","notes":"<source_info>"},"currency":"EGP","market_date":"2025","sources_analyzed":<number>}
 
-Content:
+Economy = polycrystalline panels, Standard = monocrystalline panels, Premium = high-efficiency mono (Canadian Solar, LONGi, Jinko).
+Look for prices per kW or per watt and convert to EGP per kW.
+If you find prices per watt, multiply by 1000. If prices include installation, note that.
+DO NOT use fallback values. Extract real prices from the content.
+
+Content to analyze:
 ${combinedContent}`
           }]
         }],
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.1, responseMimeType: "application/json" },
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.2, responseMimeType: "application/json" },
       }),
     });
 
