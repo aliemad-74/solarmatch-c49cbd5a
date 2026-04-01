@@ -131,6 +131,15 @@ ${combinedContent}` },
       console.error("Lovable AI error:", aiRes.status, await aiRes.text());
     }
 
+    // Validate: reject zero-rate extractions
+    if (tariffData && tariffData.tiers) {
+      const hasValidRates = tariffData.tiers.some((t: any) => t.rateEGP > 0);
+      if (!hasValidRates) {
+        console.warn("⚠️ Extracted tariffs have all-zero rates, falling back to defaults");
+        tariffData = null;
+      }
+    }
+
     // Fallback - 2025/2026 rates
     if (!tariffData) {
       tariffData = {
