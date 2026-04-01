@@ -119,17 +119,20 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `You are a solar energy market analyst. Analyze the following scraped web content about solar panel prices in Egypt and extract ACTUAL prices mentioned in the content.
+            text: `You are a solar energy market analyst specializing in Egypt. Analyze the following content and extract the TOTAL INSTALLED SYSTEM cost per kW in EGP for solar panel systems in Egypt.
 
-Return a JSON object with this exact structure:
-{"economy":{"costPerKW":<actual_number>,"confidence":"high","notes":"<source_info>"},"standard":{"costPerKW":<actual_number>,"confidence":"high","notes":"<source_info>"},"premium":{"costPerKW":<actual_number>,"confidence":"high","notes":"<source_info>"},"currency":"EGP","market_date":"2025","sources_analyzed":<number>}
+IMPORTANT DISTINCTION:
+- "Panel price per watt" (e.g., 7 EGP/W) is ONLY the panel cost, NOT the full system
+- "System cost per kW" (e.g., 18,000 EGP/kW) includes panels + inverter + mounting + installation + wiring
+- We need the FULL SYSTEM installed cost per kW, not just panel price
+- Typical full system costs in Egypt 2024-2025: Economy 13,000-17,000, Standard 17,000-22,000, Premium 22,000-30,000 EGP/kW
 
-Economy = polycrystalline panels, Standard = monocrystalline panels, Premium = high-efficiency mono (Canadian Solar, LONGi, Jinko).
-Look for prices per kW or per watt and convert to EGP per kW.
-If you find prices per watt, multiply by 1000. If prices include installation, note that.
-DO NOT use fallback values. Extract real prices from the content.
+Return JSON:
+{"economy":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"standard":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"premium":{"costPerKW":<number>,"confidence":"high|medium|low","notes":"<source>"},"currency":"EGP","market_date":"2025","sources_analyzed":<number>}
 
-Content to analyze:
+Economy = basic polycrystalline system, Standard = mono PERC system, Premium = high-efficiency (Canadian Solar, LONGi, Jinko).
+
+Content:
 ${combinedContent}`
           }]
         }],
