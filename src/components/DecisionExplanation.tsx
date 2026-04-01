@@ -345,6 +345,7 @@ const DecisionExplanation = ({ results, monthlyConsumption, rooftopArea, pvType,
                 <span className="text-sm font-semibold text-foreground">
                   {isAr ? "الافتراضات الرئيسية المستخدمة في التحليل" : "Key Assumptions Used in This Analysis"}
                 </span>
+                <MarketDataBadge isLive={panelPrices.isLive || tariffs.isLive} scrapedAt={panelPrices.scraped_at || tariffs.scraped_at} type="prices" />
               </div>
               {showAssumptions ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </button>
