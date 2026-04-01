@@ -61,6 +61,7 @@ serve(async (req) => {
 
     const searchData = await searchRes.json();
     const results = searchData.data || [];
+    console.log(`Firecrawl returned ${results.length} results`);
     const sourceUrls = results.map((r: any) => r.url).filter(Boolean);
 
     // Combine all markdown content
@@ -68,6 +69,11 @@ serve(async (req) => {
       .map((r: any) => `--- Source: ${r.url} ---\n${r.markdown || r.description || ""}`)
       .join("\n\n")
       .slice(0, 8000);
+
+    console.log(`Combined content length: ${combinedContent.length} chars`);
+    if (combinedContent.length < 100) {
+      console.warn("Very little content scraped, likely no useful data found");
+    }
 
     // Use Gemini to extract structured pricing data
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
