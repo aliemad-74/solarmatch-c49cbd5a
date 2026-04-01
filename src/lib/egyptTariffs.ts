@@ -9,23 +9,23 @@ export interface TariffTier {
   tierNameAr: string;
 }
 
-// Static fallback tariff tiers (2025/2026 rates - updated July 2025)
+// Static fallback tariff tiers (2026 rates)
 export const DEFAULT_RESIDENTIAL_TARIFFS: TariffTier[] = [
   { minKWh: 0, maxKWh: 50, rateEGP: 0.68, tierName: "Tier 1 (0-50 kWh)", tierNameAr: "الشريحة الأولى (0-50 ك.و.س)" },
-  { minKWh: 51, maxKWh: 100, rateEGP: 0.83, tierName: "Tier 2 (51-100 kWh)", tierNameAr: "الشريحة الثانية (51-100 ك.و.س)" },
-  { minKWh: 101, maxKWh: 200, rateEGP: 1.11, tierName: "Tier 3 (101-200 kWh)", tierNameAr: "الشريحة الثالثة (101-200 ك.و.س)" },
-  { minKWh: 201, maxKWh: 350, rateEGP: 1.41, tierName: "Tier 4 (201-350 kWh)", tierNameAr: "الشريحة الرابعة (201-350 ك.و.س)" },
-  { minKWh: 351, maxKWh: 650, rateEGP: 1.70, tierName: "Tier 5 (351-650 kWh)", tierNameAr: "الشريحة الخامسة (351-650 ك.و.س)" },
-  { minKWh: 651, maxKWh: 1000, rateEGP: 1.95, tierName: "Tier 6 (651-1000 kWh)", tierNameAr: "الشريحة السادسة (651-1000 ك.و.س)" },
-  { minKWh: 1001, maxKWh: Infinity, rateEGP: 2.28, tierName: "Tier 7 (>1000 kWh)", tierNameAr: "الشريحة السابعة (>1000 ك.و.س)" },
+  { minKWh: 51, maxKWh: 100, rateEGP: 0.78, tierName: "Tier 2 (51-100 kWh)", tierNameAr: "الشريحة الثانية (51-100 ك.و.س)" },
+  { minKWh: 101, maxKWh: 200, rateEGP: 0.95, tierName: "Tier 3 (101-200 kWh)", tierNameAr: "الشريحة الثالثة (101-200 ك.و.س)" },
+  { minKWh: 201, maxKWh: 350, rateEGP: 1.55, tierName: "Tier 4 (201-350 kWh)", tierNameAr: "الشريحة الرابعة (201-350 ك.و.س)" },
+  { minKWh: 351, maxKWh: 650, rateEGP: 1.95, tierName: "Tier 5 (351-650 kWh)", tierNameAr: "الشريحة الخامسة (351-650 ك.و.س)" },
+  { minKWh: 651, maxKWh: 1000, rateEGP: 2.10, tierName: "Tier 6 (651-1000 kWh)", tierNameAr: "الشريحة السادسة (651-1000 ك.و.س)" },
+  { minKWh: 1001, maxKWh: Infinity, rateEGP: 2.23, tierName: "Tier 7 (>1000 kWh)", tierNameAr: "الشريحة السابعة (>1000 ك.و.س)" },
 ];
 
 // Kept for backward compatibility
 export const RESIDENTIAL_TARIFFS = DEFAULT_RESIDENTIAL_TARIFFS;
 
 // Commercial tariff rates (fallback)
-export const COMMERCIAL_RATE = 1.95;
-export const INDUSTRIAL_RATE = 1.75;
+export const COMMERCIAL_RATE = 2.10;
+export const INDUSTRIAL_RATE = 1.95;
 
 // Active tariffs - can be overridden by scraped data
 let _activeTariffs: TariffTier[] = DEFAULT_RESIDENTIAL_TARIFFS;
