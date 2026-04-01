@@ -164,7 +164,7 @@ serve(async (req) => {
     // ==========================================
     if (mode === "review") {
       const reviewPrompt = language === "ar"
-        ? `أنت مهندس طاقة شمسية خبير في السوق المصري ومطلع على أحدث أسعار 2024-2025.
+        ? `أنت مهندس طاقة شمسية خبير في السوق المصري ومطلع على أحدث أسعار 2025-2026.
 
 مهمتك: راجع نتائج حسابات جدوى الطاقة الشمسية التالية وتحقق من دقتها.
 
@@ -199,13 +199,13 @@ serve(async (req) => {
 }
 
 ملاحظات مهمة:
-- أسعار السوق المصري 2024-2025 تتراوح بين 15,000 - 25,000 جنيه/كيلوواط حسب نوع الألواح
+- أسعار السوق المصري 2025-2026 تتراوح بين 18,000 - 25,000 جنيه/كيلوواط حسب نوع الألواح
 - إذا كانت التكلفة ضمن النطاق المعقول، اترك adjustments بقيمة null
 - لا تعدل إلا إذا كان هناك انحراف واضح أكثر من 20%
 - التفسير يجب أن يكون مفصلاً وعملياً ومخصصاً لهذا المشروع
 - لا تبدأ التفسير بـ "بصفتي" أو "كـ" أو "أنا". ابدأ مباشرة بالتقييم
 - إذا كانت نسبة التغطية أكثر من 150%، انصح العميل بإمكانية تقليل حجم النظام والاكتفاء بنسبة تغطية 100-120% لتوفير التكلفة، ووضح كم سيوفر تقريباً`
-        : `You are an expert solar energy engineer for the Egyptian market, up-to-date with 2024-2025 prices.
+        : `You are an expert solar energy engineer for the Egyptian market, up-to-date with 2025-2026 prices.
 
 Task: Review the following solar feasibility calculation results and validate their accuracy.
 
@@ -240,7 +240,7 @@ Review this data and return JSON in this format:
 }
 
 Important notes:
-- Egyptian market prices 2024-2025 range from 15,000 - 25,000 EGP/kW depending on panel type
+- Egyptian market prices 2025-2026 range from 18,000 - 25,000 EGP/kW depending on panel type
 - Only set adjustments if there's a clear deviation of more than 20%
 - If values are within reasonable range, leave adjustments as null
 - The interpretation should be detailed, practical, and specific to this project
