@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { generateShareUrl, copyToClipboard, ShareableParams } from "@/lib/shareUtils";
+import { buildWhatsAppUrl } from "@/lib/externalLinks";
 
 interface ShareDialogProps {
   params: ShareableParams;
@@ -24,6 +25,8 @@ const ShareDialog = ({ params, trigger }: ShareDialogProps) => {
   const [open, setOpen] = useState(false);
 
   const shareUrl = generateShareUrl(params);
+  const whatsappShareUrl = buildWhatsAppUrl('', `Check out my solar calculation: ${shareUrl}`);
+  const emailShareUrl = `mailto:?subject=${encodeURIComponent('My Solar Calculation')}&body=${encodeURIComponent(`Check out my solar feasibility report: ${shareUrl}`)}`;
 
   const handleCopy = async () => {
     const success = await copyToClipboard(shareUrl);
@@ -62,9 +65,9 @@ const ShareDialog = ({ params, trigger }: ShareDialogProps) => {
               className="font-mono text-xs"
             />
           </div>
-          <Button 
-            type="button" 
-            size="sm" 
+          <Button
+            type="button"
+            size="sm"
             className="px-3 gap-2"
             onClick={handleCopy}
           >
@@ -82,33 +85,16 @@ const ShareDialog = ({ params, trigger }: ShareDialogProps) => {
           </Button>
         </div>
 
-        {/* Quick share buttons */}
         <div className="flex gap-2 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              window.open(
-                `https://wa.me/?text=${encodeURIComponent(`Check out my solar calculation: ${shareUrl}`)}`,
-                '_blank'
-              );
-            }}
-          >
-            WhatsApp
+          <Button variant="outline" size="sm" className="flex-1" asChild>
+            <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer">
+              WhatsApp
+            </a>
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              window.open(
-                `mailto:?subject=${encodeURIComponent('My Solar Calculation')}&body=${encodeURIComponent(`Check out my solar feasibility report: ${shareUrl}`)}`,
-                '_blank'
-              );
-            }}
-          >
-            Email
+          <Button variant="outline" size="sm" className="flex-1" asChild>
+            <a href={emailShareUrl}>
+              Email
+            </a>
           </Button>
         </div>
       </DialogContent>

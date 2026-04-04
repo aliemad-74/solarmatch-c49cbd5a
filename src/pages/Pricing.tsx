@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
+import { buildWhatsAppUrl } from '@/lib/externalLinks';
 
 const WHATSAPP_NUMBER = '201111009619';
 
@@ -31,13 +32,13 @@ const Pricing = () => {
   const isRTL = i18n.language === 'ar';
   const { type: currentPlan } = useSubscription();
 
-  const handleSubscribe = (planName: string) => {
-    const message = encodeURIComponent(
+  const getSubscribeUrl = (planName: string) => {
+    const message =
       i18n.language === 'ar'
         ? `مرحباً، أريد الاشتراك في خطة ${planName} على SolarMatch`
-        : `Hello, I want to subscribe to the ${planName} plan on SolarMatch`
-    );
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
+        : `Hello, I want to subscribe to the ${planName} plan on SolarMatch`;
+
+    return buildWhatsAppUrl(WHATSAPP_NUMBER, message);
   };
 
   const plans: PlanData[] = [
@@ -210,15 +211,25 @@ const Pricing = () => {
                     <Button variant="outline" disabled={isCurrent} className="w-full">
                       {isCurrent ? t('pricing.currentPlan') : plan.cta}
                     </Button>
-                  ) : (
+                  ) : isCurrent ? (
                     <Button
                       variant={plan.highlighted ? 'default' : 'outline'}
                       className={`w-full gap-2 ${plan.highlighted ? 'bg-secondary hover:bg-secondary/90 text-secondary-foreground' : ''}`}
-                      disabled={isCurrent}
-                      onClick={() => handleSubscribe(plan.name)}
+                      disabled
                     >
                       <MessageCircle className="w-4 h-4" />
-                      {isCurrent ? t('pricing.currentPlan') : plan.cta}
+                      {t('pricing.currentPlan')}
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      variant={plan.highlighted ? 'default' : 'outline'}
+                      className={`w-full gap-2 ${plan.highlighted ? 'bg-secondary hover:bg-secondary/90 text-secondary-foreground' : ''}`}
+                    >
+                      <a href={getSubscribeUrl(plan.name)} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="w-4 h-4" />
+                        {plan.cta}
+                      </a>
                     </Button>
                   )}
                 </div>
