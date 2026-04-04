@@ -21,7 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, MoreHorizontal, Eye, Trash2, ShieldCheck, ShieldOff, UserCog } from "lucide-react";
+import { Search, MoreHorizontal, Eye, Trash2, ShieldCheck, ShieldOff, UserCog, Crown, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import UserDetailModal from "./UserDetailModal";
