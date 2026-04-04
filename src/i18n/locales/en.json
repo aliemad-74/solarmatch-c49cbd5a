@@ -905,5 +905,87 @@
     "error": "Something went wrong. Please try again.",
     "rateLimit": "Too many messages. Please wait a moment.",
     "paymentError": "AI credits exhausted. Please try later."
+  },
+  "pricing": {
+    "title": "Choose Your Plan",
+    "subtitle": "Get the most out of SolarMatch with a plan that fits your needs",
+    "currency": "EGP",
+    "month": "mo",
+    "perMonth": "/ month",
+    "perReport": "/ report",
+    "popular": "Most Popular",
+    "currentPlan": "Current Plan",
+    "availableIn": "Available in {{plan}}",
+    "upgradeToAccess": "Upgrade to {{plan}} to access this feature",
+    "whatsappNote": "Contact us via WhatsApp to subscribe — we'll activate your plan instantly",
+    "plans": {
+      "free": {
+        "name": "Free",
+        "price": "Free",
+        "description": "Try SolarMatch with one free report",
+        "cta": "Get Started"
+      },
+      "single": {
+        "name": "Single Report",
+        "description": "One full detailed solar analysis report",
+        "cta": "Buy Report — 50 EGP"
+      },
+      "premium": {
+        "name": "Premium",
+        "description": "Full access for homeowners and professionals",
+        "cta": "Upgrade to Premium"
+      },
+      "business": {
+        "name": "Business",
+        "description": "For teams, installers, and solar companies",
+        "cta": "Upgrade to Business"
+      }
+    },
+    "features": {
+      "oneReport": "1 free report",
+      "basicSuitability": "Basic solar suitability result",
+      "basicCostEstimate": "Basic cost & savings estimate",
+      "limitedAI": "Limited AI explanation",
+      "pdfExport": "PDF export",
+      "reportHistory": "Report history",
+      "systemComparison": "System comparison",
+      "fullAIAdvisor": "Full AI advisor access",
+      "oneFullReport": "1 full detailed report",
+      "fullAnalysis": "Full technical & financial analysis",
+      "fullAIExplanation": "Full AI explanation",
+      "reportSharing": "Report sharing",
+      "twentyReports": "Up to 20 reports / month",
+      "packageComparison": "Package comparison",
+      "sensitivityScenarios": "Sensitivity scenarios",
+      "confidenceScore": "Confidence score",
+      "aiVerification": "AI verification",
+      "liveTariffs": "Updated electricity tariffs",
+      "priorityProcessing": "Priority processing",
+      "contactExpert": "Contact expert feature",
+      "unlimitedReports": "Unlimited reports",
+      "everythingPremium": "Everything in Premium",
+      "teamAccess": "Team access",
+      "clientManagement": "Client management",
+      "whiteLabelPdf": "White-label PDF reports",
+      "csvExport": "CSV export",
+      "leadManagement": "Lead management",
+      "advancedAnalytics": "Advanced analytics",
+      "businessDashboard": "Business dashboard",
+      "prioritySupport": "Priority support",
+      "apiAccess": "API access (coming soon)",
+      "liveMarketPrices": "Updated market prices"
+    }
+  },
+  "paywall": {
+    "title": "Upgrade to Continue",
+    "description": "You have used your free report. Upgrade to continue using SolarMatch.",
+    "singleReport": "Buy 1 Report",
+    "singleReportDesc": "One full analysis with PDF export",
+    "premium": "Upgrade to Premium",
+    "premiumDesc": "20 reports/month with full AI access",
+    "business": "Upgrade to Business",
+    "businessDesc": "Unlimited reports for your team",
+    "viewAllPlans": "View All Plans",
+    "whatsappNote": "Contact us via WhatsApp to subscribe"
   }
 }
