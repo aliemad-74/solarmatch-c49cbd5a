@@ -79,8 +79,8 @@ export function useSubscription(): SubscriptionInfo {
   const { profile } = useUserAuth();
 
   const type: SubscriptionType = (profile?.subscription_type as SubscriptionType) || 'free';
-  const status = (profile as any)?.subscription_status || 'active';
-  const extraReports = (profile as any)?.extra_reports_balance || 0;
+  const status = profile?.subscription_status || 'active';
+  const extraReports = profile?.extra_reports_balance || 0;
   const reportsGenerated = profile?.reports_generated || 0;
   const baseLimit = PLAN_REPORT_LIMITS[type];
   const totalLimit = baseLimit + extraReports;
