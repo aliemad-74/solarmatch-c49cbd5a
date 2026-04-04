@@ -670,7 +670,8 @@
       "dashboard": "الرئيسية",
       "users": "المستخدمون",
       "reports": "التقارير",
-      "leads": "العملاء المحتملون"
+      "leads": "العملاء المحتملون",
+      "analytics": "التحليلات"
     },
     "login": {
       "title": "تسجيل دخول المدير",
@@ -729,7 +730,20 @@
       "limitUpdateError": "فشل تحديث الحد",
       "authenticated": "المستخدمون المسجلون",
       "legacy": "المستخدمون السابقون",
-      "exportCSV": "تصدير CSV"
+      "exportCSV": "تصدير CSV",
+      "viewDetails": "عرض التفاصيل",
+      "resetLimit": "إعادة تعيين حد التقارير",
+      "enterNewLimit": "أدخل حد التقارير الجديد:",
+      "deleteUser": "حذف المستخدم",
+      "deleted": "تم حذف المستخدم",
+      "deletedDesc": "تم حذف الملف الشخصي",
+      "deleteError": "فشل حذف المستخدم",
+      "confirmDelete": "حذف المستخدم؟",
+      "confirmDeleteDesc": "هل أنت متأكد من حذف {{name}}؟ لا يمكن التراجع.",
+      "cancel": "إلغاء",
+      "roleUpdated": "تم تحديث الدور",
+      "roleUpdatedDesc": "تم تحديث دور المستخدم",
+      "roleUpdateError": "فشل تحديث الدور"
     },
     "reports": {
       "title": "سجل التقارير",
@@ -741,7 +755,17 @@
       "createdAt": "تاريخ التوليد",
       "noReports": "لا توجد تقارير",
       "noLocation": "بدون موقع",
-      "exportCSV": "تصدير CSV"
+      "exportCSV": "تصدير CSV",
+      "buildingType": "المبنى",
+      "savings": "التوفير السنوي",
+      "payback": "فترة الاسترداد",
+      "verdict": "الحكم",
+      "deleteReport": "حذف التقرير",
+      "deleted": "تم حذف التقرير",
+      "deletedDesc": "تم حذف التقرير بنجاح",
+      "deleteError": "فشل حذف التقرير",
+      "confirmDelete": "حذف التقرير؟",
+      "confirmDeleteDesc": "هل أنت متأكد من حذف هذا التقرير؟"
     },
     "leads": {
       "title": "إدارة العملاء المحتملين",
@@ -752,13 +776,57 @@
       "name": "الاسم",
       "contact": "بيانات التواصل",
       "project": "تفاصيل المشروع",
-      "status": "الحالة",
+      "status": {
+        "inProgress": "قيد التنفيذ"
+      },
       "createdAt": "تاريخ الإرسال",
       "noLeads": "لا يوجد عملاء",
       "statusUpdated": "تم تحديث الحالة",
       "statusUpdatedDesc": "تم تحديث حالة العميل",
       "statusUpdateError": "فشل تحديث الحالة",
-      "exportCSV": "تصدير CSV"
+      "exportCSV": "تصدير CSV",
+      "markContacted": "تحديد كتم التواصل",
+      "deleteLead": "حذف العميل",
+      "deleted": "تم حذف العميل",
+      "deletedDesc": "تم حذف العميل بنجاح",
+      "deleteError": "فشل حذف العميل",
+      "confirmDelete": "حذف العميل؟",
+      "confirmDeleteDesc": "هل أنت متأكد من حذف العميل {{name}}؟"
+    },
+    "userDetail": {
+      "title": "تفاصيل المستخدم",
+      "profileInfo": "معلومات الملف الشخصي",
+      "accountInfo": "معلومات الحساب",
+      "role": "الدور",
+      "type": "نوع الحساب",
+      "assessments": "إجمالي التقييمات",
+      "reportHistory": "سجل التقارير",
+      "assessmentHistory": "التقييمات الشمسية",
+      "noReports": "لا توجد تقارير لهذا المستخدم",
+      "noAssessments": "لا توجد تقييمات لهذا المستخدم",
+      "buildingType": "نوع المبنى",
+      "feasibility": "الجدوى"
+    },
+    "analytics": {
+      "title": "التحليلات والإحصائيات",
+      "subtitle": "إحصائيات شاملة للمنصة وأدوات التصدير",
+      "today": "اليوم",
+      "thisMonth": "هذا الشهر",
+      "avgPayback": "متوسط فترة الاسترداد",
+      "years": "سنة",
+      "avgSavings": "متوسط التوفير السنوي",
+      "feasibilityDist": "توزيع الجدوى",
+      "totalAssessments": "إجمالي التقييمات",
+      "buildingTypes": "توزيع أنواع المباني",
+      "topType": "الأكثر شيوعاً",
+      "topBuildingType": "أكثر نوع مبنى",
+      "topPanelType": "أكثر نوع لوح",
+      "exportTools": "أدوات التصدير",
+      "exportDesc": "تحميل بيانات المنصة كملفات CSV",
+      "exportUsers": "تصدير المستخدمين",
+      "exportReports": "تصدير التقارير",
+      "exportLeads": "تصدير العملاء",
+      "exportAnalytics": "تصدير التحليلات"
     }
   },
   "admin.leads.status": {
