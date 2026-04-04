@@ -21,6 +21,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminLeads from "./pages/admin/AdminLeads";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 
