@@ -13,6 +13,11 @@ interface Profile {
   reports_generated: number;
   report_limit: number;
   user_type: 'individual' | 'business';
+  subscription_type: string;
+  subscription_status: string;
+  subscription_start_date: string | null;
+  subscription_end_date: string | null;
+  extra_reports_balance: number;
   created_at: string;
   updated_at: string;
 }

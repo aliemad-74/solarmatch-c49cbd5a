@@ -169,11 +169,16 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           email: string
+          extra_reports_balance: number
           id: string
           name: string
           phone: string | null
           report_limit: number
           reports_generated: number
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_status: string
+          subscription_type: string
           updated_at: string
           user_id: string
           user_type: string
@@ -182,11 +187,16 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email: string
+          extra_reports_balance?: number
           id?: string
           name: string
           phone?: string | null
           report_limit?: number
           reports_generated?: number
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string
+          subscription_type?: string
           updated_at?: string
           user_id: string
           user_type?: string
@@ -195,11 +205,16 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string
+          extra_reports_balance?: number
           id?: string
           name?: string
           phone?: string | null
           report_limit?: number
           reports_generated?: number
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string
+          subscription_type?: string
           updated_at?: string
           user_id?: string
           user_type?: string

@@ -9,7 +9,7 @@ import ROITimeline from "./ROITimeline";
 import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 
-
+import FeatureGate from "./FeatureGate";
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -674,10 +674,12 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                     <SelectItem value="ar">🇪🇬 عربي</SelectItem>
                   </SelectContent>
                 </Select>
-                <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors disabled:opacity-50">
-                  {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  {isGeneratingPdf ? "..." : t('results.downloadReport')}
-                </button>
+                <FeatureGate feature="pdf_export">
+                  <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors disabled:opacity-50">
+                    {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {isGeneratingPdf ? "..." : t('results.downloadReport')}
+                  </button>
+                </FeatureGate>
               </div>
               
               <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
@@ -685,12 +687,14 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                 {t('results.printReport')}
               </button>
               {shareableParams && (
-                <ShareDialog params={shareableParams} trigger={
-                  <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
-                    <Share2 className="w-4 h-4" />
-                    {t('results.shareResults')}
-                  </button>
-                } />
+                <FeatureGate feature="report_sharing">
+                  <ShareDialog params={shareableParams} trigger={
+                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
+                      <Share2 className="w-4 h-4" />
+                      {t('results.shareResults')}
+                    </button>
+                  } />
+                </FeatureGate>
               )}
             </div>
           </div>

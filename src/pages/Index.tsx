@@ -7,7 +7,7 @@ import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
-import LimitReachedModal from "@/components/LimitReachedModal";
+import PaywallModal from "@/components/PaywallModal";
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
@@ -559,7 +559,7 @@ const Index = () => {
         onSuccess={() => {}}
       />
 
-      <LimitReachedModal
+      <PaywallModal
         open={showLimitReachedModal}
         onOpenChange={setShowLimitReachedModal}
       />
