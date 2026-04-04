@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Mail, Phone, MessageCircle } from 'lucide-react';
+import { openWhatsAppChat } from '@/lib/externalLinks';
 
 interface LimitReachedModalProps {
   open: boolean;
@@ -18,7 +19,7 @@ export default function LimitReachedModal({ open, onOpenChange }: LimitReachedMo
         window.open('mailto:support@solarmatch.eg?subject=Request%20More%20Reports', '_blank');
         break;
       case 'whatsapp':
-        window.open('https://wa.me/201111009619?text=I%20would%20like%20to%20generate%20more%20solar%20reports', '_blank');
+        openWhatsAppChat('201111009619', 'I would like to generate more solar reports');
         break;
       case 'phone':
         window.open('tel:+201111009619', '_blank');

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { generateShareUrl, copyToClipboard, ShareableParams } from "@/lib/shareUtils";
+import { openWhatsAppChat } from "@/lib/externalLinks";
 
 interface ShareDialogProps {
   params: ShareableParams;
@@ -89,12 +90,11 @@ const ShareDialog = ({ params, trigger }: ShareDialogProps) => {
             size="sm"
             className="flex-1"
             onClick={() => {
-              window.open(
-                `https://wa.me/?text=${encodeURIComponent(`Check out my solar calculation: ${shareUrl}`)}`,
-                '_blank'
-              );
+              openWhatsAppChat('', `Check out my solar calculation: ${shareUrl}`);
             }}
           >
+            WhatsApp
+          </Button>
             WhatsApp
           </Button>
           <Button

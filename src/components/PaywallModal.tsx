@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Lock, MessageCircle, Crown, Building2, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { openWhatsAppChat } from '@/lib/externalLinks';
 
 const WHATSAPP_NUMBER = '201111009619';
 
@@ -17,12 +18,12 @@ export default function PaywallModal({ open, onOpenChange }: PaywallModalProps) 
   const navigate = useNavigate();
 
   const handleWhatsApp = (plan: string) => {
-    const message = encodeURIComponent(
+    const message =
       i18n.language === 'ar'
         ? `مرحباً، أريد الاشتراك في خطة ${plan} على SolarMatch`
-        : `Hello, I want to subscribe to the ${plan} plan on SolarMatch`
-    );
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
+        : `Hello, I want to subscribe to the ${plan} plan on SolarMatch`;
+
+    openWhatsAppChat(WHATSAPP_NUMBER, message);
     onOpenChange(false);
   };
 

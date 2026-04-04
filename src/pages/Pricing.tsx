@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
+import { openWhatsAppChat } from '@/lib/externalLinks';
 
 const WHATSAPP_NUMBER = '201111009619';
 
@@ -32,12 +33,12 @@ const Pricing = () => {
   const { type: currentPlan } = useSubscription();
 
   const handleSubscribe = (planName: string) => {
-    const message = encodeURIComponent(
+    const message =
       i18n.language === 'ar'
         ? `مرحباً، أريد الاشتراك في خطة ${planName} على SolarMatch`
-        : `Hello, I want to subscribe to the ${planName} plan on SolarMatch`
-    );
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
+        : `Hello, I want to subscribe to the ${planName} plan on SolarMatch`;
+
+    openWhatsAppChat(WHATSAPP_NUMBER, message);
   };
 
   const plans: PlanData[] = [
