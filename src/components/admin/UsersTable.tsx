@@ -227,6 +227,24 @@ const UsersTable = () => {
                     </TableCell>
                     <TableCell>
                       <Select
+                        value={(user as any).subscription_type || 'free'}
+                        onValueChange={(val) =>
+                          updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { subscription_type: val } })
+                        }
+                      >
+                        <SelectTrigger className="w-[120px] h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="free">Free</SelectItem>
+                          <SelectItem value="single_report">Single Report</SelectItem>
+                          <SelectItem value="premium">Premium</SelectItem>
+                          <SelectItem value="business">Business</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select
                         value={userRole}
                         onValueChange={(val) =>
                           changeRoleMutation.mutate({ userId: user.user_id, newRole: val })
