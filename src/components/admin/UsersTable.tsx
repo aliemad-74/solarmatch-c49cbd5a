@@ -297,6 +297,39 @@ const UsersTable = () => {
                             <UserCog className="h-4 w-4 mr-2" />
                             {t("admin.users.resetLimit")}
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const extra = prompt("Add extra reports balance:", "1");
+                              if (extra !== null) {
+                                const val = parseInt(extra, 10);
+                                if (!isNaN(val) && val > 0) {
+                                  const current = (user as any).extra_reports_balance || 0;
+                                  updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { extra_reports_balance: current + val } });
+                                }
+                              }
+                            }}
+                          >
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Add Extra Reports
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { reports_generated: 0 } });
+                            }}
+                          >
+                            <ShieldCheck className="h-4 w-4 mr-2" />
+                            Reset Usage
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const currentStatus = (user as any).subscription_status || 'active';
+                              const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+                              updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { subscription_status: newStatus } });
+                            }}
+                          >
+                            <ShieldOff className="h-4 w-4 mr-2" />
+                            {(user as any).subscription_status === 'suspended' ? 'Reactivate' : 'Suspend'}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
