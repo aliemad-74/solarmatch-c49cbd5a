@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
 
-const WHATSAPP_NUMBER = '+201111009619';
+const WHATSAPP_NUMBER = '201111009619';
 
 interface PlanFeature {
   text: string;
