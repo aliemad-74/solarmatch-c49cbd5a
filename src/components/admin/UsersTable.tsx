@@ -198,6 +198,7 @@ const UsersTable = () => {
               <TableHead>{t("admin.users.email")}</TableHead>
               <TableHead>{t("admin.users.phone")}</TableHead>
               <TableHead>{t("admin.users.reports")}</TableHead>
+              <TableHead>Subscription</TableHead>
               <TableHead>{t("admin.userDetail.role")}</TableHead>
               <TableHead>{t("admin.users.type")}</TableHead>
               <TableHead>{t("admin.users.createdAt")}</TableHead>
