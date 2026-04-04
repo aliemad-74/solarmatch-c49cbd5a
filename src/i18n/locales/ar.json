@@ -832,6 +832,8 @@
   "admin.leads.status": {
     "new": "جديد",
     "contacted": "تم التواصل",
+    "inProgress": "قيد التنفيذ",
+    "in_progress": "قيد التنفيذ",
     "qualified": "مؤهل",
     "closed": "مغلق"
   },
