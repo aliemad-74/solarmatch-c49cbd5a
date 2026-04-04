@@ -15,18 +15,13 @@ export const buildWhatsAppUrl = (phoneNumber = '', message?: string) => {
 };
 
 export const openExternalUrl = (url: string) => {
-  if (typeof document === 'undefined') return;
+  if (typeof window === 'undefined') return;
 
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.target = '_blank';
-  anchor.rel = 'noopener noreferrer';
-  anchor.referrerPolicy = 'no-referrer';
-  anchor.style.display = 'none';
+  const openedWindow = window.open(url, '_blank', 'noopener,noreferrer');
 
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
+  if (openedWindow) {
+    openedWindow.opener = null;
+  }
 };
 
 export const openWhatsAppChat = (phoneNumber = '', message?: string) => {

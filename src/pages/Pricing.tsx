@@ -211,15 +211,25 @@ const Pricing = () => {
                     <Button variant="outline" disabled={isCurrent} className="w-full">
                       {isCurrent ? t('pricing.currentPlan') : plan.cta}
                     </Button>
-                  ) : (
+                  ) : isCurrent ? (
                     <Button
                       variant={plan.highlighted ? 'default' : 'outline'}
                       className={`w-full gap-2 ${plan.highlighted ? 'bg-secondary hover:bg-secondary/90 text-secondary-foreground' : ''}`}
-                      disabled={isCurrent}
-                      onClick={() => handleSubscribe(plan.name)}
+                      disabled
                     >
                       <MessageCircle className="w-4 h-4" />
-                      {isCurrent ? t('pricing.currentPlan') : plan.cta}
+                      {t('pricing.currentPlan')}
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      variant={plan.highlighted ? 'default' : 'outline'}
+                      className={`w-full gap-2 ${plan.highlighted ? 'bg-secondary hover:bg-secondary/90 text-secondary-foreground' : ''}`}
+                    >
+                      <a href={getSubscribeUrl(plan.name)} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="w-4 h-4" />
+                        {plan.cta}
+                      </a>
                     </Button>
                   )}
                 </div>

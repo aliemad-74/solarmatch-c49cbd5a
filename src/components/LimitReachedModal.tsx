@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Mail, Phone, MessageCircle } from 'lucide-react';
-import { openWhatsAppChat } from '@/lib/externalLinks';
+import { buildWhatsAppUrl } from '@/lib/externalLinks';
 
 interface LimitReachedModalProps {
   open: boolean;
@@ -12,14 +12,12 @@ interface LimitReachedModalProps {
 export default function LimitReachedModal({ open, onOpenChange }: LimitReachedModalProps) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
+  const whatsappContactLink = buildWhatsAppUrl('201111009619', 'I would like to generate more solar reports');
 
-  const handleContact = (method: 'email' | 'whatsapp' | 'phone') => {
+  const handleContact = (method: 'email' | 'phone') => {
     switch (method) {
       case 'email':
         window.open('mailto:support@solarmatch.eg?subject=Request%20More%20Reports', '_blank');
-        break;
-      case 'whatsapp':
-        openWhatsAppChat('201111009619', 'I would like to generate more solar reports');
         break;
       case 'phone':
         window.open('tel:+201111009619', '_blank');
@@ -49,13 +47,16 @@ export default function LimitReachedModal({ open, onOpenChange }: LimitReachedMo
           </p>
 
           <div className="grid gap-3">
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3"
-              onClick={() => handleContact('whatsapp')}
-            >
-              <MessageCircle className="w-5 h-5 text-solar-green" />
-              <span>{t('limitReached.whatsapp')}</span>
+            <Button variant="outline" className="w-full justify-start gap-3" asChild>
+              <a
+                href={whatsappContactLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onOpenChange(false)}
+              >
+                <MessageCircle className="w-5 h-5 text-solar-green" />
+                <span>{t('limitReached.whatsapp')}</span>
+              </a>
             </Button>
 
             <Button
