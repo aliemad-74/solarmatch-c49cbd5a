@@ -559,7 +559,7 @@ const Index = () => {
         onSuccess={() => {}}
       />
 
-      <LimitReachedModal
+      <PaywallModal
         open={showLimitReachedModal}
         onOpenChange={setShowLimitReachedModal}
       />
