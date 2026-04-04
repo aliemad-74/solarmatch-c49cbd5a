@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Lock, MessageCircle, Crown, Building2, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const WHATSAPP_NUMBER = '+201111009619';
+const WHATSAPP_NUMBER = '201111009619';
 
 interface PaywallModalProps {
   open: boolean;
