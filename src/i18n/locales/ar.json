@@ -905,5 +905,87 @@
     "error": "حصل مشكلة. حاول تاني.",
     "rateLimit": "رسائل كتير. استنى شوية.",
     "paymentError": "رصيد الـ AI خلص. حاول بعدين."
+  },
+  "pricing": {
+    "title": "اختر خطتك",
+    "subtitle": "استفد من SolarMatch بأقصى شكل مع الخطة المناسبة ليك",
+    "currency": "ج.م",
+    "month": "شهر",
+    "perMonth": "/ شهر",
+    "perReport": "/ تقرير",
+    "popular": "الأكثر شيوعاً",
+    "currentPlan": "خطتك الحالية",
+    "availableIn": "متاح في {{plan}}",
+    "upgradeToAccess": "ترقّى لـ {{plan}} لاستخدام هذه الميزة",
+    "whatsappNote": "تواصل معنا عبر واتساب للاشتراك — هنفعّل خطتك فوراً",
+    "plans": {
+      "free": {
+        "name": "مجاني",
+        "price": "مجاني",
+        "description": "جرّب SolarMatch بتقرير مجاني واحد",
+        "cta": "ابدأ الآن"
+      },
+      "single": {
+        "name": "تقرير واحد",
+        "description": "تقرير تحليل شمسي كامل ومفصل",
+        "cta": "اشتري تقرير — 50 ج.م"
+      },
+      "premium": {
+        "name": "بريميوم",
+        "description": "وصول كامل لأصحاب المنازل والمحترفين",
+        "cta": "ترقّى لبريميوم"
+      },
+      "business": {
+        "name": "بيزنس",
+        "description": "للفرق والمركبين وشركات الطاقة الشمسية",
+        "cta": "ترقّى لبيزنس"
+      }
+    },
+    "features": {
+      "oneReport": "تقرير مجاني واحد",
+      "basicSuitability": "نتيجة ملاءمة أساسية",
+      "basicCostEstimate": "تقدير تكلفة وتوفير أساسي",
+      "limitedAI": "شرح AI محدود",
+      "pdfExport": "تصدير PDF",
+      "reportHistory": "سجل التقارير",
+      "systemComparison": "مقارنة الأنظمة",
+      "fullAIAdvisor": "مستشار AI كامل",
+      "oneFullReport": "تقرير واحد كامل ومفصل",
+      "fullAnalysis": "تحليل تقني ومالي كامل",
+      "fullAIExplanation": "شرح AI كامل",
+      "reportSharing": "مشاركة التقرير",
+      "twentyReports": "حتى 20 تقرير / شهر",
+      "packageComparison": "مقارنة الباقات",
+      "sensitivityScenarios": "سيناريوهات الحساسية",
+      "confidenceScore": "درجة الثقة",
+      "aiVerification": "تحقق AI",
+      "liveTariffs": "تعريفات كهرباء محدثة",
+      "priorityProcessing": "معالجة أولوية",
+      "contactExpert": "تواصل مع خبير",
+      "unlimitedReports": "تقارير غير محدودة",
+      "everythingPremium": "كل مزايا بريميوم",
+      "teamAccess": "وصول الفريق",
+      "clientManagement": "إدارة العملاء",
+      "whiteLabelPdf": "تقارير PDF بعلامتك التجارية",
+      "csvExport": "تصدير CSV",
+      "leadManagement": "إدارة العملاء المحتملين",
+      "advancedAnalytics": "تحليلات متقدمة",
+      "businessDashboard": "لوحة تحكم الأعمال",
+      "prioritySupport": "دعم أولوية",
+      "apiAccess": "وصول API (قريباً)",
+      "liveMarketPrices": "أسعار سوق محدثة"
+    }
+  },
+  "paywall": {
+    "title": "ترقّى لتستمر",
+    "description": "استخدمت تقريرك المجاني. ترقّى لتستمر في استخدام SolarMatch.",
+    "singleReport": "اشتري تقرير واحد",
+    "singleReportDesc": "تحليل كامل مع تصدير PDF",
+    "premium": "ترقّى لبريميوم",
+    "premiumDesc": "20 تقرير/شهر مع AI كامل",
+    "business": "ترقّى لبيزنس",
+    "businessDesc": "تقارير غير محدودة لفريقك",
+    "viewAllPlans": "عرض كل الخطط",
+    "whatsappNote": "تواصل معنا عبر واتساب للاشتراك"
   }
 }
