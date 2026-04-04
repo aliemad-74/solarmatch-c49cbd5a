@@ -18,10 +18,10 @@ export default function LimitReachedModal({ open, onOpenChange }: LimitReachedMo
         window.open('mailto:support@solarmatch.eg?subject=Request%20More%20Reports', '_blank');
         break;
       case 'whatsapp':
-        window.open('https://wa.me/201234567890?text=I%20would%20like%20to%20generate%20more%20solar%20reports', '_blank');
+        window.open('https://wa.me/201111009619?text=I%20would%20like%20to%20generate%20more%20solar%20reports', '_blank');
         break;
       case 'phone':
-        window.open('tel:+201234567890', '_blank');
+        window.open('tel:+201111009619', '_blank');
         break;
     }
     onOpenChange(false);
