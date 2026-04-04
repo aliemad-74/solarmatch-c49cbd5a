@@ -7,6 +7,7 @@ import {
   Users,
   FileText,
   UserCheck,
+  BarChart3,
   LogOut,
   Sun,
   Menu,
