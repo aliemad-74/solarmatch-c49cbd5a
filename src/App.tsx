@@ -21,6 +21,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminLeads from "./pages/admin/AdminLeads";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 
@@ -61,6 +62,7 @@ const App = () => (
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="reports" element={<AdminReports />} />
                     <Route path="leads" element={<AdminLeads />} />
+                    <Route path="analytics" element={<AdminAnalytics />} />
                   </Route>
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

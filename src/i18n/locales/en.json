@@ -670,7 +670,8 @@
       "dashboard": "Dashboard",
       "users": "Users",
       "reports": "Reports",
-      "leads": "Leads"
+      "leads": "Leads",
+      "analytics": "Analytics"
     },
     "login": {
       "title": "Admin Login",
@@ -729,7 +730,20 @@
       "limitUpdateError": "Failed to update limit",
       "authenticated": "Authenticated Users",
       "legacy": "Legacy Users",
-      "exportCSV": "Export CSV"
+      "exportCSV": "Export CSV",
+      "viewDetails": "View Details",
+      "resetLimit": "Reset Report Limit",
+      "enterNewLimit": "Enter new report limit:",
+      "deleteUser": "Delete User",
+      "deleted": "User Deleted",
+      "deletedDesc": "User profile has been deleted",
+      "deleteError": "Failed to delete user",
+      "confirmDelete": "Delete User?",
+      "confirmDeleteDesc": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+      "cancel": "Cancel",
+      "roleUpdated": "Role Updated",
+      "roleUpdatedDesc": "User role has been updated",
+      "roleUpdateError": "Failed to update role"
     },
     "reports": {
       "title": "Reports History",
@@ -741,7 +755,17 @@
       "createdAt": "Generated",
       "noReports": "No reports found",
       "noLocation": "No location",
-      "exportCSV": "Export CSV"
+      "exportCSV": "Export CSV",
+      "buildingType": "Building",
+      "savings": "Annual Savings",
+      "payback": "Payback",
+      "verdict": "Verdict",
+      "deleteReport": "Delete Report",
+      "deleted": "Report Deleted",
+      "deletedDesc": "Report has been deleted",
+      "deleteError": "Failed to delete report",
+      "confirmDelete": "Delete Report?",
+      "confirmDeleteDesc": "Are you sure you want to delete this report?"
     },
     "leads": {
       "title": "Leads Management",
@@ -752,18 +776,64 @@
       "name": "Name",
       "contact": "Contact",
       "project": "Project Details",
-      "status": "Status",
+      "status": {
+        "inProgress": "In Progress"
+      },
       "createdAt": "Submitted",
       "noLeads": "No leads found",
       "statusUpdated": "Status Updated",
       "statusUpdatedDesc": "Lead status has been updated",
       "statusUpdateError": "Failed to update status",
-      "exportCSV": "Export CSV"
+      "exportCSV": "Export CSV",
+      "markContacted": "Mark as Contacted",
+      "deleteLead": "Delete Lead",
+      "deleted": "Lead Deleted",
+      "deletedDesc": "Lead has been deleted",
+      "deleteError": "Failed to delete lead",
+      "confirmDelete": "Delete Lead?",
+      "confirmDeleteDesc": "Are you sure you want to delete the lead from {{name}}?"
+    },
+    "userDetail": {
+      "title": "User Details",
+      "profileInfo": "Profile Information",
+      "accountInfo": "Account Information",
+      "role": "Role",
+      "type": "Account Type",
+      "assessments": "Total Assessments",
+      "reportHistory": "Report History",
+      "assessmentHistory": "Solar Assessments",
+      "noReports": "No reports found for this user",
+      "noAssessments": "No assessments found for this user",
+      "buildingType": "Building Type",
+      "feasibility": "Feasibility"
+    },
+    "analytics": {
+      "title": "Analytics & Insights",
+      "subtitle": "Platform-wide statistics and data exports",
+      "today": "Today",
+      "thisMonth": "This month",
+      "avgPayback": "Avg Payback Period",
+      "years": "years",
+      "avgSavings": "Avg Annual Savings",
+      "feasibilityDist": "Feasibility Distribution",
+      "totalAssessments": "Total Assessments",
+      "buildingTypes": "Building Type Distribution",
+      "topType": "Most common",
+      "topBuildingType": "Top Building Type",
+      "topPanelType": "Top Panel Type",
+      "exportTools": "Export Tools",
+      "exportDesc": "Download platform data as CSV files",
+      "exportUsers": "Export Users",
+      "exportReports": "Export Reports",
+      "exportLeads": "Export Leads",
+      "exportAnalytics": "Export Analytics"
     }
   },
   "admin.leads.status": {
     "new": "New",
     "contacted": "Contacted",
+    "inProgress": "In Progress",
+    "in_progress": "In Progress",
     "qualified": "Qualified",
     "closed": "Closed"
   },
