@@ -14,6 +14,7 @@ import Account from "./pages/Account";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Pricing from "./pages/Pricing";
 
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
