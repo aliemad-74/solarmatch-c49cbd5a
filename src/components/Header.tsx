@@ -1,4 +1,4 @@
-import { Menu, Settings, LogOut, User, LogIn } from "lucide-react";
+import { Menu, Settings, LogOut, User, LogIn, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import LanguageToggle from "./LanguageToggle";
@@ -32,11 +32,16 @@ const Header = () => {
 
   const navLinks = [
     { path: "/", label: t('header.home') },
+    { path: "/pricing", label: t('header.pricing') },
+  ];
+
+  const aboutSubLinks = [
+    { path: "/about", label: t('header.about') },
     { path: "/why-solarmatch", label: t('header.whySolarMatch') },
     { path: "/how-it-works", label: t('header.howItWorks') },
-    { path: "/pricing", label: t('header.pricing') },
-    { path: "/about", label: t('header.about') },
   ];
+
+  const isAboutActive = ['/about', '/why-solarmatch', '/how-it-works'].includes(location.pathname);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -63,6 +68,34 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
+
+          {/* About Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={`text-sm px-3 py-2 rounded-md transition-colors flex items-center gap-1 ${
+                  isAboutActive
+                    ? "text-primary font-medium bg-primary/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {t('header.about')}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center">
+              {aboutSubLinks.map((link) => (
+                <DropdownMenuItem key={link.path} asChild>
+                  <Link
+                    to={link.path}
+                    className={isActive(link.path) ? "font-medium text-primary" : ""}
+                  >
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <div className="w-px h-5 bg-border mx-2" />
           
@@ -151,6 +184,27 @@ const Header = () => {
                     {link.label}
                   </Link>
                 ))}
+
+                {/* About sub-links */}
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    {t('header.about')}
+                  </span>
+                  {aboutSubLinks.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block text-lg transition-colors ps-3 ${
+                        isActive(link.path)
+                          ? "text-primary font-medium"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
                 
                 {user && (
                   <Link
