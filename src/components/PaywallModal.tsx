@@ -1,11 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Lock, MessageCircle, Crown, Building2, FileText } from 'lucide-react';
+import { Lock, Crown, Building2, FileText, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { buildWhatsAppUrl } from '@/lib/externalLinks';
-
-const WHATSAPP_NUMBER = '201111009619';
+import { toast } from 'sonner';
 
 interface PaywallModalProps {
   open: boolean;
@@ -17,13 +15,10 @@ export default function PaywallModal({ open, onOpenChange }: PaywallModalProps) 
   const isRTL = i18n.language === 'ar';
   const navigate = useNavigate();
 
-  const getWhatsAppLink = (plan: string) => {
-    const message =
-      i18n.language === 'ar'
-        ? `مرحباً، أريد الاشتراك في خطة ${plan} على SolarMatch`
-        : `Hello, I want to subscribe to the ${plan} plan on SolarMatch`;
-
-    return buildWhatsAppUrl(WHATSAPP_NUMBER, message);
+  const handlePlanClick = () => {
+    toast(i18n.language === 'ar' ? 'قريباً' : 'Coming soon', {
+      description: i18n.language === 'ar' ? 'بوابة الدفع قيد التجهيز' : 'Payment gateway coming soon',
+    });
   };
 
   return (
@@ -42,12 +37,9 @@ export default function PaywallModal({ open, onOpenChange }: PaywallModalProps) 
         </DialogHeader>
 
         <div className="mt-4 space-y-3">
-          <a
-            href={getWhatsAppLink('Single Report - 50 EGP')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors cursor-pointer"
-            onClick={() => onOpenChange(false)}
+          <button
+            onClick={handlePlanClick}
+            className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors cursor-pointer text-left"
           >
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <FileText className="w-5 h-5 text-primary" />
@@ -59,14 +51,11 @@ export default function PaywallModal({ open, onOpenChange }: PaywallModalProps) 
             <div className="text-right shrink-0">
               <p className="font-bold text-primary">50 {t('pricing.currency')}</p>
             </div>
-          </a>
+          </button>
 
-          <a
-            href={getWhatsAppLink('Premium - 300 EGP/month')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-4 p-4 rounded-lg border-2 border-secondary/50 bg-secondary/5 hover:bg-secondary/10 transition-colors cursor-pointer"
-            onClick={() => onOpenChange(false)}
+          <button
+            onClick={handlePlanClick}
+            className="w-full flex items-center gap-4 p-4 rounded-lg border-2 border-secondary/50 bg-secondary/5 hover:bg-secondary/10 transition-colors cursor-pointer text-left"
           >
             <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
               <Crown className="w-5 h-5 text-secondary" />
@@ -78,14 +67,11 @@ export default function PaywallModal({ open, onOpenChange }: PaywallModalProps) 
             <div className="text-right shrink-0">
               <p className="font-bold text-secondary">300 {t('pricing.currency')}<span className="text-xs font-normal">/{t('pricing.month')}</span></p>
             </div>
-          </a>
+          </button>
 
-          <a
-            href={getWhatsAppLink('Business - 1000 EGP/month')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors cursor-pointer"
-            onClick={() => onOpenChange(false)}
+          <button
+            onClick={handlePlanClick}
+            className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors cursor-pointer text-left"
           >
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <Building2 className="w-5 h-5 text-primary" />
@@ -97,7 +83,7 @@ export default function PaywallModal({ open, onOpenChange }: PaywallModalProps) 
             <div className="text-right shrink-0">
               <p className="font-bold text-primary">1000 {t('pricing.currency')}<span className="text-xs font-normal">/{t('pricing.month')}</span></p>
             </div>
-          </a>
+          </button>
         </div>
 
         <div className="mt-4 flex flex-col gap-2">
@@ -105,8 +91,8 @@ export default function PaywallModal({ open, onOpenChange }: PaywallModalProps) 
             {t('paywall.viewAllPlans')}
           </Button>
           <div className="flex items-center gap-2 justify-center text-xs text-muted-foreground">
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span>{t('paywall.whatsappNote')}</span>
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>{i18n.language === 'ar' ? 'بوابة الدفع قريباً' : 'Payment gateway coming soon'}</span>
           </div>
         </div>
       </DialogContent>

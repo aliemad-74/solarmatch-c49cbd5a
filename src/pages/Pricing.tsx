@@ -1,13 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { Check, X, Crown, Building2, FileText, Zap, MessageCircle } from 'lucide-react';
+import { Check, X, Crown, Building2, FileText, Zap, CreditCard } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
-import { buildWhatsAppUrl } from '@/lib/externalLinks';
-
-const WHATSAPP_NUMBER = '201111009619';
+import { toast } from 'sonner';
 
 interface PlanFeature {
   text: string;
@@ -32,13 +30,10 @@ const Pricing = () => {
   const isRTL = i18n.language === 'ar';
   const { type: currentPlan } = useSubscription();
 
-  const getSubscribeUrl = (planName: string) => {
-    const message =
-      i18n.language === 'ar'
-        ? `مرحباً، أريد الاشتراك في خطة ${planName} على SolarMatch`
-        : `Hello, I want to subscribe to the ${planName} plan on SolarMatch`;
-
-    return buildWhatsAppUrl(WHATSAPP_NUMBER, message);
+  const handleSubscribeClick = () => {
+    toast(i18n.language === 'ar' ? 'قريباً' : 'Coming soon', {
+      description: i18n.language === 'ar' ? 'بوابة الدفع قيد التجهيز' : 'Payment gateway coming soon',
+    });
   };
 
   const plans: PlanData[] = [
@@ -211,38 +206,20 @@ const Pricing = () => {
                     <Button variant="outline" disabled={isCurrent} className="w-full">
                       {isCurrent ? t('pricing.currentPlan') : plan.cta}
                     </Button>
-                  ) : isCurrent ? (
-                    <Button
-                      variant={plan.highlighted ? 'default' : 'outline'}
-                      className={`w-full gap-2 ${plan.highlighted ? 'bg-secondary hover:bg-secondary/90 text-secondary-foreground' : ''}`}
-                      disabled
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      {t('pricing.currentPlan')}
-                    </Button>
                   ) : (
                     <Button
-                      asChild
                       variant={plan.highlighted ? 'default' : 'outline'}
                       className={`w-full gap-2 ${plan.highlighted ? 'bg-secondary hover:bg-secondary/90 text-secondary-foreground' : ''}`}
+                      disabled={isCurrent}
+                      onClick={isCurrent ? undefined : handleSubscribeClick}
                     >
-                      <a href={getSubscribeUrl(plan.name)} target="_blank" rel="noopener noreferrer">
-                        <MessageCircle className="w-4 h-4" />
-                        {plan.cta}
-                      </a>
+                      <CreditCard className="w-4 h-4" />
+                      {isCurrent ? t('pricing.currentPlan') : plan.cta}
                     </Button>
                   )}
                 </div>
               );
             })}
-          </div>
-
-          {/* WhatsApp note */}
-          <div className="text-center mt-10">
-            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              {t('pricing.whatsappNote')}
-            </p>
           </div>
         </div>
       </main>
