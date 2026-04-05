@@ -10,7 +10,9 @@
     "account": "Account",
     "myAccount": "My Account",
     "login": "Login / Sign Up",
-    "pricing": "Pricing"
+    "pricing": "Pricing",
+    "home": "Home",
+    "whySolarMatch": "Why SolarMatch"
   },
   "hero": {
     "title": "Check Your Solar Feasibility",

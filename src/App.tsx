@@ -15,6 +15,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
+import WhySolarMatch from "./pages/WhySolarMatch";
 
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";

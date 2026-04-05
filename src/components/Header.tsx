@@ -31,6 +31,8 @@ const Header = () => {
   const { user, signOut: userSignOut, profile } = useUserAuth();
 
   const navLinks = [
+    { path: "/", label: t('header.home') },
+    { path: "/why-solarmatch", label: t('header.whySolarMatch') },
     { path: "/how-it-works", label: t('header.howItWorks') },
     { path: "/pricing", label: t('header.pricing') },
     { path: "/about", label: t('header.about') },
