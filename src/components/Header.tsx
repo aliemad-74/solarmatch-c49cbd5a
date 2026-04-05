@@ -69,6 +69,34 @@ const Header = () => {
             </Link>
           ))}
 
+          {/* About Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={`text-sm px-3 py-2 rounded-md transition-colors flex items-center gap-1 ${
+                  isAboutActive
+                    ? "text-primary font-medium bg-primary/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {t('header.about')}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center">
+              {aboutSubLinks.map((link) => (
+                <DropdownMenuItem key={link.path} asChild>
+                  <Link
+                    to={link.path}
+                    className={isActive(link.path) ? "font-medium text-primary" : ""}
+                  >
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <div className="w-px h-5 bg-border mx-2" />
           
           {(user || admin) ? (
