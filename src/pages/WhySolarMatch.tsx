@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import { ScrollReveal } from "@/components/ScrollReveal";
+import ScrollReveal from "@/components/ScrollReveal";
 import {
   MapPin, Zap, BarChart3, FileText, Shield, Brain,
   Sun, Leaf, Clock, Globe, Calculator, Users
