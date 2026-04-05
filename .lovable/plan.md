@@ -1,51 +1,41 @@
 
 
-# خطة استخدام Firecrawl في SolarMatch
+## Plan: Convert Subscription Buttons to Non-Functional Styled Buttons
 
-## الهدف
-استخدام Firecrawl لجلب بيانات حقيقية بدل القيم الثابتة الموجودة حالياً في الكود:
-1. **أسعار الألواح الشمسية** من مواقع الموردين المصريين
-2. **تعريفة الكهرباء المحدّثة** من المصادر الرسمية
+Replace all WhatsApp links in the subscription flow with plain styled buttons that show a "Coming Soon" toast when clicked. No external links, no actions -- just visual buttons ready for a future payment gateway.
 
-## الوضع الحالي
-- الأسعار ثابتة في `src/lib/solarData.ts`: Economy = 15,000 جنيه/kW، Standard = 19,000، Premium = 23,000
-- التعريفة ثابتة في `src/lib/egyptTariffs.ts`: 7 شرائح من 0.58 إلى 2.28 جنيه/kWh
+### Changes
 
----
+**1. `src/pages/Pricing.tsx`**
+- Remove `buildWhatsAppUrl` import and `WHATSAPP_NUMBER` constant
+- Remove `getSubscribeUrl` function
+- Replace the `<a href={...}>` subscribe buttons with plain `<Button>` elements
+- On click, show a toast: "Coming soon" / "قريباً"
+- Remove the WhatsApp note at the bottom
+- Keep the `MessageCircle` icon or replace with a suitable icon like `ShoppingCart` or `CreditCard`
 
-## خطوات التنفيذ
+**2. `src/components/PaywallModal.tsx`**
+- Remove `buildWhatsAppUrl` import and `WHATSAPP_NUMBER` constant
+- Convert the three `<a>` plan cards from links to `<div>` or `<button>` elements
+- On click, show a toast: "Coming soon" / "قريباً"
+- Remove the WhatsApp note text at the bottom
+- Keep the "View All Plans" button that navigates to `/pricing`
 
-### 1. ربط Firecrawl Connector
-- توصيل Firecrawl بالمشروع عبر الـ connector
+**3. `src/components/LimitReachedModal.tsx`**
+- Remove WhatsApp link and `buildWhatsAppUrl` import
+- Replace contact buttons with a single "Upgrade" button that navigates to `/pricing`
+- Or show a "Coming soon" toast
 
-### 2. إنشاء Edge Function: `scrape-solar-prices`
-- تستخدم Firecrawl Search للبحث عن "أسعار ألواح شمسية مصر 2025/2026"
-- تعمل scrape لمواقع مثل جوميا، أمازون مصر، ومواقع شركات الطاقة الشمسية المصرية
-- تستخرج الأسعار وتحسب متوسطات لكل فئة (Economy/Standard/Premium)
-- تستخدم Gemini لتحليل المحتوى المسحوب واستخراج الأسعار بشكل منظم
+**4. Translations (`en.json` / `ar.json`)**
+- Add key `common.comingSoon` → "Coming soon" / "قريباً"
+- Update or remove WhatsApp-related text keys
 
-### 3. إنشاء Edge Function: `scrape-tariffs`
-- تعمل scrape لموقع وزارة الكهرباء أو المصادر الإخبارية المصرية
-- تستخرج شرائح التعريفة المحدّثة
-- تستخدم Gemini لتحويل النص لبيانات منظمة (JSON)
+**5. Cleanup**
+- If `buildWhatsAppUrl` is no longer used anywhere, remove `src/lib/externalLinks.ts`
+- Otherwise keep it for any remaining usage (e.g. ShareDialog)
 
-### 4. جدول في قاعدة البيانات: `market_data`
-- يخزن آخر أسعار وتعريفات تم جلبها
-- أعمدة: `type` (panel_price / tariff)، `data` (JSON)، `source_url`، `scraped_at`
-- يمنع إعادة السحب كل مرة - cache لمدة 24 ساعة مثلاً
-
-### 5. Cron Job (اختياري)
-- جدولة تحديث الأسعار يومياً أو أسبوعياً تلقائياً
-
-### 6. تعديل الكود الحالي
-- `solarData.ts`: يجلب الأسعار من `market_data` أولاً، لو مفيش يستخدم القيم الثابتة كـ fallback
-- `egyptTariffs.ts`: نفس المنطق - بيانات محدّثة أو fallback للقيم الحالية
-- إضافة بادج "أسعار محدّثة" في الواجهة لما البيانات تكون من scraping حقيقي
-
----
-
-## ملاحظات تقنية
-- Firecrawl لا يستخدم gateway، فنستخدم الـ API key مباشرة في Edge Functions
-- نستخدم Gemini (متاح بالفعل) لتحليل المحتوى المسحوب واستخراج بيانات منظمة
-- القيم الثابتة الحالية تظل كـ fallback لضمان عمل التطبيق حتى لو فشل الـ scraping
+### What stays the same
+- All plan cards, pricing, features, and styling remain identical
+- Subscription gating logic, report limits, and feature locks are untouched
+- No admin or database changes needed
 
