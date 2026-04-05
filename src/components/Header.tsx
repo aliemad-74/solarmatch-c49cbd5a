@@ -1,4 +1,4 @@
-import { Menu, Settings, LogOut, User, LogIn } from "lucide-react";
+import { Menu, Settings, LogOut, User, LogIn, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import LanguageToggle from "./LanguageToggle";
@@ -32,11 +32,16 @@ const Header = () => {
 
   const navLinks = [
     { path: "/", label: t('header.home') },
+    { path: "/pricing", label: t('header.pricing') },
+  ];
+
+  const aboutSubLinks = [
+    { path: "/about", label: t('header.about') },
     { path: "/why-solarmatch", label: t('header.whySolarMatch') },
     { path: "/how-it-works", label: t('header.howItWorks') },
-    { path: "/pricing", label: t('header.pricing') },
-    { path: "/about", label: t('header.about') },
   ];
+
+  const isAboutActive = ['/about', '/why-solarmatch', '/how-it-works'].includes(location.pathname);
 
   const isActive = (path: string) => location.pathname === path;
 
