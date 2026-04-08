@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // --- Rate limiting ---
@@ -57,7 +58,7 @@ async function callGemini(
   let response: Response;
   try {
     const body: any = {
-      model: "google/gemini-2.5-pro",
+      model: "google/gemini-2.5-flash",
       messages: [{ role: "user", content: prompt }],
     };
     if (jsonMode) {
@@ -150,7 +151,7 @@ serve(async (req) => {
     const electricityPrice = safeValue(d.electricityPrice);
     const coverageRatio =
       typeof d.coverageRatio === "number" && !isNaN(d.coverageRatio)
-        ? Math.round(d.coverageRatio * 100)
+        ? Math.round(d.coverageRatio)
         : "N/A";
 
     console.log(`Mode: ${mode}, Language: ${language}`);
@@ -246,7 +247,7 @@ Important notes:
 - The interpretation should be detailed, practical, and specific to this project
 - If coverage ratio exceeds 150%, advise the client they could reduce system size to 100-120% coverage to save costs, and estimate how much they would save`;
 
-      const result = await callGemini(LOVABLE_API_KEY, reviewPrompt, true, 30000);
+      const result = await callGemini(LOVABLE_API_KEY, reviewPrompt, true, 55000);
 
       if (!result.ok) {
         console.error("Review mode Gemini error:", result.error);

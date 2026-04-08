@@ -90,7 +90,7 @@ async function geocode(lat: number, lng: number, apiKey: string) {
 async function getSolarData(lat: number, lng: number, apiKey: string) {
   // Try Google Solar first
   try {
-    const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=HIGH&key=${apiKey}`;
+    const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${apiKey}`;
     const res = await fetchWithTimeout(url);
     if (res.ok) {
       const data = await res.json();
