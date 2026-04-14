@@ -292,7 +292,7 @@ serve(async (req) => {
     const co2_saved = Math.round((annual_production * 0.55 / 1000) * 100) / 100;
 
     let feasibility: "suitable" | "conditional" | "not_suitable" | "oversized";
-    if (coverage_ratio >= 3.0) feasibility = "oversized";
+    if (coverage_ratio >= 1.5) feasibility = "oversized";
     else if (coverage_ratio >= 0.7 && payback_years <= 10) feasibility = "suitable";
     else if (coverage_ratio >= 0.3 && payback_years <= 15) feasibility = "conditional";
     else feasibility = "not_suitable";

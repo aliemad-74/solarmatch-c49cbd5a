@@ -82,7 +82,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   const coveragePercent = Math.min(results.coverageRatio * 100, 200);
 
   // Feasibility
-  const feasibilityStatus = results.coverageRatio >= 3.0
+  const feasibilityStatus = results.coverageRatio >= 1.5
     ? 'oversized'
     : results.coverageRatio >= 0.7 && results.paybackYears <= 10
       ? 'suitable'
@@ -231,35 +231,12 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             </div>
           </div>
 
-          {/* Oversized recommendation card */}
+          {/* Small oversized hint in decision overview */}
           {feasibilityStatus === 'oversized' && recommended && (
-            <div className="p-5 rounded-2xl border-2 border-solar-green/40 bg-solar-green/5 mb-4">
-              <h5 className="font-display text-base font-bold text-solar-green mb-3 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                {isAr ? "الحجم المثالي المقترح" : "Recommended Optimal Size"}
-              </h5>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-foreground">{recommended.recommended_size_kw} kW</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "الحجم المقترح" : "Recommended Size"}</p>
-                </div>
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-foreground">{recommended.recommended_area} m²</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "المساحة المطلوبة" : "Required Area"}</p>
-                </div>
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-foreground">{formatCurrency(recommended.recommended_cost)}</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "التكلفة بعد التصغير" : "Cost After Downsizing"}</p>
-                </div>
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-solar-green">{formatCurrency(recommended.savings_from_downsizing)}</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "توفير من التصغير" : "Savings From Downsizing"}</p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                {isAr
-                  ? `فترة الاسترداد المقترحة: ${formatNumber(recommended.recommended_payback, 1)} سنة (بدلاً من ${formatNumber(results.paybackYears, 1)} سنة)`
-                  : `Recommended payback: ${formatNumber(recommended.recommended_payback, 1)} yrs (instead of ${formatNumber(results.paybackYears, 1)} yrs)`}
+            <div className="p-3 rounded-xl border border-solar-green/30 bg-solar-green/5 mb-4 flex items-center gap-2">
+              <ArrowDown className="w-4 h-4 text-solar-green" />
+              <p className="text-xs text-solar-green font-medium">
+                {isAr ? "اطلع على النظام المُوصى به بالأسفل ↓" : "See the Recommended System below ↓"}
               </p>
             </div>
           )}
@@ -299,6 +276,72 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
 
         {/* ==================== DETAILED SECTIONS (ACCORDIONS) ==================== */}
         <div className="space-y-3 print:hidden">
+
+          {/* ==================== ACCORDION 0: RECOMMENDED SYSTEM (OVERSIZED ONLY) ==================== */}
+          {feasibilityStatus === 'oversized' && recommended && (
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="w-full flex items-center justify-between p-5 bg-solar-green/10 rounded-2xl border-2 border-solar-green/40 hover:bg-solar-green/15 transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-solar-green/20">
+                    <TrendingUp className="w-5 h-5 text-solar-green" />
+                  </div>
+                  <span className="font-display text-base md:text-lg font-semibold text-solar-green">{isAr ? "النظام المُوصى به" : "Recommended System"}</span>
+                </div>
+                <ChevronDown className="w-5 h-5 text-solar-green transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2 animate-fade-in">
+                <div className="bg-solar-green/5 rounded-2xl border-2 border-solar-green/30 p-5 space-y-4">
+
+                  {/* Comparison header */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">{isAr ? "النظام الحالي" : "Current System"}</p>
+                      <div className="bg-card rounded-xl border border-border/50 p-3">
+                        <p className="text-lg font-bold text-foreground">{results.kWInstalled} kW</p>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-medium text-solar-green mb-1">{isAr ? "النظام المقترح" : "Recommended"}</p>
+                      <div className="bg-card rounded-xl border-2 border-solar-green/40 p-3">
+                        <p className="text-lg font-bold text-solar-green">{recommended.recommended_size_kw} kW</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detailed comparison table */}
+                  <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
+                    {[
+                      { label: isAr ? "حجم النظام" : "System Size", current: `${results.kWInstalled} kW`, rec: `${recommended.recommended_size_kw} kW` },
+                      { label: isAr ? "المساحة المطلوبة" : "Required Area", current: `${formatNumber(results.usableArea, 0)} m²`, rec: `${recommended.recommended_area} m²` },
+                      { label: isAr ? "التكلفة" : "Total Cost", current: formatCurrency(results.totalCost), rec: formatCurrency(recommended.recommended_cost) },
+                      { label: isAr ? "نسبة التغطية" : "Coverage", current: `${formatNumber(results.coverageRatio * 100, 0)}%`, rec: "110%" },
+                      { label: isAr ? "فترة الاسترداد" : "Payback", current: `${formatNumber(results.paybackYears, 1)} ${isAr ? "سنة" : "yrs"}`, rec: `${formatNumber(recommended.recommended_payback, 1)} ${isAr ? "سنة" : "yrs"}` },
+                    ].map((row, i) => (
+                      <div key={i} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-border/30" : ""}`}>
+                        <span className="text-sm text-muted-foreground">{row.label}</span>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-muted-foreground/60 line-through">{row.current}</span>
+                          <span className="font-semibold text-solar-green">{row.rec}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Savings highlight */}
+                  <div className="bg-solar-green/10 rounded-xl p-4 text-center border border-solar-green/30">
+                    <p className="text-xs text-solar-green font-medium mb-1">{isAr ? "التوفير من تصغير النظام" : "Savings From Right-Sizing"}</p>
+                    <p className="text-2xl font-bold text-solar-green">{formatCurrency(recommended.savings_from_downsizing)}</p>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    {isAr
+                      ? "النظام المقترح يغطي 110% من استهلاكك — كافي تماماً مع هامش أمان."
+                      : "The recommended system covers 110% of your consumption — fully sufficient with a safety margin."}
+                  </p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* ==================== ACCORDION 1: ELECTRICAL & SYSTEM DETAILS ==================== */}
           <Collapsible>
