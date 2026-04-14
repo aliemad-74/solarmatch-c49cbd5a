@@ -216,14 +216,53 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   {t(`results.verdict.${feasibilityStatus}`)}
                 </h4>
                 <p className="text-muted-foreground">
-                  {t(`results.feasibility.${feasibilityStatus}Desc`, {
-                    years: formatNumber(results.paybackYears, 1),
-                    coverage: formatNumber(results.coverageRatio * 100, 0),
-                  })}
+                  {feasibilityStatus === 'oversized'
+                    ? t(`results.feasibility.oversizedDesc`, {
+                        coverage: formatNumber(results.coverageRatio * 100, 0),
+                        savings: recommended ? formatNumber(recommended.savings_from_downsizing, 0) : '—',
+                      })
+                    : t(`results.feasibility.${feasibilityStatus}Desc`, {
+                        years: formatNumber(results.paybackYears, 1),
+                        coverage: formatNumber(results.coverageRatio * 100, 0),
+                      })
+                  }
                 </p>
               </div>
             </div>
           </div>
+
+          {/* Oversized recommendation card */}
+          {feasibilityStatus === 'oversized' && recommended && (
+            <div className="p-5 rounded-2xl border-2 border-solar-green/40 bg-solar-green/5 mb-4">
+              <h5 className="font-display text-base font-bold text-solar-green mb-3 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                {isAr ? "الحجم المثالي المقترح" : "Recommended Optimal Size"}
+              </h5>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-card rounded-xl p-3 text-center">
+                  <p className="text-lg font-bold text-foreground">{recommended.recommended_size_kw} kW</p>
+                  <p className="text-xs text-muted-foreground">{isAr ? "الحجم المقترح" : "Recommended Size"}</p>
+                </div>
+                <div className="bg-card rounded-xl p-3 text-center">
+                  <p className="text-lg font-bold text-foreground">{recommended.recommended_area} m²</p>
+                  <p className="text-xs text-muted-foreground">{isAr ? "المساحة المطلوبة" : "Required Area"}</p>
+                </div>
+                <div className="bg-card rounded-xl p-3 text-center">
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(recommended.recommended_cost)}</p>
+                  <p className="text-xs text-muted-foreground">{isAr ? "التكلفة بعد التصغير" : "Cost After Downsizing"}</p>
+                </div>
+                <div className="bg-card rounded-xl p-3 text-center">
+                  <p className="text-lg font-bold text-solar-green">{formatCurrency(recommended.savings_from_downsizing)}</p>
+                  <p className="text-xs text-muted-foreground">{isAr ? "توفير من التصغير" : "Savings From Downsizing"}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                {isAr
+                  ? `فترة الاسترداد المقترحة: ${formatNumber(recommended.recommended_payback, 1)} سنة (بدلاً من ${formatNumber(results.paybackYears, 1)} سنة)`
+                  : `Recommended payback: ${formatNumber(recommended.recommended_payback, 1)} yrs (instead of ${formatNumber(results.paybackYears, 1)} yrs)`}
+              </p>
+            </div>
+          )}
 
           {/* Approximate system cost */}
           <div className="bg-card rounded-xl border border-border/50 p-4 text-center mb-4">
