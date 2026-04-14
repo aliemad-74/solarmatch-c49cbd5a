@@ -346,7 +346,8 @@
     "verdict": {
       "suitable": "Suitable for Solar Installation",
       "conditional": "Conditionally Suitable",
-      "notSuitable": "Not Suitable at This Time"
+      "notSuitable": "Not Suitable at This Time",
+      "oversized": "Excellent Location — System Oversized"
     },
     "feasibility": {
       "suitable": "Solar Is Suitable",
@@ -354,7 +355,9 @@
       "conditional": "Conditionally Suitable",
       "conditionalDesc": "Solar is feasible but with limited coverage ({{coverage}}%). A smaller system may still be worthwhile.",
       "notSuitable": "Not Recommended",
-      "notSuitableDesc": "Based on your roof area and consumption, solar may not provide sufficient return. Consider expanding usable area."
+      "notSuitableDesc": "Based on your roof area and consumption, solar may not provide sufficient return. Consider expanding usable area.",
+      "oversized": "Oversized — Reduce for Optimal ROI",
+      "oversizedDesc": "Your location is excellent for solar! However, the system covers {{coverage}}% of your consumption — much more than needed. Reducing the area can save you {{savings}} EGP while still covering 110% of your usage."
     },
     "uncertaintyDisclaimer": "Actual performance may vary due to behavioral and market changes. Values shown are estimates.",
     "estimateLabel": "~ estimate / year",

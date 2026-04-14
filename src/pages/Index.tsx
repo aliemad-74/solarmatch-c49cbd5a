@@ -56,12 +56,19 @@ export interface SolarEngineData {
     annual_savings: number;
     payback_years: number;
     co2_saved: number;
-    feasibility: "suitable" | "conditional" | "not_suitable";
+    feasibility: "suitable" | "conditional" | "not_suitable" | "oversized";
     pv_package: string;
   };
   ai_analysis: {
     recommendation: string;
     confidence: "high" | "medium" | "low";
+  };
+  recommended?: {
+    recommended_size_kw: number;
+    recommended_area: number;
+    recommended_cost: number;
+    recommended_payback: number;
+    savings_from_downsizing: number;
   };
 }
 

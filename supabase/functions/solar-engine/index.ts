@@ -291,10 +291,30 @@ serve(async (req) => {
     const payback_years = annual_savings > 0 ? Math.round((total_cost / annual_savings) * 10) / 10 : 99;
     const co2_saved = Math.round((annual_production * 0.55 / 1000) * 100) / 100;
 
-    let feasibility: "suitable" | "conditional" | "not_suitable";
-    if (coverage_ratio >= 0.7 && payback_years <= 10) feasibility = "suitable";
+    let feasibility: "suitable" | "conditional" | "not_suitable" | "oversized";
+    if (coverage_ratio >= 3.0) feasibility = "oversized";
+    else if (coverage_ratio >= 0.7 && payback_years <= 10) feasibility = "suitable";
     else if (coverage_ratio >= 0.3 && payback_years <= 15) feasibility = "conditional";
     else feasibility = "not_suitable";
+
+    // For oversized systems, calculate recommended (right-sized) values
+    let recommended: Record<string, number> | null = null;
+    if (feasibility === "oversized") {
+      const target_coverage = 1.1; // 110% of consumption
+      const recommended_annual = annual_consumption * target_coverage;
+      const recommended_size = Math.round((recommended_annual / (adjusted_irradiance_factor * 365 * 0.80)) * 100) / 100;
+      const recommended_area_val = Math.round(recommended_size * areaPerKw);
+      const recommended_cost_val = Math.round(recommended_size * costPerKw);
+      const recommended_savings = Math.round(Math.min(recommended_annual, annual_consumption) * electricity_price);
+      const recommended_payback = recommended_savings > 0 ? Math.round((recommended_cost_val / recommended_savings) * 10) / 10 : 99;
+      recommended = {
+        recommended_size_kw: recommended_size,
+        recommended_area: recommended_area_val,
+        recommended_cost: recommended_cost_val,
+        recommended_payback: recommended_payback,
+        savings_from_downsizing: total_cost - recommended_cost_val,
+      };
+    }
 
     // STEP 6: AI Analysis
     const aiPrompt = `You are SolarMatch AI, Egypt's expert solar feasibility advisor. Analyze this solar assessment and provide a personalized recommendation in the same language as the user's location (Arabic for Egyptian locations, English otherwise).
@@ -367,6 +387,7 @@ Keep response under 200 words. Be specific with numbers.`;
         recommendation: aiText ?? "AI analysis unavailable. Results are based on engineering calculations.",
         confidence,
       },
+      ...(recommended ? { recommended } : {}),
     };
 
     return new Response(JSON.stringify(result), {
