@@ -231,35 +231,12 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             </div>
           </div>
 
-          {/* Oversized recommendation card */}
+          {/* Small oversized hint in decision overview */}
           {feasibilityStatus === 'oversized' && recommended && (
-            <div className="p-5 rounded-2xl border-2 border-solar-green/40 bg-solar-green/5 mb-4">
-              <h5 className="font-display text-base font-bold text-solar-green mb-3 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                {isAr ? "الحجم المثالي المقترح" : "Recommended Optimal Size"}
-              </h5>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-foreground">{recommended.recommended_size_kw} kW</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "الحجم المقترح" : "Recommended Size"}</p>
-                </div>
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-foreground">{recommended.recommended_area} m²</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "المساحة المطلوبة" : "Required Area"}</p>
-                </div>
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-foreground">{formatCurrency(recommended.recommended_cost)}</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "التكلفة بعد التصغير" : "Cost After Downsizing"}</p>
-                </div>
-                <div className="bg-card rounded-xl p-3 text-center">
-                  <p className="text-lg font-bold text-solar-green">{formatCurrency(recommended.savings_from_downsizing)}</p>
-                  <p className="text-xs text-muted-foreground">{isAr ? "توفير من التصغير" : "Savings From Downsizing"}</p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                {isAr
-                  ? `فترة الاسترداد المقترحة: ${formatNumber(recommended.recommended_payback, 1)} سنة (بدلاً من ${formatNumber(results.paybackYears, 1)} سنة)`
-                  : `Recommended payback: ${formatNumber(recommended.recommended_payback, 1)} yrs (instead of ${formatNumber(results.paybackYears, 1)} yrs)`}
+            <div className="p-3 rounded-xl border border-solar-green/30 bg-solar-green/5 mb-4 flex items-center gap-2">
+              <ArrowDown className="w-4 h-4 text-solar-green" />
+              <p className="text-xs text-solar-green font-medium">
+                {isAr ? "اطلع على النظام المُوصى به بالأسفل ↓" : "See the Recommended System below ↓"}
               </p>
             </div>
           )}
