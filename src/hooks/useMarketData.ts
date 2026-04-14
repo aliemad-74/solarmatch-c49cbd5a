@@ -29,7 +29,7 @@ export function useMarketData() {
           tariffData.data.industrial_rate,
           tariffData.data.effective_date,
         );
-        console.log("✅ Active tariffs updated from live data:", tariffData.data.effective_date);
+        // Tariffs updated from live data
       }
     } catch (e) {
       console.error("Market data fetch error:", e);

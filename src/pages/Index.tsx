@@ -353,7 +353,7 @@ const Index = () => {
           const reviewData = await reviewResponse.json();
           if (reviewData.success && reviewData.review) {
             const review = reviewData.review;
-            console.log("AI Review:", review);
+            // AI review received
 
             // Apply bounded adjustments if AI flagged issues
             if (review.adjustments) {
@@ -363,21 +363,21 @@ const Index = () => {
                 // Only apply if within ±30% to prevent hallucination damage
                 if (ratio > 0.7 && ratio < 1.3) {
                   calculation.totalCost = Math.round(adj.totalCost);
-                  console.log("AI adjusted totalCost:", calculation.totalCost);
+                  // totalCost adjusted
                 }
               }
               if (adj.costPerKW !== null && adj.costPerKW !== undefined) {
                 const ratio = adj.costPerKW / calculation.costPerKW;
                 if (ratio > 0.7 && ratio < 1.3) {
                   calculation.costPerKW = Math.round(adj.costPerKW);
-                  console.log("AI adjusted costPerKW:", calculation.costPerKW);
+                  // costPerKW adjusted
                 }
               }
               if (adj.paybackYears !== null && adj.paybackYears !== undefined) {
                 const ratio = adj.paybackYears / calculation.paybackYears;
                 if (ratio > 0.7 && ratio < 1.3) {
                   calculation.paybackYears = parseFloat(adj.paybackYears.toFixed(1));
-                  console.log("AI adjusted paybackYears:", calculation.paybackYears);
+                  // paybackYears adjusted
                 }
               }
             }
