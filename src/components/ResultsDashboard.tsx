@@ -82,16 +82,22 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   const coveragePercent = Math.min(results.coverageRatio * 100, 200);
 
   // Feasibility
-  const feasibilityStatus = results.coverageRatio >= 0.7 && results.paybackYears <= 10
-    ? 'suitable'
-    : results.coverageRatio >= 0.3 && results.paybackYears <= 15
-      ? 'conditional'
-      : 'notSuitable';
+  const feasibilityStatus = results.coverageRatio >= 3.0
+    ? 'oversized'
+    : results.coverageRatio >= 0.7 && results.paybackYears <= 10
+      ? 'suitable'
+      : results.coverageRatio >= 0.3 && results.paybackYears <= 15
+        ? 'conditional'
+        : 'notSuitable';
+
+  // Get recommended data from solar engine for oversized systems
+  const recommended = solarEngineData?.recommended as Record<string, number> | undefined;
 
   const feasibilityConfig = {
     suitable: { icon: CheckCircle2, color: 'text-solar-green', bg: 'bg-solar-green/10 border-solar-green/30', iconColor: 'text-solar-green' },
     conditional: { icon: AlertCircle, color: 'text-solar-gold', bg: 'bg-solar-gold/10 border-solar-gold/30', iconColor: 'text-solar-gold' },
     notSuitable: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30', iconColor: 'text-destructive' },
+    oversized: { icon: Settings2, color: 'text-solar-green', bg: 'bg-solar-green/10 border-solar-green/30', iconColor: 'text-solar-green' },
   };
 
   const fc = feasibilityConfig[feasibilityStatus];

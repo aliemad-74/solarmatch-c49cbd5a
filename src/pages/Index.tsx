@@ -56,7 +56,7 @@ export interface SolarEngineData {
     annual_savings: number;
     payback_years: number;
     co2_saved: number;
-    feasibility: "suitable" | "conditional" | "not_suitable";
+    feasibility: "suitable" | "conditional" | "not_suitable" | "oversized";
     pv_package: string;
   };
   ai_analysis: {
