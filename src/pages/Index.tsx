@@ -63,6 +63,13 @@ export interface SolarEngineData {
     recommendation: string;
     confidence: "high" | "medium" | "low";
   };
+  recommended?: {
+    recommended_size_kw: number;
+    recommended_area: number;
+    recommended_cost: number;
+    recommended_payback: number;
+    savings_from_downsizing: number;
+  };
 }
 
 const Index = () => {
