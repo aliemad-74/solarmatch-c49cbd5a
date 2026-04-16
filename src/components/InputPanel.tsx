@@ -327,6 +327,14 @@ const InputPanel = ({
                 <Zap className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-foreground">
                   {isArabic ? "سعر الكهرباء المُحدد تلقائياً" : "Auto-detected Electricity Price"}
+                  {(buildingType === "commercial" || buildingType === "industrial" || buildingType === "agricultural") && (
+                    <span className="text-xs font-normal text-secondary ms-2">
+                      ({isArabic 
+                        ? (buildingType === "commercial" ? "تعريفة تجارية" : buildingType === "industrial" ? "تعريفة صناعية" : "تعريفة تجارية (زراعي)")
+                        : (buildingType === "commercial" ? "Commercial tariff" : buildingType === "industrial" ? "Industrial tariff" : "Commercial tariff (Agricultural)")
+                      })
+                    </span>
+                  )}
                 </span>
               </div>
               <p className="text-lg font-bold text-primary">
@@ -339,7 +347,7 @@ const InputPanel = ({
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                {isArabic ? "يتم تحديد السعر تلقائياً بناءً على شريحة استهلاكك" : "Price is automatically determined based on your consumption bracket"}
+                {isArabic ? "يتم تحديد السعر تلقائياً بناءً على نوع النشاط وشريحة استهلاكك" : "Price is automatically determined based on your building type and consumption bracket"}
               </p>
             </div>
           )}
