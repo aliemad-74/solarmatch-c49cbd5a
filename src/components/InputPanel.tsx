@@ -15,7 +15,7 @@ import { ChevronDown } from "lucide-react";
 import { getAllSolarInsights } from "@/lib/solarInsights";
 import { Card, CardContent } from "@/components/ui/card";
 import { TariffTier } from "@/lib/egyptTariffs";
-import { estimateKwhFromBill, BillEstimation } from "@/lib/billToKwh";
+import { estimateKwhFromBill, getTariffForConsumption, BillEstimation } from "@/lib/billToKwh";
 
 interface TariffInfo {
   tiers: TariffTier[];
@@ -118,38 +118,18 @@ const InputPanel = ({
   const hasRealClimateData = climateData !== null && climateData !== undefined;
   const climate = climateData ?? defaultClimateData;
 
-  const electricityPriceRange = useMemo(() => {
-    const fallback = { min: 0.68, max: 2.23 };
-    const tiers = tariffInfo?.tiers?.length
-      ? tariffInfo.tiers
-      : [
-          { minKWh: 0, maxKWh: 50, rateEGP: fallback.min, tierName: "", tierNameAr: "" },
-          { minKWh: 1001, maxKWh: Infinity, rateEGP: fallback.max, tierName: "", tierNameAr: "" },
-        ];
-
-    const validRates = tiers
-      .map((tier) => Number(tier.rateEGP))
-      .filter((rate) => Number.isFinite(rate));
-
-    if (validRates.length === 0) return fallback;
-
-    const min = Math.floor(Math.min(...validRates) * 100) / 100;
-    const max = Math.ceil(Math.max(...validRates) * 100) / 100;
-
-    if (max <= min) return fallback;
-    return { min, max };
-  }, [tariffInfo?.tiers]);
-
+  // Auto-detect electricity price from consumption
   useEffect(() => {
-    if (electricityPrice < electricityPriceRange.min) {
-      setElectricityPrice(electricityPriceRange.min);
-      return;
+    const consumption = buildingMode ? numberOfUnits * avgUnitConsumption : monthlyConsumption;
+    if (consumption > 0) {
+      const tariffInfo2 = getTariffForConsumption(consumption);
+      const price = tariffInfo2.electricityPricePerKwh;
+      if (Number.isFinite(price) && price > 0) {
+        setElectricityPrice(price);
+        console.log("[InputPanel] Auto electricity price:", price.toFixed(4), "EGP/kWh for", consumption, "kWh");
+      }
     }
-
-    if (electricityPrice > electricityPriceRange.max) {
-      setElectricityPrice(electricityPriceRange.max);
-    }
-  }, [electricityPrice, electricityPriceRange.min, electricityPriceRange.max, setElectricityPrice]);
+  }, [monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption, setElectricityPrice]);
   
   // Get all solar insights from NASA climate data
   const insights = getAllSolarInsights(climate, isArabic);
@@ -340,37 +320,29 @@ const InputPanel = ({
             </div>
           </div>
 
-          {/* Electricity Price Slider - Dynamic from tariff data */}
-          <div className="space-y-4 mb-6">
-            <Label className="text-sm font-medium text-foreground flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-muted-foreground" />
-                {t('input.electricityPrice')}
-                <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.electricityPriceTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
-              </span>
-              <span className="text-lg font-semibold text-primary">{electricityPrice.toFixed(2)} {t('common.EGP')}</span>
-            </Label>
-            {tariffInfo?.source === "live" && (
-              <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                {tariffInfo?.effectiveDate} - بيانات حية
+          {/* Auto-detected Electricity Price Display */}
+          {effectiveMonthlyConsumption > 0 && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  {isArabic ? "سعر الكهرباء المُحدد تلقائياً" : "Auto-detected Electricity Price"}
+                </span>
               </div>
-            )}
-            <div className="px-2">
-              <Slider
-                value={[electricityPrice]}
-                onValueChange={(v) => setElectricityPrice(v[0])}
-                min={electricityPriceRange.min}
-                max={electricityPriceRange.max}
-                step={0.05}
-                className="w-full"
-              />
+              <p className="text-lg font-bold text-primary">
+                {electricityPrice.toFixed(2)} {t('common.EGP')}/{t('common.kWh')}
+              </p>
+              {tariffInfo?.source === "live" && (
+                <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  {tariffInfo?.effectiveDate} - {isArabic ? "بيانات حية" : "Live data"}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                {isArabic ? "يتم تحديد السعر تلقائياً بناءً على شريحة استهلاكك" : "Price is automatically determined based on your consumption bracket"}
+              </p>
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{electricityPriceRange.min.toFixed(2)} {t('common.EGP')}</span>
-              <span>{electricityPriceRange.max.toFixed(2)} {t('common.EGP')}</span>
-            </div>
-          </div>
+          )}
 
           {/* ==================== FARM MODE SECTION ==================== */}
           <div className="border-t border-border pt-6 mb-6">
