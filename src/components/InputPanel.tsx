@@ -575,6 +575,10 @@ const InputPanel = ({
                           {isArabic ? "الشريحة التقديرية:" : "Estimated tariff bracket:"}{" "}
                           {isArabic ? billEstimation.estimatedTariffBracketAr : billEstimation.estimatedTariffBracket}
                         </p>
+                        <p className="text-xs text-muted-foreground">
+                          {isArabic ? "سعر الكهرباء:" : "Electricity price:"}{" "}
+                          <span className="font-semibold">{billEstimation.electricityPricePerKwh.toFixed(2)} {t('common.EGP')}/{t('common.kWh')}</span>
+                        </p>
                       </div>
                     )}
                   </div>
@@ -600,6 +604,21 @@ const InputPanel = ({
                     <p className="text-xs text-muted-foreground">
                       {t('input.checkBill')}
                     </p>
+                    {monthlyConsumption > 0 && (() => {
+                      const info = getTariffForConsumption(monthlyConsumption);
+                      return (
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
+                          <p className="text-xs text-muted-foreground">
+                            {isArabic ? "الشريحة التقديرية:" : "Estimated tariff bracket:"}{" "}
+                            {isArabic ? info.estimatedTariffBracketAr : info.estimatedTariffBracket}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {isArabic ? "سعر الكهرباء:" : "Electricity price:"}{" "}
+                            <span className="font-semibold">{info.electricityPricePerKwh.toFixed(2)} {t('common.EGP')}/{t('common.kWh')}</span>
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
