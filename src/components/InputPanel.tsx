@@ -118,18 +118,18 @@ const InputPanel = ({
   const hasRealClimateData = climateData !== null && climateData !== undefined;
   const climate = climateData ?? defaultClimateData;
 
-  // Auto-detect electricity price from consumption
+  // Auto-detect electricity price from consumption + building type
   useEffect(() => {
     const consumption = buildingMode ? numberOfUnits * avgUnitConsumption : monthlyConsumption;
     if (consumption > 0) {
-      const tariffInfo2 = getTariffForConsumption(consumption);
+      const tariffInfo2 = getTariffForConsumption(consumption, buildingType);
       const price = tariffInfo2.electricityPricePerKwh;
       if (Number.isFinite(price) && price > 0) {
         setElectricityPrice(price);
-        console.log("[InputPanel] Auto electricity price:", price.toFixed(4), "EGP/kWh for", consumption, "kWh");
+        console.log("[InputPanel] Auto electricity price:", price.toFixed(4), "EGP/kWh for", consumption, "kWh, category:", tariffInfo2.tariffCategory);
       }
     }
-  }, [monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption, setElectricityPrice]);
+  }, [monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption, buildingType, setElectricityPrice]);
   
   // Get all solar insights from NASA climate data
   const insights = getAllSolarInsights(climate, isArabic);
