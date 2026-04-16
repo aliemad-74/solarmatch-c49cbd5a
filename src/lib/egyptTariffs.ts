@@ -1,5 +1,6 @@
 // Egypt Electricity Tariff System
 // Supports dynamic tariffs from market_data scraping with static fallback
+// Includes residential, commercial, and industrial tariff structures
 
 export interface TariffTier {
   minKWh: number;
@@ -8,6 +9,8 @@ export interface TariffTier {
   tierName: string;
   tierNameAr: string;
 }
+
+export type TariffCategory = "residential" | "commercial" | "industrial";
 
 // Static fallback tariff tiers (2026 rates)
 export const DEFAULT_RESIDENTIAL_TARIFFS: TariffTier[] = [
@@ -20,15 +23,36 @@ export const DEFAULT_RESIDENTIAL_TARIFFS: TariffTier[] = [
   { minKWh: 1001, maxKWh: Infinity, rateEGP: 2.23, tierName: "Tier 7 (>1000 kWh)", tierNameAr: "الشريحة السابعة (>1000 ك.و.س)" },
 ];
 
+// Commercial tariff tiers (2026 fallback)
+export const DEFAULT_COMMERCIAL_TARIFFS: TariffTier[] = [
+  { minKWh: 0, maxKWh: 100, rateEGP: 1.40, tierName: "Commercial 1 (0-100 kWh)", tierNameAr: "تجاري 1 (0-100 ك.و.س)" },
+  { minKWh: 101, maxKWh: 250, rateEGP: 1.80, tierName: "Commercial 2 (101-250 kWh)", tierNameAr: "تجاري 2 (101-250 ك.و.س)" },
+  { minKWh: 251, maxKWh: 600, rateEGP: 2.20, tierName: "Commercial 3 (251-600 kWh)", tierNameAr: "تجاري 3 (251-600 ك.و.س)" },
+  { minKWh: 601, maxKWh: 1000, rateEGP: 2.85, tierName: "Commercial 4 (601-1000 kWh)", tierNameAr: "تجاري 4 (601-1000 ك.و.س)" },
+  { minKWh: 1001, maxKWh: 2500, rateEGP: 3.15, tierName: "Commercial 5 (1001-2500 kWh)", tierNameAr: "تجاري 5 (1001-2500 ك.و.س)" },
+  { minKWh: 2501, maxKWh: Infinity, rateEGP: 3.45, tierName: "Commercial 6 (>2500 kWh)", tierNameAr: "تجاري 6 (>2500 ك.و.س)" },
+];
+
+// Industrial tariff tiers (2026 fallback)
+export const DEFAULT_INDUSTRIAL_TARIFFS: TariffTier[] = [
+  { minKWh: 0, maxKWh: 200, rateEGP: 1.18, tierName: "Industrial 1 (0-200 kWh)", tierNameAr: "صناعي 1 (0-200 ك.و.س)" },
+  { minKWh: 201, maxKWh: 500, rateEGP: 1.45, tierName: "Industrial 2 (201-500 kWh)", tierNameAr: "صناعي 2 (201-500 ك.و.س)" },
+  { minKWh: 501, maxKWh: 1000, rateEGP: 1.72, tierName: "Industrial 3 (501-1000 kWh)", tierNameAr: "صناعي 3 (501-1000 ك.و.س)" },
+  { minKWh: 1001, maxKWh: 5000, rateEGP: 1.95, tierName: "Industrial 4 (1001-5000 kWh)", tierNameAr: "صناعي 4 (1001-5000 ك.و.س)" },
+  { minKWh: 5001, maxKWh: Infinity, rateEGP: 2.10, tierName: "Industrial 5 (>5000 kWh)", tierNameAr: "صناعي 5 (>5000 ك.و.س)" },
+];
+
 // Kept for backward compatibility
 export const RESIDENTIAL_TARIFFS = DEFAULT_RESIDENTIAL_TARIFFS;
 
-// Commercial tariff rates (fallback)
-export const COMMERCIAL_RATE = 2.10;
+// Commercial tariff rates (backward compat flat rates)
+export const COMMERCIAL_RATE = 2.85;
 export const INDUSTRIAL_RATE = 1.95;
 
-// Active tariffs - can be overridden by scraped data
+// Active tariffs state
 let _activeTariffs: TariffTier[] = DEFAULT_RESIDENTIAL_TARIFFS;
+let _activeCommercialTariffs: TariffTier[] = DEFAULT_COMMERCIAL_TARIFFS;
+let _activeIndustrialTariffs: TariffTier[] = DEFAULT_INDUSTRIAL_TARIFFS;
 let _activeCommercialRate = COMMERCIAL_RATE;
 let _activeIndustrialRate = INDUSTRIAL_RATE;
 let _tariffSource: "static" | "live" = "static";
@@ -39,6 +63,8 @@ export function setActiveTariffs(
   commercialRate?: number,
   industrialRate?: number,
   effectiveDate?: string,
+  commercialTiers?: TariffTier[],
+  industrialTiers?: TariffTier[],
 ) {
   if (tiers && tiers.length >= 5) {
     // Normalize maxKWh: null → Infinity for last tier
@@ -50,17 +76,62 @@ export function setActiveTariffs(
     if (commercialRate) _activeCommercialRate = commercialRate;
     if (industrialRate) _activeIndustrialRate = industrialRate;
     if (effectiveDate) _tariffEffectiveDate = effectiveDate;
+    
+    if (commercialTiers && commercialTiers.length >= 3) {
+      _activeCommercialTariffs = commercialTiers.map((t, i) => ({
+        ...t,
+        maxKWh: t.maxKWh == null || t.maxKWh === 0 ? (i === commercialTiers.length - 1 ? Infinity : t.maxKWh) : t.maxKWh,
+      }));
+    }
+    if (industrialTiers && industrialTiers.length >= 3) {
+      _activeIndustrialTariffs = industrialTiers.map((t, i) => ({
+        ...t,
+        maxKWh: t.maxKWh == null || t.maxKWh === 0 ? (i === industrialTiers.length - 1 ? Infinity : t.maxKWh) : t.maxKWh,
+      }));
+    }
   }
 }
 
 export function getActiveTariffs() {
   return {
     tiers: _activeTariffs,
+    commercialTiers: _activeCommercialTariffs,
+    industrialTiers: _activeIndustrialTariffs,
     commercialRate: _activeCommercialRate,
     industrialRate: _activeIndustrialRate,
     source: _tariffSource,
     effectiveDate: _tariffEffectiveDate,
   };
+}
+
+/**
+ * Get the appropriate tariff tiers based on building type / tariff category.
+ */
+export function getTiersForCategory(category: TariffCategory): TariffTier[] {
+  switch (category) {
+    case "commercial": return _activeCommercialTariffs;
+    case "industrial": return _activeIndustrialTariffs;
+    default: return _activeTariffs;
+  }
+}
+
+/**
+ * Determine tariff category from building type and consumption level.
+ * High-consumption commercial, industrial, and agricultural users 
+ * should use commercial/industrial tariff brackets.
+ */
+export function detectTariffCategory(
+  buildingType: string,
+  monthlyConsumption?: number,
+): TariffCategory {
+  // Direct mapping for non-residential types
+  if (buildingType === "commercial") return "commercial";
+  if (buildingType === "industrial") return "industrial";
+  if (buildingType === "agricultural") return "commercial"; // Farms use commercial tariffs
+  
+  // High-consumption residential/apartment → still residential tiers  
+  // (Egyptian law: residential meters stay on residential tariff)
+  return "residential";
 }
 
 export interface TariffCalculation {
@@ -70,6 +141,7 @@ export interface TariffCalculation {
   tierBreakdown: { tier: TariffTier; kWh: number; cost: number }[];
   potentialTierAfterSolar?: TariffTier;
   monthlySavings?: number;
+  tariffCategory?: TariffCategory;
 }
 
 // Calculate electricity bill using tiered pricing (uses active tariffs)
@@ -99,6 +171,22 @@ export function calculateTieredBill(monthlyKWh: number, customTiers?: TariffTier
   const effectiveRate = monthlyKWh > 0 ? totalCost / monthlyKWh : 0;
 
   return { totalCost, effectiveRate, currentTier, tierBreakdown: breakdown };
+}
+
+/**
+ * Calculate bill with automatic tariff category detection.
+ */
+export function calculateBillForCategory(
+  monthlyKWh: number,
+  buildingType: string,
+): TariffCalculation & { tariffCategory: TariffCategory } {
+  const category = detectTariffCategory(buildingType, monthlyKWh);
+  const tiers = getTiersForCategory(category);
+  const result = calculateTieredBill(monthlyKWh, tiers);
+  
+  console.log(`[tariff] Category: ${category}, kWh: ${monthlyKWh}, effectiveRate: ${result.effectiveRate.toFixed(4)}`);
+  
+  return { ...result, tariffCategory: category };
 }
 
 // Calculate bill after solar offset

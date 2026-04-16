@@ -19,6 +19,8 @@ export interface TariffTierData {
 
 export interface TariffData {
   tiers: TariffTierData[];
+  commercial_tiers?: TariffTierData[];
+  industrial_tiers?: TariffTierData[];
   commercial_rate: number;
   industrial_rate: number;
   effective_date: string;
@@ -43,7 +45,22 @@ const FALLBACK_2026_TARIFFS: TariffData = {
     { minKWh: 651, maxKWh: 1000, rateEGP: 2.1, tierName: "Tier 6 (651-1000 kWh)", tierNameAr: "الشريحة السادسة (651-1000 ك.و.س)" },
     { minKWh: 1001, maxKWh: null, rateEGP: 2.23, tierName: "Tier 7 (>1000 kWh)", tierNameAr: "الشريحة السابعة (>1000 ك.و.س)" },
   ],
-  commercial_rate: 2.1,
+  commercial_tiers: [
+    { minKWh: 0, maxKWh: 100, rateEGP: 1.40, tierName: "Commercial 1 (0-100 kWh)", tierNameAr: "تجاري 1 (0-100 ك.و.س)" },
+    { minKWh: 101, maxKWh: 250, rateEGP: 1.80, tierName: "Commercial 2 (101-250 kWh)", tierNameAr: "تجاري 2 (101-250 ك.و.س)" },
+    { minKWh: 251, maxKWh: 600, rateEGP: 2.20, tierName: "Commercial 3 (251-600 kWh)", tierNameAr: "تجاري 3 (251-600 ك.و.س)" },
+    { minKWh: 601, maxKWh: 1000, rateEGP: 2.85, tierName: "Commercial 4 (601-1000 kWh)", tierNameAr: "تجاري 4 (601-1000 ك.و.س)" },
+    { minKWh: 1001, maxKWh: 2500, rateEGP: 3.15, tierName: "Commercial 5 (1001-2500 kWh)", tierNameAr: "تجاري 5 (1001-2500 ك.و.س)" },
+    { minKWh: 2501, maxKWh: null, rateEGP: 3.45, tierName: "Commercial 6 (>2500 kWh)", tierNameAr: "تجاري 6 (>2500 ك.و.س)" },
+  ],
+  industrial_tiers: [
+    { minKWh: 0, maxKWh: 200, rateEGP: 1.18, tierName: "Industrial 1 (0-200 kWh)", tierNameAr: "صناعي 1 (0-200 ك.و.س)" },
+    { minKWh: 201, maxKWh: 500, rateEGP: 1.45, tierName: "Industrial 2 (201-500 kWh)", tierNameAr: "صناعي 2 (201-500 ك.و.س)" },
+    { minKWh: 501, maxKWh: 1000, rateEGP: 1.72, tierName: "Industrial 3 (501-1000 kWh)", tierNameAr: "صناعي 3 (501-1000 ك.و.س)" },
+    { minKWh: 1001, maxKWh: 5000, rateEGP: 1.95, tierName: "Industrial 4 (1001-5000 kWh)", tierNameAr: "صناعي 4 (1001-5000 ك.و.س)" },
+    { minKWh: 5001, maxKWh: null, rateEGP: 2.10, tierName: "Industrial 5 (>5000 kWh)", tierNameAr: "صناعي 5 (>5000 ك.و.س)" },
+  ],
+  commercial_rate: 2.85,
   industrial_rate: 1.95,
   effective_date: "2026",
   confidence: "high",

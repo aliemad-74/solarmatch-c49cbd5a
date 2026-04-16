@@ -118,18 +118,18 @@ const InputPanel = ({
   const hasRealClimateData = climateData !== null && climateData !== undefined;
   const climate = climateData ?? defaultClimateData;
 
-  // Auto-detect electricity price from consumption
+  // Auto-detect electricity price from consumption + building type
   useEffect(() => {
     const consumption = buildingMode ? numberOfUnits * avgUnitConsumption : monthlyConsumption;
     if (consumption > 0) {
-      const tariffInfo2 = getTariffForConsumption(consumption);
+      const tariffInfo2 = getTariffForConsumption(consumption, buildingType);
       const price = tariffInfo2.electricityPricePerKwh;
       if (Number.isFinite(price) && price > 0) {
         setElectricityPrice(price);
-        console.log("[InputPanel] Auto electricity price:", price.toFixed(4), "EGP/kWh for", consumption, "kWh");
+        console.log("[InputPanel] Auto electricity price:", price.toFixed(4), "EGP/kWh for", consumption, "kWh, category:", tariffInfo2.tariffCategory);
       }
     }
-  }, [monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption, setElectricityPrice]);
+  }, [monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption, buildingType, setElectricityPrice]);
   
   // Get all solar insights from NASA climate data
   const insights = getAllSolarInsights(climate, isArabic);
@@ -156,16 +156,16 @@ const InputPanel = ({
   // Bill-to-kWh estimation
   useEffect(() => {
     if (usageInputMethod === "bill" && monthlyBill > 0) {
-      const estimation = estimateKwhFromBill(monthlyBill);
+      const estimation = estimateKwhFromBill(monthlyBill, buildingType);
       setBillEstimation(estimation);
       if (estimation.estimatedConsumptionKwh > 0) {
         setMonthlyConsumption(estimation.estimatedConsumptionKwh);
-        console.log("[InputPanel] Bill→kWh: bill=", monthlyBill, "EGP → kWh=", estimation.estimatedConsumptionKwh, "bracket=", estimation.estimatedTariffBracket);
+        console.log("[InputPanel] Bill→kWh: bill=", monthlyBill, "EGP → kWh=", estimation.estimatedConsumptionKwh, "category=", estimation.tariffCategory);
       }
     } else if (usageInputMethod === "bill" && monthlyBill <= 0) {
       setBillEstimation(null);
     }
-  }, [monthlyBill, usageInputMethod]);
+  }, [monthlyBill, usageInputMethod, buildingType]);
 
   // Building type labels with translations
   const buildingTypeLabels: Record<BuildingType, string> = {
@@ -327,6 +327,14 @@ const InputPanel = ({
                 <Zap className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-foreground">
                   {isArabic ? "سعر الكهرباء المُحدد تلقائياً" : "Auto-detected Electricity Price"}
+                  {(buildingType === "commercial" || buildingType === "industrial" || buildingType === "agricultural") && (
+                    <span className="text-xs font-normal text-secondary ms-2">
+                      ({isArabic 
+                        ? (buildingType === "commercial" ? "تعريفة تجارية" : buildingType === "industrial" ? "تعريفة صناعية" : "تعريفة تجارية (زراعي)")
+                        : (buildingType === "commercial" ? "Commercial tariff" : buildingType === "industrial" ? "Industrial tariff" : "Commercial tariff (Agricultural)")
+                      })
+                    </span>
+                  )}
                 </span>
               </div>
               <p className="text-lg font-bold text-primary">
@@ -339,7 +347,7 @@ const InputPanel = ({
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                {isArabic ? "يتم تحديد السعر تلقائياً بناءً على شريحة استهلاكك" : "Price is automatically determined based on your consumption bracket"}
+                {isArabic ? "يتم تحديد السعر تلقائياً بناءً على نوع النشاط وشريحة استهلاكك" : "Price is automatically determined based on your building type and consumption bracket"}
               </p>
             </div>
           )}
@@ -606,7 +614,7 @@ const InputPanel = ({
                       {t('input.checkBill')}
                     </p>
                     {monthlyConsumption > 0 && (() => {
-                      const info = getTariffForConsumption(monthlyConsumption);
+                      const info = getTariffForConsumption(monthlyConsumption, buildingType);
                       return (
                         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
                           <p className="text-xs text-muted-foreground">

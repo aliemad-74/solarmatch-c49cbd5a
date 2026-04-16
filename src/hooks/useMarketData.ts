@@ -28,6 +28,8 @@ export function useMarketData() {
           tariffData.data.commercial_rate,
           tariffData.data.industrial_rate,
           tariffData.data.effective_date,
+          tariffData.data.commercial_tiers,
+          tariffData.data.industrial_tiers,
         );
         // Tariffs updated from live data
       }
