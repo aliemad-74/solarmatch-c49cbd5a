@@ -1,4 +1,4 @@
-import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb, HelpCircle } from "lucide-react";
+import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb, HelpCircle, Receipt } from "lucide-react";
 import InputSanityWarnings from "./InputSanityWarnings";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { ChevronDown } from "lucide-react";
 import { getAllSolarInsights } from "@/lib/solarInsights";
 import { Card, CardContent } from "@/components/ui/card";
 import { TariffTier } from "@/lib/egyptTariffs";
+import { estimateKwhFromBill, BillEstimation } from "@/lib/billToKwh";
 
 interface TariffInfo {
   tiers: TariffTier[];
@@ -92,6 +93,9 @@ const InputPanel = ({
 }: InputPanelProps) => {
   const { t, i18n } = useTranslation();
   const [showInsights, setShowInsights] = useState(false);
+  const [usageInputMethod, setUsageInputMethod] = useState<"bill" | "kwh">("bill");
+  const [monthlyBill, setMonthlyBill] = useState<number>(0);
+  const [billEstimation, setBillEstimation] = useState<BillEstimation | null>(null);
   const isArabic = i18n.language === 'ar';
   
   const pv = pvTypes[pvType];
