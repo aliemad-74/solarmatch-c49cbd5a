@@ -321,7 +321,7 @@ const InputPanel = ({
           </div>
 
           {/* Auto-detected Electricity Price Display */}
-          {effectiveMonthlyConsumption > 0 && (
+          {userHasEnteredConsumption && effectiveMonthlyConsumption > 0 && (
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-4 h-4 text-primary" />
