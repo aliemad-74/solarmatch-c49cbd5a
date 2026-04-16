@@ -614,7 +614,7 @@ const InputPanel = ({
                       {t('input.checkBill')}
                     </p>
                     {monthlyConsumption > 0 && (() => {
-                      const info = getTariffForConsumption(monthlyConsumption);
+                      const info = getTariffForConsumption(monthlyConsumption, buildingType);
                       return (
                         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
                           <p className="text-xs text-muted-foreground">
