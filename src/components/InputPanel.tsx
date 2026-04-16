@@ -173,6 +173,20 @@ const InputPanel = ({
     }
   }, [buildingMode]);
 
+  // Bill-to-kWh estimation
+  useEffect(() => {
+    if (usageInputMethod === "bill" && monthlyBill > 0) {
+      const estimation = estimateKwhFromBill(monthlyBill);
+      setBillEstimation(estimation);
+      if (estimation.estimatedConsumptionKwh > 0) {
+        setMonthlyConsumption(estimation.estimatedConsumptionKwh);
+        console.log("[InputPanel] Bill→kWh: bill=", monthlyBill, "EGP → kWh=", estimation.estimatedConsumptionKwh, "bracket=", estimation.estimatedTariffBracket);
+      }
+    } else if (usageInputMethod === "bill" && monthlyBill <= 0) {
+      setBillEstimation(null);
+    }
+  }, [monthlyBill, usageInputMethod]);
+
   // Building type labels with translations
   const buildingTypeLabels: Record<BuildingType, string> = {
     residential: t('buildingTypes.residential'),
