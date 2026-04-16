@@ -11,6 +11,7 @@ export interface BillEstimation {
   estimatedTariffBracket: string;
   estimatedTariffBracketAr: string;
   estimatedBillFromKwh: number;
+  electricityPricePerKwh: number;
 }
 
 /**
@@ -77,10 +78,47 @@ export function estimateKwhFromBill(billAmount: number): BillEstimation {
   console.log("[billToKwh] Estimated bracket:", bracket.tierName);
   console.log("[billToKwh] Recalculated bill:", finalCalc.totalCost.toFixed(2), "EGP");
 
+  const electricityPricePerKwh = finalCalc.effectiveRate > 0 ? finalCalc.effectiveRate : bracket.rateEGP;
+
+  console.log("[billToKwh] Electricity price per kWh:", electricityPricePerKwh.toFixed(4));
+
   return {
     estimatedConsumptionKwh: bestKwh,
     estimatedTariffBracket: bracket.tierName,
     estimatedTariffBracketAr: bracket.tierNameAr,
     estimatedBillFromKwh: finalCalc.totalCost,
+    electricityPricePerKwh,
+  };
+}
+
+/**
+ * Get tariff info for a known kWh consumption value.
+ */
+export function getTariffForConsumption(monthlyKwh: number): BillEstimation {
+  if (!Number.isFinite(monthlyKwh) || monthlyKwh <= 0) {
+    const { tiers } = getActiveTariffs();
+    const fallbackRate = tiers[0]?.rateEGP ?? 0.68;
+    return {
+      estimatedConsumptionKwh: 0,
+      estimatedTariffBracket: tiers[0]?.tierName ?? "",
+      estimatedTariffBracketAr: tiers[0]?.tierNameAr ?? "",
+      estimatedBillFromKwh: 0,
+      electricityPricePerKwh: fallbackRate,
+    };
+  }
+
+  const { tiers } = getActiveTariffs();
+  const calc = calculateTieredBill(Math.round(monthlyKwh), tiers);
+  const bracket = calc.currentTier;
+  const electricityPricePerKwh = calc.effectiveRate > 0 ? calc.effectiveRate : bracket.rateEGP;
+
+  console.log("[getTariffForConsumption] kWh:", monthlyKwh, "bracket:", bracket.tierName, "price:", electricityPricePerKwh.toFixed(4));
+
+  return {
+    estimatedConsumptionKwh: Math.round(monthlyKwh),
+    estimatedTariffBracket: bracket.tierName,
+    estimatedTariffBracketAr: bracket.tierNameAr,
+    estimatedBillFromKwh: calc.totalCost,
+    electricityPricePerKwh,
   };
 }
