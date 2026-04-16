@@ -558,7 +558,7 @@ const InputPanel = ({
                       value={monthlyBill || ''}
                       onChange={(e) => {
                         const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
-                        if (Number.isFinite(val)) setMonthlyBill(val);
+                        if (Number.isFinite(val)) { setMonthlyBill(val); if (val > 0) setUserHasEnteredConsumption(true); }
                       }}
                       min={0}
                       className="h-12 text-lg font-medium"
@@ -597,7 +597,7 @@ const InputPanel = ({
                       id="monthly-consumption"
                       type="number"
                       value={monthlyConsumption || ''}
-                      onChange={(e) => setMonthlyConsumption(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                      onChange={(e) => { const v = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)); setMonthlyConsumption(v); if (v > 0) setUserHasEnteredConsumption(true); }}
                       min={0}
                       className="h-12 text-lg font-medium"
                       placeholder={isArabic ? "مثال: 350 ك.و.س" : "Example: 350 kWh"}
