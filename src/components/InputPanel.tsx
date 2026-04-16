@@ -156,16 +156,16 @@ const InputPanel = ({
   // Bill-to-kWh estimation
   useEffect(() => {
     if (usageInputMethod === "bill" && monthlyBill > 0) {
-      const estimation = estimateKwhFromBill(monthlyBill);
+      const estimation = estimateKwhFromBill(monthlyBill, buildingType);
       setBillEstimation(estimation);
       if (estimation.estimatedConsumptionKwh > 0) {
         setMonthlyConsumption(estimation.estimatedConsumptionKwh);
-        console.log("[InputPanel] Bill→kWh: bill=", monthlyBill, "EGP → kWh=", estimation.estimatedConsumptionKwh, "bracket=", estimation.estimatedTariffBracket);
+        console.log("[InputPanel] Bill→kWh: bill=", monthlyBill, "EGP → kWh=", estimation.estimatedConsumptionKwh, "category=", estimation.tariffCategory);
       }
     } else if (usageInputMethod === "bill" && monthlyBill <= 0) {
       setBillEstimation(null);
     }
-  }, [monthlyBill, usageInputMethod]);
+  }, [monthlyBill, usageInputMethod, buildingType]);
 
   // Building type labels with translations
   const buildingTypeLabels: Record<BuildingType, string> = {
