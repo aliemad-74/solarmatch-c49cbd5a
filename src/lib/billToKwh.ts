@@ -27,6 +27,7 @@ export function estimateKwhFromBill(billAmount: number): BillEstimation {
       estimatedTariffBracket: "",
       estimatedTariffBracketAr: "",
       estimatedBillFromKwh: 0,
+      electricityPricePerKwh: 0,
     };
   }
 
