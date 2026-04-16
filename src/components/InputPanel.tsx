@@ -1,4 +1,4 @@
-import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb, HelpCircle } from "lucide-react";
+import { Home, Zap, MapPin, Cpu, Building2, Sparkles, Sun, Thermometer, TrendingUp, DollarSign, Gauge, Building, Users, Wind, Cloud, Calendar, Droplets, Wheat, Lightbulb, HelpCircle, Receipt } from "lucide-react";
 import InputSanityWarnings from "./InputSanityWarnings";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { ChevronDown } from "lucide-react";
 import { getAllSolarInsights } from "@/lib/solarInsights";
 import { Card, CardContent } from "@/components/ui/card";
 import { TariffTier } from "@/lib/egyptTariffs";
+import { estimateKwhFromBill, BillEstimation } from "@/lib/billToKwh";
 
 interface TariffInfo {
   tiers: TariffTier[];
@@ -92,6 +93,9 @@ const InputPanel = ({
 }: InputPanelProps) => {
   const { t, i18n } = useTranslation();
   const [showInsights, setShowInsights] = useState(false);
+  const [usageInputMethod, setUsageInputMethod] = useState<"bill" | "kwh">("bill");
+  const [monthlyBill, setMonthlyBill] = useState<number>(0);
+  const [billEstimation, setBillEstimation] = useState<BillEstimation | null>(null);
   const isArabic = i18n.language === 'ar';
   
   const pv = pvTypes[pvType];
@@ -168,6 +172,20 @@ const InputPanel = ({
       setFarmMode(false);
     }
   }, [buildingMode]);
+
+  // Bill-to-kWh estimation
+  useEffect(() => {
+    if (usageInputMethod === "bill" && monthlyBill > 0) {
+      const estimation = estimateKwhFromBill(monthlyBill);
+      setBillEstimation(estimation);
+      if (estimation.estimatedConsumptionKwh > 0) {
+        setMonthlyConsumption(estimation.estimatedConsumptionKwh);
+        console.log("[InputPanel] Bill→kWh: bill=", monthlyBill, "EGP → kWh=", estimation.estimatedConsumptionKwh, "bracket=", estimation.estimatedTariffBracket);
+      }
+    } else if (usageInputMethod === "bill" && monthlyBill <= 0) {
+      setBillEstimation(null);
+    }
+  }, [monthlyBill, usageInputMethod]);
 
   // Building type labels with translations
   const buildingTypeLabels: Record<BuildingType, string> = {
@@ -521,24 +539,98 @@ const InputPanel = ({
                 </div>
               </div>
             ) : (
-              /* Standard Mode: Single Consumption Input */
-              <div className="space-y-3">
-              <Label htmlFor="monthly-consumption" className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Gauge className="w-4 h-4 text-muted-foreground" />
-                  {t('input.monthlyConsumption')}
-                  <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.monthlyConsumptionTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
-                </Label>
-                <Input
-                  id="monthly-consumption"
-                  type="number"
-                  value={monthlyConsumption || ''}
-                  onChange={(e) => setMonthlyConsumption(e.target.value === '' ? 0 : Number(e.target.value))}
-                  min={0}
-                  className="h-12 text-lg font-medium"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('input.checkBill')}
-                </p>
+              /* Standard Mode: Usage Input Method Toggle */
+              <div className="space-y-4">
+                {/* Usage Method Toggle */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Gauge className="w-4 h-4 text-muted-foreground" />
+                    {t('input.usageMethodTitle')}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setUsageInputMethod("bill")}
+                      className={`p-3 rounded-xl border text-center transition-all text-sm ${
+                        usageInputMethod === "bill"
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      <Receipt className="w-4 h-4 mx-auto mb-1" />
+                      {t('input.usageMethodBill')}
+                    </button>
+                    <button
+                      onClick={() => setUsageInputMethod("kwh")}
+                      className={`p-3 rounded-xl border text-center transition-all text-sm ${
+                        usageInputMethod === "kwh"
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      <Zap className="w-4 h-4 mx-auto mb-1" />
+                      {t('input.usageMethodKwh')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bill Input */}
+                {usageInputMethod === "bill" && (
+                  <div className="space-y-3">
+                    <Label htmlFor="monthly-bill" className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Receipt className="w-4 h-4 text-muted-foreground" />
+                      {t('input.monthlyBillLabel')}
+                    </Label>
+                    <Input
+                      id="monthly-bill"
+                      type="number"
+                      value={monthlyBill || ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value));
+                        if (Number.isFinite(val)) setMonthlyBill(val);
+                      }}
+                      min={0}
+                      className="h-12 text-lg font-medium"
+                      placeholder={isArabic ? "مثال: 500 جنيه" : "Example: 500 EGP"}
+                    />
+                    {billEstimation && billEstimation.estimatedConsumptionKwh > 0 && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
+                        <p className="text-sm text-foreground">
+                          {isArabic ? "الاستهلاك التقديري:" : "Estimated monthly consumption:"}{" "}
+                          <span className="font-semibold text-primary">
+                            ~{billEstimation.estimatedConsumptionKwh.toLocaleString()} {t('common.kWh')}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {isArabic ? "الشريحة التقديرية:" : "Estimated tariff bracket:"}{" "}
+                          {isArabic ? billEstimation.estimatedTariffBracketAr : billEstimation.estimatedTariffBracket}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* kWh Input */}
+                {usageInputMethod === "kwh" && (
+                  <div className="space-y-3">
+                    <Label htmlFor="monthly-consumption" className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Gauge className="w-4 h-4 text-muted-foreground" />
+                      {t('input.monthlyConsumption')}
+                      <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.monthlyConsumptionTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
+                    </Label>
+                    <Input
+                      id="monthly-consumption"
+                      type="number"
+                      value={monthlyConsumption || ''}
+                      onChange={(e) => setMonthlyConsumption(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                      min={0}
+                      className="h-12 text-lg font-medium"
+                      placeholder={isArabic ? "مثال: 350 ك.و.س" : "Example: 350 kWh"}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t('input.checkBill')}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
