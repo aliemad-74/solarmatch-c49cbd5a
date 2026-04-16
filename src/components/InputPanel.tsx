@@ -95,6 +95,7 @@ const InputPanel = ({
   const [usageInputMethod, setUsageInputMethod] = useState<"bill" | "kwh">("bill");
   const [monthlyBill, setMonthlyBill] = useState<number>(0);
   const [billEstimation, setBillEstimation] = useState<BillEstimation | null>(null);
+  const [userHasEnteredConsumption, setUserHasEnteredConsumption] = useState(false);
   const isArabic = i18n.language === 'ar';
   
   const pv = pvTypes[pvType];
