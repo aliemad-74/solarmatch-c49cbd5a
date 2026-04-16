@@ -26,26 +26,10 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const isAr = language === "ar";
-
+    // Build context block (language-neutral, always English internally)
     let contextBlock = "";
     if (solarContext) {
-      contextBlock = isAr
-        ? `\n\nبيانات التقرير الحالي للمستخدم:
-- الموقع: ${solarContext.locationName || "غير محدد"}
-- حجم النظام: ${solarContext.systemSize || "غير محدد"} كيلووات
-- الإنتاج السنوي: ${solarContext.annualProduction || "غير محدد"} كيلووات ساعة
-- التكلفة الإجمالية: ${solarContext.totalCost || "غير محدد"} جنيه
-- التوفير السنوي: ${solarContext.annualSavings || "غير محدد"} جنيه
-- فترة الاسترداد: ${solarContext.paybackYears || "غير محدد"} سنة
-- نسبة التغطية: ${solarContext.coverageRatio || "غير محدد"}%
-- خفض CO2: ${solarContext.co2Saved || "غير محدد"} طن
-- نوع الألواح: ${solarContext.pvType || "غير محدد"}
-- نوع المبنى: ${solarContext.buildingType || "غير محدد"}
-- الاستهلاك الشهري: ${solarContext.monthlyConsumption || "غير محدد"} كيلووات ساعة
-
-استخدم هذه البيانات للإجابة على أسئلة المستخدم بدقة.`
-        : `\n\nUser's current report data:
+      contextBlock = `\n\nUser's current report data:
 - Location: ${solarContext.locationName || "N/A"}
 - System size: ${solarContext.systemSize || "N/A"} kW
 - Annual production: ${solarContext.annualProduction || "N/A"} kWh
@@ -61,9 +45,13 @@ serve(async (req) => {
 Use this data to answer user questions accurately.`;
     }
 
-    const systemPrompt = isAr
-      ? `أنت مستشار طاقة شمسية خبير متخصص في السوق المصري. أجب بإيجاز ودقة. لا تبدأ بـ "بصفتي" أو "كـ". ابدأ مباشرة بالإجابة. استخدم الأرقام والبيانات الحقيقية عند الإمكان. أجب باللغة العربية.${contextBlock}`
-      : `You are an expert solar energy advisor specialized in the Egyptian market. Answer concisely and accurately. Start directly with the answer. Use real numbers and data when possible. Answer in English.${contextBlock}`;
+    const systemPrompt = `You are SolarMatch AI, an expert solar energy advisor specialized in the Egyptian market.
+
+CRITICAL RULES:
+1. **Language**: You MUST reply in the SAME language the user writes their message in. If the user writes in Arabic, reply in Arabic. If in English, reply in English. If in Franco-Arabic, reply in Arabic. Match the user's message language, NOT the website language.
+2. **Topic restriction**: You are ONLY allowed to answer questions about solar energy, renewable energy, electricity, energy savings, solar panels, inverters, batteries, grid connection, net metering, Egyptian electricity tariffs, rooftop assessments, energy costs, CO2 reduction, and the SolarMatch platform. If the user asks about ANYTHING else (recipes, sports, politics, coding, general knowledge, etc.), politely decline and say you can only help with solar energy topics.
+3. Answer concisely and accurately. Start directly with the answer — never begin with "As a" or "As your".
+4. Use real numbers and data when possible.${contextBlock}`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
