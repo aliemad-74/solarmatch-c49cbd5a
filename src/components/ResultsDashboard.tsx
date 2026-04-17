@@ -10,6 +10,8 @@ import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 
 import FeatureGate from "./FeatureGate";
+import LockedFeature from "./LockedFeature";
+import UpgradeBanner from "./UpgradeBanner";
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import TechnicalSpecifications from "./TechnicalSpecifications";
@@ -17,6 +19,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { generateSolarReport, ReportLanguage } from "@/lib/pdfReport";
 import { useState, useEffect } from "react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,6 +44,7 @@ interface ResultsDashboardProps {
 const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const { profile } = useUserAuth();
+  const planFeatures = usePlanFeatures();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>(isAr ? "ar" : "en");
@@ -276,6 +280,9 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             </div>
           )}
         </div>
+
+        {/* Upgrade Banner for free users */}
+        <UpgradeBanner />
 
         {/* ==================== DETAILED SECTIONS (ACCORDIONS) ==================== */}
         <div className="space-y-3 print:hidden">
@@ -528,6 +535,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </div>
 
               {/* Package Options */}
+              <LockedFeature feature="canViewPackageComparison">
               {results.packageOptions && results.packageOptions.length > 0 && (
                 <div>
                   <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -554,13 +562,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   </div>
                 </div>
               )}
+              </LockedFeature>
 
               {/* 25-Year ROI Timeline */}
+              <LockedFeature feature="canViewROIChart">
               <ROITimeline
                 initialCost={results.totalCost}
                 yearlyEnergy={results.energyYear}
                 electricityPrice={results.climateData?.location ? (results.savingsYear / results.energyYear) : 1.95}
               />
+              </LockedFeature>
 
               {/* Cumulative Savings Chart */}
               <div className="bg-card rounded-2xl border border-border/50 p-5">
@@ -680,6 +691,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </Collapsible>
 
           {/* ==================== ACCORDION 4: UNCERTAINTY & SENSITIVITY ==================== */}
+          <LockedFeature feature="canViewSensitivity">
           <Collapsible>
             <CollapsibleTrigger className="w-full flex items-center justify-between p-5 bg-card rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors group">
               <div className="flex items-center gap-3">
@@ -722,6 +734,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </div>
             </CollapsibleContent>
           </Collapsible>
+          </LockedFeature>
 
         </div>
 
@@ -765,12 +778,12 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                     <SelectItem value="ar">🇪🇬 عربي</SelectItem>
                   </SelectContent>
                 </Select>
-                <FeatureGate feature="pdf_export">
+                <LockedFeature feature="canExportPDF">
                   <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors disabled:opacity-50">
                     {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     {isGeneratingPdf ? "..." : t('results.downloadReport')}
                   </button>
-                </FeatureGate>
+                </LockedFeature>
               </div>
               
               <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
@@ -778,14 +791,14 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                 {t('results.printReport')}
               </button>
               {shareableParams && (
-                <FeatureGate feature="report_sharing">
+                <LockedFeature feature="canShareReport">
                   <ShareDialog params={shareableParams} trigger={
                     <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
                       <Share2 className="w-4 h-4" />
                       {t('results.shareResults')}
                     </button>
                   } />
-                </FeatureGate>
+                </LockedFeature>
               )}
             </div>
           </div>
