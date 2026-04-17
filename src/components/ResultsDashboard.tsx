@@ -535,6 +535,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </div>
 
               {/* Package Options */}
+              <LockedFeature feature="canViewPackageComparison">
               {results.packageOptions && results.packageOptions.length > 0 && (
                 <div>
                   <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -561,13 +562,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   </div>
                 </div>
               )}
+              </LockedFeature>
 
               {/* 25-Year ROI Timeline */}
+              <LockedFeature feature="canViewROIChart">
               <ROITimeline
                 initialCost={results.totalCost}
                 yearlyEnergy={results.energyYear}
                 electricityPrice={results.climateData?.location ? (results.savingsYear / results.energyYear) : 1.95}
               />
+              </LockedFeature>
 
               {/* Cumulative Savings Chart */}
               <div className="bg-card rounded-2xl border border-border/50 p-5">
