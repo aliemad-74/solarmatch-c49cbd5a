@@ -16,6 +16,9 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
 import WhySolarMatch from "./pages/WhySolarMatch";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Contact from "./pages/Contact";
 
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -51,6 +54,9 @@ const App = () => (
                   <Route path="/account" element={<Account />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/contact" element={<Contact />} />
 
                   {/* Admin routes */}
                   <Route path="/admin/login" element={<AdminLogin />} />
