@@ -113,6 +113,18 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
             const isNewUser = (now.getTime() - createdAt.getTime()) < 60000;
             if (isNewUser) {
               recordRegistrationTracking(currentSession.user.id);
+              // Update profile with metadata fields for new users
+              const meta = currentSession.user.user_metadata;
+              if (meta?.profile_type || meta?.agreed_to_terms) {
+                setTimeout(async () => {
+                  await supabase.from('profiles').update({
+                    profile_type: meta.profile_type || 'standard',
+                    agreed_to_terms: meta.agreed_to_terms || false,
+                    agreed_at: meta.agreed_to_terms ? new Date().toISOString() : null,
+                    marketing_consent: true,
+                  }).eq('user_id', currentSession.user.id);
+                }, 2000);
+              }
             }
           }
 
