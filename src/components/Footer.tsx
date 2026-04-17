@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import SolarMatchLogo from "./SolarMatchLogo";
 
 const Footer = () => {
@@ -25,9 +26,9 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/60">
             <p>© 2025 SolarMatch. Built for the Innovation Competition.</p>
             <div className="flex items-center gap-6">
-              <span className="hover:text-white transition-colors cursor-pointer">Privacy</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Terms</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Contact</span>
+              <Link to="/privacy" className="hover:text-white transition-colors">{t('footer.privacy', 'Privacy')}</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">{t('footer.terms', 'Terms')}</Link>
+              <Link to="/contact" className="hover:text-white transition-colors">{t('footer.contact', 'Contact')}</Link>
             </div>
           </div>
         </div>
