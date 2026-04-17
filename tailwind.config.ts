@@ -74,6 +74,12 @@ export default {
           green: "hsl(var(--solar-green))",
           teal: "hsl(var(--solar-teal))",
           navy: "hsl(var(--solar-navy))",
+          blue: "hsl(var(--solar-blue))",
+          "blue-soft": "hsl(var(--solar-blue-soft))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

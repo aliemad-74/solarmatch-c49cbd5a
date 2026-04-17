@@ -10,7 +10,7 @@ const Footer = () => {
     <footer className="border-t border-border bg-[hsl(157_53%_18%)] text-white print:hidden pb-20 md:pb-0">
       <div className="container mx-auto px-4 py-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <SolarMatchLogo variant="full" size={72} />
+          <SolarMatchLogo variant="full" size={120} />
 
           <div className="text-center md:text-right">
             <p className="text-sm text-white/80 mb-1 flex items-center justify-center md:justify-end gap-1">

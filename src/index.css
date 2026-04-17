@@ -41,6 +41,12 @@
     --solar-orange: 39 66% 50%;
     --solar-teal: 157 53% 18%;        /* #154737 */
     --solar-navy: 157 55% 27%;
+    --solar-blue: 202 51% 36%;        /* #2D6A8A — secondary technical accent */
+    --solar-blue-soft: 202 45% 94%;   /* tint for badges/cards */
+
+    /* Info / link / AI accent */
+    --info: 202 51% 36%;
+    --info-foreground: 0 0% 100%;
 
     --destructive: 1 41% 46%;         /* #A94442 */
     --destructive-foreground: 0 0% 100%;
@@ -100,6 +106,10 @@
     --solar-orange: 39 60% 52%;
     --solar-teal: 157 45% 22%;
     --solar-navy: 157 50% 30%;
+    --solar-blue: 202 50% 52%;
+    --solar-blue-soft: 202 30% 18%;
+    --info: 202 50% 52%;
+    --info-foreground: 0 0% 100%;
 
     --destructive: 1 45% 42%;
     --destructive-foreground: 0 0% 100%;
