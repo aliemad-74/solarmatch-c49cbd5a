@@ -93,11 +93,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           templateData: {
             name: profile.name,
             location: locationName,
-            systemSizeKw: results.systemSizeKw,
+            systemSizeKw: results.kWInstalled,
             annualProduction: Math.round(results.energyYear),
             annualSavings: Math.round(results.savingsYear),
             paybackYears: results.paybackYears,
-            co2Saved: Math.round(results.co2Year),
+            co2Saved: Math.round(results.co2Saved),
             feasibility: feasibilityLabel,
             reportUrl: window.location.href,
           },
