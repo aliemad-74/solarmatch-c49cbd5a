@@ -827,6 +827,12 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                     {isGeneratingPdf ? "..." : t('results.downloadReport')}
                   </button>
                 </LockedFeature>
+                {profile?.email && (
+                  <button onClick={handleEmailReport} disabled={isEmailingReport} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-accent text-sm font-medium hover:bg-accent/20 transition-colors disabled:opacity-50">
+                    {isEmailingReport ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                    {isEmailingReport ? "..." : (isAr ? "إرسال بالبريد" : "Email Report")}
+                  </button>
+                )}
               </div>
               
               <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors">
