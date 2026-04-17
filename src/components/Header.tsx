@@ -50,7 +50,7 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border print:hidden">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <SolarMatchLogo variant="full" size={56} />
+          <SolarMatchLogo variant="full" size={140} />
         </Link>
         
         {/* Desktop Navigation */}
