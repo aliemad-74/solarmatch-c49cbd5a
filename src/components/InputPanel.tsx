@@ -134,24 +134,33 @@ const InputPanel = ({
   // Get all solar insights from NASA climate data
   const insights = getAllSolarInsights(climate, isArabic);
 
-  // Handle Farm Mode toggle - sync area and building type
-  useEffect(() => {
-    if (farmMode) {
-      // When enabling farm mode, set building type to agricultural
-      setBuildingType("agricultural");
-      // Convert feddan to sqm
-      setRooftopArea(Math.round(areaInFeddans * FEDDAN_TO_SQM));
-      // Disable building mode
-      if (buildingMode) setBuildingMode(false);
-    }
-  }, [farmMode, areaInFeddans]);
+  // Sync farm mode and building mode based on building type selection
+  const isFarmType = buildingType === 'agricultural';
+  const isMultiUnit = buildingType === 'apartment';
 
-  // Handle building mode toggle - disable farm mode
   useEffect(() => {
-    if (buildingMode && farmMode) {
+    if (isFarmType) {
+      setFarmMode(true);
+      setBuildingMode(false);
+      setRooftopArea(Math.round(areaInFeddans * FEDDAN_TO_SQM));
+    } else {
       setFarmMode(false);
     }
-  }, [buildingMode]);
+  }, [buildingType]);
+
+  useEffect(() => {
+    if (isFarmType && areaInFeddans > 0) {
+      setRooftopArea(Math.round(areaInFeddans * FEDDAN_TO_SQM));
+    }
+  }, [areaInFeddans]);
+
+  useEffect(() => {
+    if (isMultiUnit) {
+      setBuildingMode(true);
+    } else if (!isFarmType) {
+      setBuildingMode(false);
+    }
+  }, [buildingType]);
 
   // Bill-to-kWh estimation
   useEffect(() => {
@@ -167,14 +176,18 @@ const InputPanel = ({
     }
   }, [monthlyBill, usageInputMethod, buildingType]);
 
-  // Building type labels with translations
-  const buildingTypeLabels: Record<BuildingType, string> = {
-    residential: t('buildingTypes.residential'),
-    apartment: t('buildingTypes.apartment'),
-    commercial: t('buildingTypes.commercial'),
-    industrial: t('buildingTypes.industrial'),
-    agricultural: t('buildingTypes.agricultural'),
+  // Building type labels with translations and icons
+  const buildingTypeConfig: Record<BuildingType, { label: string; icon: string }> = {
+    residential: { label: t('buildingTypes.residential'), icon: "🏠" },
+    commercial: { label: t('buildingTypes.commercial'), icon: "🏢" },
+    industrial: { label: t('buildingTypes.industrial'), icon: "🏭" },
+    apartment: { label: t('buildingTypes.apartment'), icon: "🏗" },
+    agricultural: { label: t('buildingTypes.agricultural'), icon: "🌾" },
   };
+
+  const buildingTypeLabels: Record<BuildingType, string> = Object.fromEntries(
+    Object.entries(buildingTypeConfig).map(([k, v]) => [k, v.label])
+  ) as Record<BuildingType, string>;
 
   // Package labels with translations
   const packageLabels: Record<string, string> = {
@@ -183,12 +196,13 @@ const InputPanel = ({
     premium: t('packages.premium'),
   };
 
-  // Agricultural activity labels
-  const activityLabels: Record<AgriculturalActivity, { label: string; icon: string }> = {
-    drip_irrigation: { label: t('farmMode.dripIrrigation'), icon: "🌱" },
-    greenhouse: { label: t('farmMode.greenhouse'), icon: "🏠" },
-    poultry_livestock: { label: t('farmMode.poultryLivestock'), icon: "🐔" },
-    cold_storage: { label: t('farmMode.coldStorage'), icon: "❄️" },
+  // Agricultural activity labels (updated for new options)
+  const activityLabels: Record<string, { label: string; icon: string }> = {
+    drip_irrigation: { label: isArabic ? "ري بالتنقيط" : "Drip Irrigation", icon: "💧" },
+    surface_irrigation: { label: isArabic ? "ري بالغمر" : "Surface Irrigation", icon: "🌊" },
+    cold_storage: { label: isArabic ? "تبريد" : "Cold Storage", icon: "❄️" },
+    greenhouse: { label: isArabic ? "إضاءة صوب" : "Greenhouse Lighting", icon: "💡" },
+    mixed: { label: isArabic ? "متعدد" : "Mixed", icon: "🔄" },
   };
 
   return (
