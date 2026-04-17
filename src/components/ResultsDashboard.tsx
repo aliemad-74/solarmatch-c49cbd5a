@@ -1,4 +1,6 @@
-import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone, Satellite, Wind, Mountain } from "lucide-react";
+import { Zap, DollarSign, Calendar, Leaf, Sun, TrendingUp, AlertTriangle, Gauge, Building, Users, PlugZap, Battery, Unplug, Package, Download, Loader2, Share2, Printer, LayoutGrid, CheckCircle2, XCircle, AlertCircle, Info, ArrowUp, ArrowDown, Crosshair, BarChart3, Settings2, ChevronDown, Phone, Satellite, Wind, Mountain, Mail } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useMarketData } from "@/hooks/useMarketData";
 import { MarketDataBadge } from "@/components/MarketDataBadge";
@@ -47,6 +49,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   const planFeatures = usePlanFeatures();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isEmailingReport, setIsEmailingReport] = useState(false);
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>(isAr ? "ar" : "en");
   const { panelPrices, tariffs, refresh: refreshMarketData } = useMarketData();
 
@@ -69,6 +72,46 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
   };
 
   const handlePrint = () => window.print();
+
+  const handleEmailReport = async () => {
+    if (!results || isEmailingReport) return;
+    if (!profile?.email) {
+      toast.error(isAr ? "يجب تسجيل الدخول أولاً" : "Please sign in first");
+      return;
+    }
+    setIsEmailingReport(true);
+    try {
+      const feasibilityLabel = feasibilityStatus === 'suitable' ? (isAr ? 'مناسب' : 'Suitable')
+        : feasibilityStatus === 'conditional' ? (isAr ? 'مناسب بشروط' : 'Conditionally Suitable')
+        : feasibilityStatus === 'oversized' ? (isAr ? 'نظام كبير' : 'Oversized')
+        : (isAr ? 'غير مناسب' : 'Not Suitable');
+      const { error } = await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'solar-report',
+          recipientEmail: profile.email,
+          idempotencyKey: `solar-report-${profile.user_id}-${Date.now()}`,
+          templateData: {
+            name: profile.name,
+            location: locationName,
+            systemSizeKw: results.systemSizeKw,
+            annualProduction: Math.round(results.energyYear),
+            annualSavings: Math.round(results.savingsYear),
+            paybackYears: results.paybackYears,
+            co2Saved: Math.round(results.co2Year),
+            feasibility: feasibilityLabel,
+            reportUrl: window.location.href,
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success(isAr ? `تم إرسال التقرير إلى ${profile.email}` : `Report sent to ${profile.email}`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(isAr ? "فشل إرسال البريد" : "Failed to send email");
+    } finally {
+      setIsEmailingReport(false);
+    }
+  };
 
   // Chart data
   const monthlyData = MONTH_NAMES.map((month, index) => ({
