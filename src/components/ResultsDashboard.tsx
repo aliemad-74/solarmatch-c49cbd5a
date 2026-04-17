@@ -834,12 +834,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
 
         {/* Technical Specifications - only for technical profile users */}
         {profile?.profile_type === 'technical' && (
-          <TechnicalSpecifications
-            kWInstalled={results.kWInstalled}
-            panelCount={results.panelCount}
-            panelWattage={results.panelWattage}
-            energyYear={results.energyYear}
-          />
+          <TechnicalSpecifications results={results} />
         )}
 
       </div>
