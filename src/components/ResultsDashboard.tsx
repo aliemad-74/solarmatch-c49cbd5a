@@ -734,6 +734,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </div>
             </CollapsibleContent>
           </Collapsible>
+          </LockedFeature>
 
         </div>
 
