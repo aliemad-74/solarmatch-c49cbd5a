@@ -44,6 +44,7 @@ interface ResultsDashboardProps {
 const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const { profile } = useUserAuth();
+  const planFeatures = usePlanFeatures();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>(isAr ? "ar" : "en");
