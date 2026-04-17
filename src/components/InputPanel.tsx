@@ -438,24 +438,10 @@ const InputPanel = ({
             </div>
           )}
 
-          {/* ==================== CONSUMPTION SECTION (Hide when Farm Mode is active) ==================== */}
-          <div className={`border-t border-border pt-6 mb-6 ${farmMode ? 'hidden' : ''}`}>
-            <div className="flex items-center justify-between mb-4">
-              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Building className="w-4 h-4 text-muted-foreground" />
-                {t('input.buildingMode')}
-              </Label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{buildingMode ? t('input.multiUnit') : t('input.singleConsumption')}</span>
-                <Switch
-                  checked={buildingMode}
-                  onCheckedChange={setBuildingMode}
-                />
-              </div>
-            </div>
-
-            {buildingMode ? (
-              /* Building Mode: Multiple Units */
+          {/* ==================== CONSUMPTION SECTION ==================== */}
+          <div className={`border-t border-border pt-6 mb-6 ${isFarmType ? 'hidden' : ''}`}>
+            {isMultiUnit ? (
+              /* Multi-Unit: units + avg consumption */
               <div className="bg-muted/30 rounded-xl p-4 space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <Users className="w-4 h-4" />
@@ -463,7 +449,7 @@ const InputPanel = ({
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="num-units" className="text-sm">{t('input.numberOfUnits')}</Label>
+                    <Label htmlFor="num-units" className="text-sm">{isArabic ? "عدد الوحدات" : "Number of Units"}</Label>
                     <Input
                       id="num-units"
                       type="number"
@@ -474,7 +460,7 @@ const InputPanel = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="avg-consumption" className="text-sm">{t('input.avgConsumption')}</Label>
+                    <Label htmlFor="avg-consumption" className="text-sm">{isArabic ? "متوسط استهلاك الوحدة / شهر (كيلوواط)" : "Avg. Unit Consumption / month (kWh)"}</Label>
                     <Input
                       id="avg-consumption"
                       type="number"
