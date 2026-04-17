@@ -106,6 +106,10 @@
     --solar-orange: 39 60% 52%;
     --solar-teal: 157 45% 22%;
     --solar-navy: 157 50% 30%;
+    --solar-blue: 202 50% 52%;
+    --solar-blue-soft: 202 30% 18%;
+    --info: 202 50% 52%;
+    --info-foreground: 0 0% 100%;
 
     --destructive: 1 45% 42%;
     --destructive-foreground: 0 0% 100%;
