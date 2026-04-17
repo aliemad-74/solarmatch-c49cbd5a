@@ -179,6 +179,7 @@ export type Database = {
           profile_type: string
           report_limit: number
           reports_generated: number
+          reports_used_this_month: number
           subscription_end_date: string | null
           subscription_start_date: string | null
           subscription_status: string
@@ -201,6 +202,7 @@ export type Database = {
           profile_type?: string
           report_limit?: number
           reports_generated?: number
+          reports_used_this_month?: number
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_status?: string
@@ -223,6 +225,7 @@ export type Database = {
           profile_type?: string
           report_limit?: number
           reports_generated?: number
+          reports_used_this_month?: number
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_status?: string
@@ -401,6 +404,27 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          plan_interest: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          plan_interest?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          plan_interest?: string
         }
         Relationships: []
       }
