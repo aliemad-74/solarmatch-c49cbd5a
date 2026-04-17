@@ -32,9 +32,19 @@ import { toast } from "sonner";
 const Account = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { user, profile, isLoading } = useUserAuth();
+  const { user, profile, isLoading, refreshProfile } = useUserAuth();
   const isRTL = i18n.language === "ar";
+  const isAr = i18n.language === "ar";
   const dateLocale = i18n.language === "ar" ? ar : enUS;
+  const [marketingConsent, setMarketingConsent] = useState(true);
+  const [profileType, setProfileType] = useState<'standard' | 'technical'>('standard');
+
+  useEffect(() => {
+    if (profile) {
+      setMarketingConsent(profile.marketing_consent);
+      setProfileType((profile.profile_type as 'standard' | 'technical') || 'standard');
+    }
+  }, [profile]);
 
   // Redirect if not logged in
   useEffect(() => {
