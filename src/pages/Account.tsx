@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   User, 
   Mail, 
@@ -18,18 +20,31 @@ import {
   Calendar, 
   MapPin, 
   Zap,
-  ArrowLeft
+  ArrowLeft,
+  Shield,
+  Settings
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const Account = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { user, profile, isLoading } = useUserAuth();
+  const { user, profile, isLoading, refreshProfile } = useUserAuth();
   const isRTL = i18n.language === "ar";
+  const isAr = i18n.language === "ar";
   const dateLocale = i18n.language === "ar" ? ar : enUS;
+  const [marketingConsent, setMarketingConsent] = useState(true);
+  const [profileType, setProfileType] = useState<'standard' | 'technical'>('standard');
+
+  useEffect(() => {
+    if (profile) {
+      setMarketingConsent(profile.marketing_consent);
+      setProfileType((profile.profile_type as 'standard' | 'technical') || 'standard');
+    }
+  }, [profile]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -200,6 +215,78 @@ const Account = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Account Settings */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              {isAr ? "إعدادات الحساب" : "Account Settings"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Profile Type */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">{isAr ? "نوع الحساب" : "Profile Type"}</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={async () => {
+                    setProfileType('standard');
+                    await supabase.from('profiles').update({ profile_type: 'standard' }).eq('user_id', user!.id);
+                    refreshProfile();
+                    toast.success(isAr ? "تم التحديث" : "Updated");
+                  }}
+                  className={`p-4 rounded-xl border text-center transition-all ${
+                    profileType === 'standard'
+                      ? 'bg-primary/10 border-solar-gold ring-2 ring-solar-gold/50'
+                      : 'bg-muted/30 border-border/50 hover:border-primary/50'
+                  }`}
+                >
+                  <span className="text-2xl block mb-1">🏠</span>
+                  <p className="font-medium text-sm">{isAr ? "صاحب عقار أو مشروع" : "Property / Project Owner"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "أبحث عن تركيب طاقة شمسية" : "Looking for solar installation"}</p>
+                </button>
+                <button
+                  onClick={async () => {
+                    setProfileType('technical');
+                    await supabase.from('profiles').update({ profile_type: 'technical' }).eq('user_id', user!.id);
+                    refreshProfile();
+                    toast.success(isAr ? "تم التحديث" : "Updated");
+                  }}
+                  className={`p-4 rounded-xl border text-center transition-all ${
+                    profileType === 'technical'
+                      ? 'bg-primary/10 border-solar-gold ring-2 ring-solar-gold/50'
+                      : 'bg-muted/30 border-border/50 hover:border-primary/50'
+                  }`}
+                >
+                  <span className="text-2xl block mb-1">⚙️</span>
+                  <p className="font-medium text-sm">{isAr ? "مهندس أو مقاول تركيب" : "Engineer / Installer"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "أعمل في مجال الطاقة الشمسية" : "Working in solar energy"}</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Marketing Consent */}
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border">
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="font-medium text-sm">{isAr ? "السماح بمشاركة بياناتي مع شركاء التركيب" : "Allow sharing my data with installer partners"}</p>
+                  <p className="text-xs text-muted-foreground">{isAr ? "بيانات التقييم فقط (الموقع، نوع المبنى، حجم النظام)" : "Assessment data only (location, building type, system size)"}</p>
+                </div>
+              </div>
+              <Switch
+                checked={marketingConsent}
+                onCheckedChange={async (checked) => {
+                  setMarketingConsent(checked);
+                  await supabase.from('profiles').update({ marketing_consent: checked }).eq('user_id', user!.id);
+                  refreshProfile();
+                  toast.success(isAr ? "تم التحديث" : "Updated");
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Reports History */}
         <Card className="mt-6">

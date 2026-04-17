@@ -38,6 +38,11 @@ const Privacy = () => {
           body: "لا نبيع بياناتك لأي طرف ثالث. نشاركها فقط مع مزودي الخدمات التقنية الموثوقين (مثل Supabase وGoogle Maps) بالحد الأدنى اللازم لتشغيل المنصة، وفي حالة تواصلك مع شركات تركيب نشارك بياناتك معهم بموافقتك الصريحة فقط.",
         },
         {
+          icon: Shield,
+          title: "استخدام البيانات لأغراض التسويق",
+          body: "بموافقتك على شروط الاستخدام، قد تشارك SolarMatch بيانات تقييمك (الموقع الجغرافي، نوع المبنى، حجم النظام المقترح) مع شركاء التركيب المعتمدين بهدف تزويدك بعروض تركيب مناسبة.\n\nلن تُشارَك بياناتك الشخصية (الاسم، البريد الإلكتروني، رقم الهاتف) مع أي طرف خارج شبكة الشركاء المعتمدين لدى SolarMatch.\n\nيمكنك إلغاء هذه الموافقة في أي وقت من خلال إعدادات حسابك، وسيتوقف مشاركة بياناتك فوراً.",
+        },
+        {
           icon: Mail,
           title: "تواصل معنا",
           body: "لأي استفسار بخصوص الخصوصية أو لممارسة حقوقك، راسلنا على privacy@solarmatch.app أو عبر واتساب على +20 111 100 9619.",
@@ -68,6 +73,11 @@ const Privacy = () => {
           icon: Database,
           title: "Data Sharing",
           body: "We do not sell your data to any third party. We only share it with trusted service providers (such as Supabase and Google Maps) at the minimum required to operate the platform. If you contact installer companies, we share your data with them only with your explicit consent.",
+        },
+        {
+          icon: Shield,
+          title: "Use of Data for Marketing Purposes",
+          body: "By agreeing to our Terms of Use, SolarMatch may share your assessment data (location, building type, recommended system size) with our verified installer partners to provide you with relevant installation offers.\n\nYour personal data (name, email, phone number) will never be shared with any party outside SolarMatch's approved installer network.\n\nYou may withdraw this consent at any time from your Account Settings. Data sharing will stop immediately upon withdrawal.",
         },
         {
           icon: Mail,
@@ -111,7 +121,7 @@ const Privacy = () => {
                   </div>
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold mb-2">{s.title}</h2>
-                    <p className="text-muted-foreground leading-relaxed">{s.body}</p>
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{s.body}</p>
                   </div>
                 </div>
               </div>

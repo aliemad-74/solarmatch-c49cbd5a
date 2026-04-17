@@ -12,9 +12,11 @@ import ContactExpertDialog from "./ContactExpertDialog";
 import FeatureGate from "./FeatureGate";
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
+import TechnicalSpecifications from "./TechnicalSpecifications";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { generateSolarReport, ReportLanguage } from "@/lib/pdfReport";
 import { useState, useEffect } from "react";
+import { useUserAuth } from "@/contexts/UserAuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,6 +40,7 @@ interface ResultsDashboardProps {
 
 const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
+  const { profile } = useUserAuth();
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>(isAr ? "ar" : "en");
@@ -827,6 +830,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </div>
             ) : null}
           </div>
+        )}
+
+        {/* Technical Specifications - only for technical profile users */}
+        {profile?.profile_type === 'technical' && (
+          <TechnicalSpecifications results={results} />
         )}
 
       </div>
