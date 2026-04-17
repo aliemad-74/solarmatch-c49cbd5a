@@ -10,6 +10,8 @@ import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 
 import FeatureGate from "./FeatureGate";
+import LockedFeature from "./LockedFeature";
+import UpgradeBanner from "./UpgradeBanner";
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import TechnicalSpecifications from "./TechnicalSpecifications";
@@ -17,6 +19,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { generateSolarReport, ReportLanguage } from "@/lib/pdfReport";
 import { useState, useEffect } from "react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
