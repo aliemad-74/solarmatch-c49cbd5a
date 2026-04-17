@@ -34,7 +34,9 @@ const signUpSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
   phone: z.string().regex(/^[0-9+\-\(\) ]{7,20}$/, 'Invalid phone number'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  userType: z.enum(['individual', 'business'])
+  userType: z.enum(['individual', 'business']),
+  profileType: z.enum(['standard', 'technical']),
+  agreedToTerms: z.literal(true, { errorMap: () => ({ message: 'You must agree to the terms' }) })
 });
 
 const signInSchema = z.object({
@@ -57,7 +59,9 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
     email: '',
     phone: '',
     password: '',
-    userType: 'individual' as 'individual' | 'business'
+    userType: 'individual' as 'individual' | 'business',
+    profileType: 'standard' as 'standard' | 'technical',
+    agreedToTerms: false,
   });
 
   const [signInData, setSignInData] = useState({
@@ -130,7 +134,9 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
         signUpData.password, 
         signUpData.name,
         signUpData.phone,
-        signUpData.userType
+        signUpData.userType,
+        signUpData.profileType,
+        signUpData.agreedToTerms
       );
       
       if (error) {
