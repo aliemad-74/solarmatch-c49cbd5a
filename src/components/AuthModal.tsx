@@ -8,6 +8,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useUserAuth } from '@/contexts/UserAuthContext';
 import { Loader2, Sun, Shield, CheckCircle2, AlertCircle, Mail } from 'lucide-react';
 import { z } from 'zod';
@@ -362,6 +363,41 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
 
           <TabsContent value="signup" className="space-y-3 mt-3">
             <form onSubmit={handleSignUp} className="space-y-3">
+              {/* Profile Type Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm">{isRTL ? "نوع الحساب" : "Profile Type"}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSignUpData({ ...signUpData, profileType: 'standard' })}
+                    disabled={isDisabled}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      signUpData.profileType === 'standard'
+                        ? 'bg-primary/10 border-solar-gold ring-2 ring-solar-gold/50'
+                        : 'bg-muted/30 border-border/50 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-2xl block mb-1">🏠</span>
+                    <p className="font-medium text-xs">{isRTL ? "صاحب عقار أو مشروع" : "Property / Project Owner"}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{isRTL ? "أبحث عن تركيب طاقة شمسية" : "Looking for solar installation"}</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignUpData({ ...signUpData, profileType: 'technical' })}
+                    disabled={isDisabled}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      signUpData.profileType === 'technical'
+                        ? 'bg-primary/10 border-solar-gold ring-2 ring-solar-gold/50'
+                        : 'bg-muted/30 border-border/50 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-2xl block mb-1">⚙️</span>
+                    <p className="font-medium text-xs">{isRTL ? "مهندس أو مقاول تركيب" : "Engineer / Installer"}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{isRTL ? "أعمل في مجال الطاقة الشمسية" : "Working in solar energy"}</p>
+                  </button>
+                </div>
+              </div>
+
               {/* User Type Selection */}
               <div className="space-y-2">
                 <Label className="text-sm">{t('auth.userType')}</Label>
@@ -448,16 +484,30 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
                 {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
               </div>
 
-              <div className="flex items-start gap-2 p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-                <Shield className="w-3 h-3 mt-0.5 text-primary flex-shrink-0" />
-                <p>{t('auth.privacyNote')}</p>
+              {/* Terms Checkbox */}
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="agree-terms"
+                  checked={signUpData.agreedToTerms}
+                  onCheckedChange={(checked) => setSignUpData({ ...signUpData, agreedToTerms: checked === true })}
+                  disabled={isDisabled}
+                  className="mt-0.5"
+                />
+                <label htmlFor="agree-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                  {isRTL ? (
+                    <>أوافق على <Link to="/privacy" onClick={() => onOpenChange(false)} className="text-primary hover:underline">سياسة الخصوصية</Link> وشروط الاستخدام</>
+                  ) : (
+                    <>I agree to the <Link to="/privacy" onClick={() => onOpenChange(false)} className="text-primary hover:underline">Privacy Policy</Link> and Terms of Use</>
+                  )}
+                </label>
               </div>
+              {fieldErrors.agreedToTerms && <p className="text-xs text-destructive">{fieldErrors.agreedToTerms}</p>}
 
               <Button
                 type="submit"
                 size="sm"
                 className="w-full bg-gradient-to-r from-primary to-solar-gold hover:opacity-90"
-                disabled={isDisabled}
+                disabled={isDisabled || !signUpData.agreedToTerms}
               >
                 {isSubmitting ? (
                   <>
