@@ -166,13 +166,17 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agreed_at: string | null
+          agreed_to_terms: boolean
           avatar_url: string | null
           created_at: string
           email: string
           extra_reports_balance: number
           id: string
+          marketing_consent: boolean
           name: string
           phone: string | null
+          profile_type: string
           report_limit: number
           reports_generated: number
           subscription_end_date: string | null
@@ -184,13 +188,17 @@ export type Database = {
           user_type: string
         }
         Insert: {
+          agreed_at?: string | null
+          agreed_to_terms?: boolean
           avatar_url?: string | null
           created_at?: string
           email: string
           extra_reports_balance?: number
           id?: string
+          marketing_consent?: boolean
           name: string
           phone?: string | null
+          profile_type?: string
           report_limit?: number
           reports_generated?: number
           subscription_end_date?: string | null
@@ -202,13 +210,17 @@ export type Database = {
           user_type?: string
         }
         Update: {
+          agreed_at?: string | null
+          agreed_to_terms?: boolean
           avatar_url?: string | null
           created_at?: string
           email?: string
           extra_reports_balance?: number
           id?: string
+          marketing_consent?: boolean
           name?: string
           phone?: string | null
+          profile_type?: string
           report_limit?: number
           reports_generated?: number
           subscription_end_date?: string | null
