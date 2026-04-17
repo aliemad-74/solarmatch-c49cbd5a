@@ -281,6 +281,9 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           )}
         </div>
 
+        {/* Upgrade Banner for free users */}
+        <UpgradeBanner />
+
         {/* ==================== DETAILED SECTIONS (ACCORDIONS) ==================== */}
         <div className="space-y-3 print:hidden">
 
