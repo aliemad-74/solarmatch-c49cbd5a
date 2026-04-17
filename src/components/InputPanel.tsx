@@ -364,68 +364,47 @@ const InputPanel = ({
             </div>
           )}
 
-          {/* ==================== FARM MODE SECTION ==================== */}
-          <div className="border-t border-border pt-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Wheat className="w-4 h-4 text-muted-foreground" />
-                {t('farmMode.title')}
-              </Label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{farmMode ? (isArabic ? 'مفعّل' : 'Enabled') : (isArabic ? 'معطّل' : 'Disabled')}</span>
-                <Switch
-                  checked={farmMode}
-                  onCheckedChange={setFarmMode}
-                />
-              </div>
-            </div>
-
-            {farmMode && (
+          {/* ==================== AREA INPUT (conditional on building type) ==================== */}
+          {isFarmType && (
+            <div className="border-t border-border pt-6 mb-6">
               <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
                 <CardContent className="p-4 space-y-4">
                   {/* Area in Feddans */}
                   <div className="space-y-3">
                     <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-primary" />
-                      {t('farmMode.areaInFeddans')}
+                      {isArabic ? "المساحة بالفدان" : "Area in Feddans"}
                     </Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="number"
-                        value={areaInFeddans || ''}
-                        onChange={(e) => setAreaInFeddans(e.target.value === '' ? 0 : Number(e.target.value))}
-                        min={0.1}
-                        step={0.5}
-                        className="h-12 text-lg font-medium flex-1"
-                        placeholder={isArabic ? "أدخل المساحة بالفدان" : "Enter area in feddans"}
-                      />
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">
-                        {isArabic ? 'فدان' : 'Feddan'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">=</span>
-                      <span className="font-bold text-primary">{Math.round(areaInFeddans * FEDDAN_TO_SQM).toLocaleString()} m²</span>
-                      <span className="text-xs text-muted-foreground">({t('farmMode.feddanEquivalent')})</span>
+                    <Input
+                      type="number"
+                      value={areaInFeddans || ''}
+                      onChange={(e) => setAreaInFeddans(e.target.value === '' ? 0 : Number(e.target.value))}
+                      min={0.1}
+                      step={0.1}
+                      className="h-12 text-lg font-medium"
+                      placeholder={isArabic ? "مثال: 2.5" : "Example: 2.5"}
+                    />
+                    <div className="space-y-1 text-sm">
+                      <p className="text-muted-foreground">
+                        = <span className="font-bold text-primary">{Math.round(areaInFeddans * FEDDAN_TO_SQM).toLocaleString()}</span> {isArabic ? "م² تقريباً" : "m² approximately"}
+                      </p>
+                      <p className="text-muted-foreground">
+                        ≈ <span className="font-bold text-primary">{(areaInFeddans * 5.88).toFixed(1)}</span> {isArabic ? "ملعب كرة قدم" : "football fields"}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Agricultural Activity Type */}
+                  {/* Agricultural Activity Selector */}
                   <div className="space-y-3">
                     <Label className="text-sm font-medium text-foreground">
-                      {t('farmMode.activityType')}
+                      {isArabic ? "نوع النشاط الزراعي" : "Agricultural Activity"}
                     </Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {(Object.entries(agriculturalActivities) as [AgriculturalActivity, typeof agriculturalActivities[AgriculturalActivity]][]).map(([key, data]) => (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                      {Object.entries(activityLabels).map(([key, config]) => (
                         <button
                           key={key}
                           onClick={() => {
-                            setAgriculturalActivity(key);
-                            // Auto-suggest consumption based on activity and feddans
-                            const estimated = key === 'drip_irrigation' 
-                              ? data.estimatedConsumption * areaInFeddans
-                              : data.estimatedConsumption;
-                            setFarmEquipmentConsumption(Math.round(estimated));
+                            setAgriculturalActivity(key as AgriculturalActivity);
                           }}
                           className={`p-3 rounded-xl border text-center transition-all ${
                             agriculturalActivity === key 
@@ -433,49 +412,31 @@ const InputPanel = ({
                               : "bg-background/80 border-border/50 text-muted-foreground hover:border-primary/50"
                           }`}
                         >
-                          <span className="text-xl">{activityLabels[key].icon}</span>
-                          <p className="font-medium text-xs mt-1">{activityLabels[key].label}</p>
+                          <span className="text-xl">{config.icon}</span>
+                          <p className="font-medium text-xs mt-1">{config.label}</p>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Equipment Consumption */}
+                  {/* Farm consumption */}
                   <div className="space-y-3">
                     <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                       <Zap className="w-4 h-4 text-primary" />
-                      {t('farmMode.equipmentConsumption')}
+                      {isArabic ? "الاستهلاك الشهري للمزرعة (كيلوواط)" : "Monthly Farm Consumption (kWh)"}
                     </Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="number"
-                        value={farmEquipmentConsumption || ''}
-                        onChange={(e) => setFarmEquipmentConsumption(e.target.value === '' ? 0 : Number(e.target.value))}
-                        min={0}
-                        className="h-12 text-lg font-medium flex-1"
-                      />
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">
-                        {t('common.kWh')}/{t('common.month')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Quick Estimation Tips */}
-                  <div className="bg-background/60 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                      <Lightbulb className="w-4 h-4 text-amber-500" />
-                      {t('farmMode.estimationTip')}
-                    </div>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• {t('farmMode.pumpEstimate')}</li>
-                      <li>• {t('farmMode.greenhouseEstimate')}</li>
-                      <li>• {t('farmMode.poultryEstimate')}</li>
-                    </ul>
+                    <Input
+                      type="number"
+                      value={farmEquipmentConsumption || ''}
+                      onChange={(e) => setFarmEquipmentConsumption(e.target.value === '' ? 0 : Number(e.target.value))}
+                      min={0}
+                      className="h-12 text-lg font-medium"
+                    />
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* ==================== CONSUMPTION SECTION (Hide when Farm Mode is active) ==================== */}
           <div className={`border-t border-border pt-6 mb-6 ${farmMode ? 'hidden' : ''}`}>
