@@ -11,6 +11,7 @@ import {
   Html,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -20,32 +21,34 @@ interface InviteEmailProps {
   confirmationUrl: string
 }
 
-export const InviteEmail = ({
-  siteName,
-  siteUrl,
-  confirmationUrl,
-}: InviteEmailProps) => (
+export const InviteEmail = ({ siteName, siteUrl, confirmationUrl }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to join {siteName}</Preview>
+    <Preview>تم دعوتك للانضمام إلى {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
-        <Text style={text}>
-          You've been invited to join{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          . Click the button below to accept the invitation and create your
-          account.
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Accept Invitation
-        </Button>
-        <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
-        </Text>
+        <Section style={header}>
+          <Heading style={brand}>SolarMatch ☀️</Heading>
+        </Section>
+        <Section style={card}>
+          <Heading style={h1}>لقد تم دعوتك</Heading>
+          <Text style={text}>
+            تم دعوتك للانضمام إلى{' '}
+            <Link href={siteUrl} style={link}>
+              <strong>{siteName}</strong>
+            </Link>
+            . اضغط على الزر أدناه لقبول الدعوة وإنشاء حسابك.
+          </Text>
+          <Section style={{ textAlign: 'center', margin: '32px 0' }}>
+            <Button style={button} href={confirmationUrl}>
+              قبول الدعوة
+            </Button>
+          </Section>
+          <Text style={footer}>
+            إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة بأمان.
+          </Text>
+        </Section>
+        <Text style={signature}>— فريق SolarMatch</Text>
       </Container>
     </Body>
   </Html>
@@ -53,27 +56,14 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Inter, Arial, sans-serif', padding: '32px 0' }
+const container = { maxWidth: '560px', margin: '0 auto', padding: '0 20px' }
+const header = { textAlign: 'center' as const, padding: '8px 0 24px' }
+const brand = { fontSize: '24px', fontWeight: 'bold' as const, color: '#355C7D', margin: 0, fontFamily: '"Space Grotesk", Inter, Arial, sans-serif' }
+const card = { backgroundColor: '#F7F8F6', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '32px 28px' }
+const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#1A1A1A', margin: '0 0 18px', fontFamily: '"Space Grotesk", Inter, Arial, sans-serif' }
+const text = { fontSize: '15px', color: '#1A1A1A', lineHeight: '1.6', margin: '0 0 16px' }
+const link = { color: '#355C7D', textDecoration: 'underline' }
+const button = { backgroundColor: '#355C7D', color: '#ffffff', fontSize: '15px', fontWeight: 'bold' as const, borderRadius: '12px', padding: '14px 28px', textDecoration: 'none', display: 'inline-block' }
+const footer = { fontSize: '13px', color: '#667085', margin: '24px 0 0', lineHeight: '1.5' }
+const signature = { fontSize: '13px', color: '#667085', textAlign: 'center' as const, margin: '20px 0 0' }
