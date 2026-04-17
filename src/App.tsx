@@ -20,6 +20,8 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
 import Unsubscribe from "./pages/Unsubscribe";
+import SeoTopicPage from "./pages/SeoTopicPage";
+import { SEO_SLUGS } from "./components/seo/seoContent";
 
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -60,7 +62,21 @@ const App = () => (
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
 
-                  {/* Admin routes */}
+                  {/* SEO landing pages — EN + AR */}
+                  {SEO_SLUGS.map((slug) => (
+                    <Route
+                      key={`en-${slug}`}
+                      path={`/${slug}`}
+                      element={<SeoTopicPage lang="en" slug={slug} />}
+                    />
+                  ))}
+                  {SEO_SLUGS.map((slug) => (
+                    <Route
+                      key={`ar-${slug}`}
+                      path={`/ar/${slug}`}
+                      element={<SeoTopicPage lang="ar" slug={slug} />}
+                    />
+                  ))}
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route
                     path="/admin"
