@@ -272,28 +272,26 @@ const InputPanel = ({
             </div>
           </div>
 
-          {/* Building Type Selection - Hide Agricultural option when not in farm mode */}
-          <div className={`space-y-3 mb-6 ${farmMode ? 'hidden' : ''}`}>
+          {/* Building Type Selection - All 5 types as horizontal cards */}
+          <div className="space-y-3 mb-6">
             <Label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Building2 className="w-4 h-4 text-muted-foreground" />
               {t('input.buildingType')}
               <TooltipProvider><Tooltip><TooltipTrigger asChild><HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px]"><p className="text-xs">{t('input.buildingTypeTooltip')}</p></TooltipContent></Tooltip></TooltipProvider>
             </Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {(Object.entries(buildingTypes) as [BuildingType, typeof buildingTypes[BuildingType]][])
-                .filter(([key]) => key !== 'agricultural')
-                .map(([key, data]) => (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              {(Object.entries(buildingTypeConfig) as [BuildingType, { label: string; icon: string }][]).map(([key, config]) => (
                 <button
                   key={key}
                   onClick={() => setBuildingType(key)}
                   className={`p-3 rounded-xl border text-center transition-all ${
                     buildingType === key 
-                      ? "bg-primary/10 border-primary text-primary" 
+                      ? "bg-primary/10 border-solar-gold text-primary ring-2 ring-solar-gold/50" 
                       : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/50"
                   }`}
                 >
-                  <p className="font-medium text-sm">{buildingTypeLabels[key]}</p>
-                  <p className="text-xs opacity-70">{Math.round(data.usableFraction * 100)}% {isArabic ? 'قابل للاستخدام' : 'usable'}</p>
+                  <span className="text-xl block mb-1">{config.icon}</span>
+                  <p className="font-medium text-xs">{config.label}</p>
                 </button>
               ))}
             </div>
