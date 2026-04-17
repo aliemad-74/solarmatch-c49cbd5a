@@ -832,6 +832,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           </div>
         )}
 
+        {/* Technical Specifications - only for technical profile users */}
+        {profile?.profile_type === 'technical' && (
+          <TechnicalSpecifications
+            kWInstalled={results.kWInstalled}
+            panelCount={results.panelCount}
+            panelWattage={results.panelWattage}
+            energyYear={results.energyYear}
+          />
+        )}
+
       </div>
     </section>
   );
