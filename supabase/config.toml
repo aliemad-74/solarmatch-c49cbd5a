@@ -1,25 +1,21 @@
 project_id = "hgskuophhidgbuluxiel"
 
-[functions.solar-advisor]
-verify_jwt = false
-
-[functions.building-footprints]
-verify_jwt = false
-
-[functions.solar-engine]
-verify_jwt = false
-
-[functions.capture-lead]
-verify_jwt = false
-
-[functions.google-solar]
-verify_jwt = false
-
-[functions.scrape-solar-prices]
-verify_jwt = false
-
-[functions.scrape-tariffs]
-verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = true
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.building-footprints]
+    verify_jwt = false
+  [functions.capture-lead]
+    verify_jwt = false
+  [functions.google-solar]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.scrape-solar-prices]
+    verify_jwt = false
+  [functions.scrape-tariffs]
+    verify_jwt = false
+  [functions.solar-advisor]
+    verify_jwt = false
+  [functions.solar-engine]
+    verify_jwt = false
