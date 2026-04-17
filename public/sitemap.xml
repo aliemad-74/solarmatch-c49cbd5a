@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://solarmatch.site/</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+
+  </url>
+  <url>
+    <loc>https://solarmatch.site/how-it-works</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+
+  </url>
+  <url>
+    <loc>https://solarmatch.site/about</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+
+  </url>
+  <url>
+    <loc>https://solarmatch.site/pricing</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+
+  </url>
+  <url>
+    <loc>https://solarmatch.site/why-solarmatch</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+
+  </url>
+  <url>
+    <loc>https://solarmatch.site/contact</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+
+  </url>
+  <url>
+    <loc>https://solarmatch.site/features</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/features"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/features"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/features"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/features</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/features"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/features"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/features"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/pricing-plans</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/pricing-plans"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/pricing-plans"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/pricing-plans"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/pricing-plans</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/pricing-plans"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/pricing-plans"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/pricing-plans"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/about-solarmatch</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/about-solarmatch"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/about-solarmatch"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/about-solarmatch"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/about-solarmatch</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/about-solarmatch"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/about-solarmatch"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/about-solarmatch"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/contact-us</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/contact-us"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/contact-us"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/contact-us"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/contact-us</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/contact-us"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/contact-us"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/contact-us"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/faq</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/faq"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/faq"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/faq</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/faq"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/faq"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/solar-cost-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-cost-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-cost-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-cost-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/solar-cost-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-cost-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-cost-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-cost-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/solar-for-farms-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-for-farms-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-for-farms-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-for-farms-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/solar-for-farms-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-for-farms-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-for-farms-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-for-farms-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/solar-for-businesses-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-for-businesses-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-for-businesses-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-for-businesses-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/solar-for-businesses-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-for-businesses-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-for-businesses-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-for-businesses-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/solar-for-homes-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-for-homes-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-for-homes-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-for-homes-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/solar-for-homes-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-for-homes-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-for-homes-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-for-homes-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/solar-roi-calculator</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-roi-calculator"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-roi-calculator"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-roi-calculator"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/solar-roi-calculator</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-roi-calculator"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-roi-calculator"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-roi-calculator"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/electricity-tariff-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/electricity-tariff-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/electricity-tariff-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/electricity-tariff-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/electricity-tariff-egypt</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/electricity-tariff-egypt"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/electricity-tariff-egypt"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/electricity-tariff-egypt"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/solar-panel-types</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-panel-types"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-panel-types"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-panel-types"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/solar-panel-types</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/solar-panel-types"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/solar-panel-types"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/solar-panel-types"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/case-studies</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/case-studies"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/case-studies"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/case-studies"/>
+  </url>
+  <url>
+    <loc>https://solarmatch.site/ar/case-studies</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/case-studies"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/case-studies"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/case-studies"/>
+  </url>
+</urlset>
