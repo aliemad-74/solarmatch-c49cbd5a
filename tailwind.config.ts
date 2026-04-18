@@ -70,8 +70,11 @@ export default {
         },
         solar: {
           gold: "hsl(var(--solar-gold))",
+          "gold-soft": "hsl(var(--solar-gold-soft))",
           orange: "hsl(var(--solar-orange))",
           green: "hsl(var(--solar-green))",
+          "green-dark": "hsl(var(--solar-green-dark))",
+          "green-soft": "hsl(var(--solar-green-soft))",
           teal: "hsl(var(--solar-teal))",
           navy: "hsl(var(--solar-navy))",
           blue: "hsl(var(--solar-blue))",
@@ -80,6 +83,14 @@ export default {
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
