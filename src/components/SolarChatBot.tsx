@@ -198,7 +198,7 @@ const SolarChatBot = ({ results, locationName, preloadedRecommendation, monthlyC
       {!isOpen && (
         <button
           onClick={handleOpen}
-          className="fixed z-50 bottom-20 md:bottom-6 p-3.5 rounded-full shadow-lg gradient-solar text-primary-foreground hover:scale-110 transition-transform"
+          className="fixed z-50 bottom-20 md:bottom-6 p-3.5 rounded-full shadow-lg bg-solar-blue text-white hover:bg-solar-navy hover:scale-110 transition-all"
           style={{ [isAr ? "left" : "right"]: "1.25rem" }}
           aria-label="Open Solar Chat"
         >
@@ -218,7 +218,7 @@ const SolarChatBot = ({ results, locationName, preloadedRecommendation, monthlyC
           dir={isAr ? "rtl" : "ltr"}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-solar-blue text-white shrink-0">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
               <span className="font-semibold text-sm">{t("chat.title")}</span>
@@ -232,14 +232,14 @@ const SolarChatBot = ({ results, locationName, preloadedRecommendation, monthlyC
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-2">
-                <Sparkles className="w-8 h-8 text-primary opacity-50" />
+                <Sparkles className="w-8 h-8 text-solar-blue opacity-60" />
                 <p className="text-xs text-muted-foreground">{t("chat.welcome")}</p>
                 <div className="flex flex-wrap gap-1.5 justify-center">
                   {suggestedQuestions.map((q, i) => (
                     <button
                       key={i}
                       onClick={() => sendMessage(q)}
-                      className="text-xs px-2.5 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
+                      className="text-xs px-2.5 py-1.5 rounded-full border border-solar-blue/30 text-solar-blue hover:bg-solar-blue-soft transition-colors"
                     >
                       {q}
                     </button>
@@ -253,7 +253,7 @@ const SolarChatBot = ({ results, locationName, preloadedRecommendation, monthlyC
                 <div
                   className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      ? "bg-solar-blue text-white rounded-br-sm"
                       : "bg-muted text-foreground rounded-bl-sm"
                   }`}
                 >
@@ -283,7 +283,7 @@ const SolarChatBot = ({ results, locationName, preloadedRecommendation, monthlyC
                   <button
                     key={i}
                     onClick={() => sendMessage(q)}
-                    className="text-xs px-2.5 py-1.5 rounded-full border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
+                    className="text-xs px-2.5 py-1.5 rounded-full border border-solar-blue/30 text-solar-blue hover:bg-solar-blue-soft transition-colors"
                   >
                     {q}
                   </button>

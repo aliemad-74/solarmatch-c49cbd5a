@@ -433,7 +433,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               {/* Coverage Ratio */}
               <div className="bg-card rounded-2xl border border-border/50 p-5">
                 <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Gauge className="w-4 h-4 text-primary" />
+                  <Gauge className="w-4 h-4 text-solar-blue" />
                   {isAr ? "نسبة التغطية" : "Coverage Ratio"}
                 </h5>
                 <div className="relative h-3 bg-muted rounded-full overflow-hidden mb-2">
@@ -451,7 +451,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               {results.buildingMode && (
                 <div className="bg-card rounded-2xl border border-border/50 p-5">
                   <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Building className="w-4 h-4 text-primary" />
+                    <Building className="w-4 h-4 text-solar-blue" />
                     {t('results.buildingModeAnalysis')}
                   </h5>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
@@ -464,7 +464,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                       <p className="text-[10px] text-muted-foreground">{t('results.kWhUnitMonth')}</p>
                     </div>
                     <div className="p-2 bg-muted/50 rounded-lg">
-                      <p className="text-lg font-bold text-primary">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-solar-blue">{results.effectiveMonthlyConsumption.toLocaleString()}</p>
                       <p className="text-[10px] text-muted-foreground">{t('results.totalKWhMonth')}</p>
                     </div>
                     <div className="p-2 bg-muted/50 rounded-lg">
@@ -822,7 +822,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   </SelectContent>
                 </Select>
                 <LockedFeature feature="canExportPDF">
-                  <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors disabled:opacity-50">
+                  <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-solar-blue-soft text-solar-blue text-sm font-medium hover:bg-solar-blue hover:text-white transition-colors disabled:opacity-50">
                     {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     {isGeneratingPdf ? "..." : t('results.downloadReport')}
                   </button>
