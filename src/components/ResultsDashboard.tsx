@@ -504,7 +504,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                       <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
                       <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={{ stroke: "hsl(var(--border))" }} />
                       <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [`${value.toLocaleString()} kWh`, "Production"]} />
-                      <Bar dataKey="production" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="production" fill="hsl(var(--solar-blue))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -639,16 +639,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
               </div>
 
               {/* Why this conclusion */}
-              <div className="bg-card rounded-2xl border border-border/50 p-5">
-                <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Info className="w-4 h-4 text-primary" />
+              <div className="bg-solar-blue-soft rounded-2xl border border-solar-blue/20 p-5">
+                <h5 className="text-sm font-semibold text-solar-navy mb-3 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-solar-blue" />
                   {isAr ? "لماذا تم التوصل إلى هذا الاستنتاج" : "Why This Conclusion Was Reached"}
                 </h5>
                 <div className="space-y-2.5">
                   {rankedFactors.map((factor, i) => (
                     <div key={factor.key} className="flex items-start gap-2.5">
                       <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                        <span className="w-5 h-5 rounded-full bg-solar-blue/15 text-solar-blue text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
                         {factor.direction === "positive" ? <ArrowUp className="w-3.5 h-3.5 text-solar-green" /> : <ArrowDown className="w-3.5 h-3.5 text-destructive" />}
                       </div>
                       <div>

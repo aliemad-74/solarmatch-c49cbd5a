@@ -106,7 +106,7 @@ const AdminDashboard = () => {
                       borderRadius: "8px",
                     }}
                   />
-                  <Bar dataKey="reports" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="reports" fill="hsl(var(--solar-blue))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
                       borderRadius: "8px",
                     }}
                   />
-                  <Bar dataKey="leads" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="leads" fill="hsl(var(--solar-navy))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

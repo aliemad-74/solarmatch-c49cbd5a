@@ -28,7 +28,7 @@ export function MarketDataBadge({ isLive, scrapedAt, type }: MarketDataBadgeProp
         <TooltipTrigger>
           <Badge
             variant={isLive ? "default" : "secondary"}
-            className={`text-xs gap-1 ${isLive ? "bg-green-600 hover:bg-green-700" : ""}`}
+            className={`text-xs gap-1 ${isLive ? "bg-solar-blue text-white hover:bg-solar-navy border-transparent" : "bg-solar-blue-soft text-solar-navy border-transparent"}`}
           >
             {isLive ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
             {label}

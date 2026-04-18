@@ -338,7 +338,7 @@ const AdminAnalytics = () => {
                         borderRadius: "8px",
                       }}
                     />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="value" fill="hsl(var(--solar-blue))" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
