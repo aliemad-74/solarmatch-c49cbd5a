@@ -23,10 +23,13 @@
     /* Primary — Green #1F6B4F */
     --primary: 157 55% 27%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 157 53% 18%;     /* #154737 dark green */
+    --primary-soft: 138 28% 94%;      /* #EAF4EE light green bg */
 
     /* Secondary — Solar Gold #D9A441 */
     --secondary: 39 66% 55%;
     --secondary-foreground: 0 0% 10%;
+    --secondary-soft: 43 65% 84%;     /* #F2E2B8 soft gold */
 
     --muted: 90 8% 95%;
     --muted-foreground: 215 14% 46%;  /* #667085 */
@@ -37,18 +40,29 @@
 
     /* Status colors */
     --solar-green: 157 55% 27%;       /* #1F6B4F */
+    --solar-green-dark: 157 53% 18%;  /* #154737 */
+    --solar-green-soft: 138 28% 94%;  /* #EAF4EE */
     --solar-gold: 39 66% 55%;         /* #D9A441 */
+    --solar-gold-soft: 43 65% 84%;    /* #F2E2B8 */
     --solar-orange: 39 66% 50%;
     --solar-teal: 157 53% 18%;        /* #154737 */
-    --solar-navy: 157 55% 27%;
-    --solar-blue: 202 51% 36%;        /* #2D6A8A — secondary technical accent */
-    --solar-blue-soft: 202 45% 94%;   /* tint for badges/cards */
+    --solar-navy: 202 55% 27%;        /* #1F4E6B deep solar blue */
+    --solar-blue: 202 51% 36%;        /* #2D6A8A */
+    --solar-blue-soft: 204 35% 94%;   /* #EAF2F7 */
 
     /* Info / link / AI accent */
     --info: 202 51% 36%;
     --info-foreground: 0 0% 100%;
 
-    --destructive: 1 41% 46%;         /* #A94442 */
+    /* Success */
+    --success: 146 50% 36%;           /* #2E8B57 */
+    --success-foreground: 0 0% 100%;
+
+    /* Warning — gold */
+    --warning: 39 66% 55%;            /* #D9A441 */
+    --warning-foreground: 0 0% 10%;
+
+    --destructive: 0 43% 49%;         /* #B54747 */
     --destructive-foreground: 0 0% 100%;
 
     --border: 215 17% 87%;            /* #D9DEE5 */
