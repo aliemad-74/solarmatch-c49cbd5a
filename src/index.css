@@ -79,7 +79,7 @@
     --shadow-glow: 0 0 0 1px hsl(157 55% 27% / 0.08);
 
     /* Gradient — very subtle only */
-    --gradient-solar: linear-gradient(135deg, hsl(157 55% 27%) 0%, hsl(157 53% 22%) 100%);
+    --gradient-solar: linear-gradient(135deg, hsl(157 55% 27%) 0%, hsl(157 53% 18%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(90 10% 97%) 0%, hsl(90 12% 95%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(90 10% 99%) 100%);
 
