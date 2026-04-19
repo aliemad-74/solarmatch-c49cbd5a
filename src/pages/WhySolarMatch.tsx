@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -104,6 +105,21 @@ const WhySolarMatch = () => {
 
   return (
     <div className="min-h-screen bg-background" dir={isAr ? "rtl" : "ltr"}>
+      <PageSeo
+        path="/why-solarmatch"
+        en={{
+          title: "Why SolarMatch | Trusted AI Solar Calculator for Egypt",
+          description: "12 reasons to use SolarMatch — NASA POWER & Google Solar data, AI verification, real 2026 Egyptian tariffs, bilingual reports, and accurate ROI for homes, farms, and businesses.",
+          keywords: "Why SolarMatch, AI solar calculator Egypt, solar feasibility platform, solar ROI Egypt, solar savings calculator",
+        }}
+        ar={{
+          title: "لماذا SolarMatch | حاسبة الطاقة الشمسية الموثوقة في مصر",
+          description: "12 سبباً لاختيار SolarMatch — بيانات NASA و Google Solar، تحقق بالذكاء الاصطناعي، تعرفة 2026 الرسمية، وتقارير دقيقة للمنازل والمزارع والشركات في مصر.",
+          keywords: "لماذا SolarMatch, الطاقة الشمسية في مصر, حاسبة الطاقة الشمسية, دراسة جدوى الطاقة الشمسية",
+        }}
+        breadcrumbs={[{ name: "Why SolarMatch", nameAr: "لماذا SolarMatch", path: "/why-solarmatch" }]}
+        type="article"
+      />
       <Header />
       <main className="pt-20 pb-24 md:pb-12">
         <div className="container mx-auto px-4 max-w-6xl">

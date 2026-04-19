@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Check, X, Crown, Building2, FileText, Zap, Star } from 'lucide-react';
+import { PageSeo } from '@/components/seo/PageSeo';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -175,6 +176,20 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageSeo
+        path="/pricing"
+        en={{
+          title: "SolarMatch Pricing | Free Solar Calculator & Premium Plans",
+          description: "Compare SolarMatch pricing: free solar feasibility report, single-report purchase, Premium for households, and Business plans for installers and consultants in Egypt.",
+          keywords: "SolarMatch pricing, solar calculator Egypt pricing, solar feasibility plans, AI solar calculator subscription",
+        }}
+        ar={{
+          title: "أسعار SolarMatch | حاسبة الطاقة الشمسية مجاناً وخطط بريميوم",
+          description: "قارن خطط SolarMatch: تقرير جدوى مجاني، تقرير منفرد، خطة بريميوم للمنازل، وخطة الأعمال للمركبين والشركات في مصر.",
+          keywords: "أسعار SolarMatch, اشتراك حاسبة الطاقة الشمسية, خطط دراسة جدوى الطاقة الشمسية",
+        }}
+        breadcrumbs={[{ name: "Pricing", nameAr: "الأسعار", path: "/pricing" }]}
+      />
       <Header />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
