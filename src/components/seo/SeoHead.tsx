@@ -74,11 +74,23 @@ export const orgSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "SolarMatch",
+  alternateName: ["Solar Match", "SolarMatch Egypt"],
   url: SITE,
   logo: `${SITE}/favicon.png`,
+  areaServed: { "@type": "Country", name: "Egypt" },
   sameAs: [],
   description:
-    "SolarMatch — Egypt's rooftop solar feasibility platform. NASA & Google Solar data, real 2026 tariffs, AI-verified financial analysis.",
+    "SolarMatch — AI-powered rooftop solar feasibility platform for Egypt. Calculate solar system size, ROI, savings, payback and installation cost for homes, farms, and businesses.",
+};
+
+export const websiteSchema: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "SolarMatch",
+  alternateName: "Solar Match",
+  url: SITE,
+  inLanguage: ["en", "ar"],
+  publisher: { "@type": "Organization", name: "SolarMatch" },
 };
 
 export const faqSchema = (
@@ -90,6 +102,19 @@ export const faqSchema = (
     "@type": "Question",
     name: item.q,
     acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+});
+
+export const breadcrumbSchema = (
+  items: { name: string; path: string }[]
+): Record<string, unknown> => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map((item, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: item.name,
+    item: `${SITE}${item.path}`,
   })),
 });
 
@@ -111,5 +136,18 @@ export const articleSchema = (
   mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE}${path}` },
   datePublished: "2026-01-01",
 });
+
+export const localBusinessSchema: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "SolarMatch",
+  url: SITE,
+  image: `${SITE}/favicon.png`,
+  telephone: "+201111009619",
+  email: "support@solarmatch.app",
+  areaServed: { "@type": "Country", name: "Egypt" },
+  address: { "@type": "PostalAddress", addressCountry: "EG" },
+  priceRange: "$$",
+};
 
 export { SITE };
