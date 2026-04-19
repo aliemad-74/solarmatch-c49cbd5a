@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -79,6 +80,21 @@ const HowItWorks = () => {
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageSeo
+        path="/how-it-works"
+        en={{
+          title: "How SolarMatch Works | AI Solar Calculator for Egypt",
+          description: "See how SolarMatch's AI solar calculator turns your rooftop, location, and electricity bill into a full feasibility report — system size, savings, ROI, and payback in minutes.",
+          keywords: "how solar works Egypt, AI solar calculator, solar feasibility platform, solar system calculator Egypt, SolarMatch",
+        }}
+        ar={{
+          title: "كيف يعمل SolarMatch | حاسبة الطاقة الشمسية بالذكاء الاصطناعي",
+          description: "اكتشف كيف تحوّل منصة SolarMatch موقعك واستهلاكك للكهرباء إلى دراسة جدوى كاملة للطاقة الشمسية: حجم النظام، التوفير، العائد على الاستثمار وفترة الاسترداد.",
+          keywords: "حاسبة الطاقة الشمسية, دراسة جدوى الطاقة الشمسية, الطاقة الشمسية في مصر, حساب التوفير من الطاقة الشمسية",
+        }}
+        breadcrumbs={[{ name: "How It Works", nameAr: "كيف يعمل", path: "/how-it-works" }]}
+        type="article"
+      />
       <Header />
       
       <main className="pt-24 pb-16">

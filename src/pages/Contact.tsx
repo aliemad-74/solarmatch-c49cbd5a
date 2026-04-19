@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -65,6 +66,21 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <PageSeo
+        path="/contact"
+        en={{
+          title: "Contact SolarMatch | Solar Support & Partnerships in Egypt",
+          description: "Reach the SolarMatch team for support, partnerships, or expert consultation on solar panels, ROI, and feasibility studies for homes, farms, and businesses in Egypt.",
+          keywords: "Contact SolarMatch, solar support Egypt, solar partnerships, solar consultation Egypt",
+        }}
+        ar={{
+          title: "تواصل مع SolarMatch | دعم الطاقة الشمسية والشراكات في مصر",
+          description: "تواصل مع فريق SolarMatch للحصول على الدعم، الشراكات، أو استشارة خبير في الطاقة الشمسية للمنازل والمزارع والشركات في مصر.",
+          keywords: "تواصل مع SolarMatch, دعم الطاقة الشمسية, الطاقة الشمسية في مصر",
+        }}
+        breadcrumbs={[{ name: "Contact", nameAr: "تواصل معنا", path: "/contact" }]}
+        localBusiness
+      />
       <Header />
       <main className="flex-1 pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-5xl">

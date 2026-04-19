@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -88,6 +89,18 @@ const Privacy = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <PageSeo
+        path="/privacy"
+        en={{
+          title: "Privacy Policy | SolarMatch",
+          description: "Read the SolarMatch Privacy Policy: what data we collect, how we use it, and how we protect your information when you use our AI solar feasibility platform in Egypt.",
+        }}
+        ar={{
+          title: "سياسة الخصوصية | SolarMatch",
+          description: "اطّلع على سياسة الخصوصية الخاصة بمنصة SolarMatch: البيانات التي نجمعها، طريقة استخدامها، وكيفية حماية معلوماتك عند استخدام حاسبة الطاقة الشمسية.",
+        }}
+        breadcrumbs={[{ name: "Privacy", nameAr: "الخصوصية", path: "/privacy" }]}
+      />
       <Header />
       <main className="flex-1 pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">

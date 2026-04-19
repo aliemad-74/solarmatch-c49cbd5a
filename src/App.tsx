@@ -50,16 +50,24 @@ const App = () => (
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
+                  <Route path="/ar" element={<Index />} />
                   <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/ar/how-it-works" element={<HowItWorks />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/ar/about" element={<About />} />
                   <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/ar/pricing" element={<Pricing />} />
                   <Route path="/why-solarmatch" element={<WhySolarMatch />} />
+                  <Route path="/ar/why-solarmatch" element={<WhySolarMatch />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/ar/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
+                  <Route path="/ar/terms" element={<Terms />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/ar/contact" element={<Contact />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
 
                   {/* SEO landing pages — EN + AR */}

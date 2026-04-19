@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -78,6 +79,18 @@ const Terms = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <PageSeo
+        path="/terms"
+        en={{
+          title: "Terms & Conditions | SolarMatch",
+          description: "Review the SolarMatch Terms & Conditions covering use of our AI solar calculator and feasibility reports for homes, farms, and businesses in Egypt.",
+        }}
+        ar={{
+          title: "الشروط والأحكام | SolarMatch",
+          description: "راجع شروط وأحكام استخدام منصة SolarMatch وحاسبة الطاقة الشمسية وتقارير دراسة الجدوى للمنازل والمزارع والشركات في مصر.",
+        }}
+        breadcrumbs={[{ name: "Terms", nameAr: "الشروط", path: "/terms" }]}
+      />
       <Header />
       <main className="flex-1 pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">
