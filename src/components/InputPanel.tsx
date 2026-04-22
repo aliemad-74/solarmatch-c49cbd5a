@@ -747,6 +747,7 @@ const InputPanel = ({
             onClick={onCalculate}
             size="lg"
             disabled={!climateData}
+            data-tour="calculate"
             className="w-full h-14 text-lg font-semibold gradient-solar text-primary-foreground shadow-glow hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Zap className="w-5 h-5 me-2" />

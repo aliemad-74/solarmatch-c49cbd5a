@@ -788,7 +788,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
         </div>
 
         {/* Actions Bar — Report-focused */}
-        <div className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 print:mt-4">
+        <div data-tour="report" className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 print:mt-4">
           <div className="flex flex-col gap-6">
             {/* CTA text */}
             <div className="text-center md:text-start">

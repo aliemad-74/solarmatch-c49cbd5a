@@ -8,7 +8,6 @@ import { UserProvider } from "@/contexts/UserContext";
 import { UserAuthProvider } from "@/contexts/UserAuthContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import Index from "./pages/Index";
-import HowItWorks from "./pages/HowItWorks";
 import About from "./pages/About";
 import Account from "./pages/Account";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -51,8 +50,9 @@ const App = () => (
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
                   <Route path="/ar" element={<Index />} />
-                  <Route path="/how-it-works" element={<HowItWorks />} />
-                  <Route path="/ar/how-it-works" element={<HowItWorks />} />
+                  {/* Legacy "how-it-works" replaced by interactive onboarding tour — redirect to home */}
+                  <Route path="/how-it-works" element={<Navigate to="/" replace />} />
+                  <Route path="/ar/how-it-works" element={<Navigate to="/ar" replace />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/ar/about" element={<About />} />
                   <Route path="/features" element={<Features />} />
