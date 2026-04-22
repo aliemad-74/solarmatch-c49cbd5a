@@ -856,29 +856,39 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Welcome to SolarMatch!",
-      "description": "Calculate your solar potential in Egypt using real NASA climate data and current electricity tariffs"
+      "title": "Welcome to SolarMatch 👋",
+      "description": "Let's show you how to analyze your solar potential in 60 seconds."
     },
     "location": {
-      "title": "Select Your Location",
-      "description": "Click on the map or use GPS to pinpoint your building. We'll fetch solar irradiance data for your exact coordinates"
+      "title": "Pick Your Location",
+      "description": "Start by entering your address or selecting your rooftop on the map."
     },
     "configure": {
-      "title": "Configure Your System",
-      "description": "Enter your rooftop area, building type, and monthly consumption. Choose from economy, standard, or premium panel packages"
+      "title": "Enter Your Consumption",
+      "description": "Add your monthly electricity bill or kWh consumption to size your system."
+    },
+    "calculate": {
+      "title": "Generate Your Report",
+      "description": "Click here to run the AI-powered solar feasibility analysis."
     },
     "results": {
-      "title": "View Detailed Results",
-      "description": "See energy production, savings projections, payback period, and CO₂ reduction with interactive charts"
+      "title": "Review Your Results",
+      "description": "See system size, annual savings, ROI, and payback period at a glance."
     },
     "report": {
-      "title": "Download Your Report",
-      "description": "Get a professional PDF report, share results with others, or contact a solar expert for next steps"
+      "title": "Download or Share",
+      "description": "Get a professional PDF report or share your results with others."
+    },
+    "final": {
+      "title": "You're all set 🚀",
+      "description": "You can replay this guide anytime from your Account settings."
     },
     "next": "Next",
     "prev": "Back",
-    "skip": "Skip Tour",
-    "start": "Start Calculating"
+    "skip": "Skip tutorial",
+    "start": "Start Now",
+    "replay": "Replay Guide",
+    "replayDescription": "Show the onboarding walkthrough again"
   },
   "mobileNav": {
     "home": "Home",
