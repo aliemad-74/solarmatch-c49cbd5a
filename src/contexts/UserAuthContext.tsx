@@ -49,8 +49,9 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const canGenerateReport = profile ? profile.reports_generated < profile.report_limit : false;
-  const remainingReports = profile ? Math.max(0, profile.report_limit - profile.reports_generated) : 0;
+  // SolarMatch is fully free — every authenticated user can always generate unlimited reports.
+  const canGenerateReport = !!profile;
+  const remainingReports = profile ? Number.POSITIVE_INFINITY : 0;
 
   const fetchProfile = async (userId: string) => {
     try {

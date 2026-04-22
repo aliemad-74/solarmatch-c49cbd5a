@@ -90,9 +90,7 @@ const Account = () => {
     return null;
   }
 
-  const reportsUsed = profile.reports_generated;
-  const reportsLimit = profile.report_limit;
-  const reportsRemaining = Math.max(0, reportsLimit - reportsUsed);
+  // SolarMatch is fully free — no per-user report limits.
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
@@ -107,7 +105,8 @@ const Account = () => {
 
         <h1 className="text-3xl font-bold mb-8">{t("account.title")}</h1>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-1">
+          {/* Profile Card only — Reports usage card removed (site is fully free) */}
           {/* Profile Card */}
           <Card>
             <CardHeader>
@@ -176,44 +175,7 @@ const Account = () => {
             </CardContent>
           </Card>
 
-          {/* Reports Usage Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                {t("account.reportsUsage")}
-              </CardTitle>
-              <CardDescription>{t("account.reportsDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t("account.reportsUsed")}</p>
-                    <p className="text-2xl font-bold">{reportsUsed} / {reportsLimit}</p>
-                  </div>
-                  <div className="text-end">
-                    <p className="text-sm text-muted-foreground">{t("account.remaining")}</p>
-                    <p className="text-2xl font-bold text-primary">{reportsRemaining}</p>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-muted rounded-full h-3">
-                  <div 
-                    className="bg-primary h-3 rounded-full transition-all"
-                    style={{ width: `${Math.min(100, (reportsUsed / reportsLimit) * 100)}%` }}
-                  />
-                </div>
-
-                {reportsRemaining === 0 && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    {t("account.noReportsRemaining")}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Reports Usage card removed — SolarMatch is fully free with unlimited reports. */}
         </div>
 
         {/* Account Settings */}

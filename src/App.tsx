@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { UserProvider } from "@/contexts/UserContext";
 import { UserAuthProvider } from "@/contexts/UserAuthContext";
@@ -14,7 +14,7 @@ import Account from "./pages/Account";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
-import Pricing from "./pages/Pricing";
+import Features from "./pages/Features";
 import WhySolarMatch from "./pages/WhySolarMatch";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -55,8 +55,11 @@ const App = () => (
                   <Route path="/ar/how-it-works" element={<HowItWorks />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/ar/about" element={<About />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/ar/pricing" element={<Pricing />} />
+                  <Route path="/features" element={<Features />} />
+                  <Route path="/ar/features" element={<Features />} />
+                  {/* Legacy pricing URLs now redirect to features (site is fully free) */}
+                  <Route path="/pricing" element={<Navigate to="/features" replace />} />
+                  <Route path="/ar/pricing" element={<Navigate to="/ar/features" replace />} />
                   <Route path="/why-solarmatch" element={<WhySolarMatch />} />
                   <Route path="/ar/why-solarmatch" element={<WhySolarMatch />} />
                   <Route path="/account" element={<Account />} />
@@ -70,21 +73,24 @@ const App = () => (
                   <Route path="/ar/contact" element={<Contact />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
 
-                  {/* SEO landing pages — EN + AR */}
-                  {SEO_SLUGS.map((slug) => (
+                  {/* SEO landing pages — EN + AR (skip slugs that have dedicated pages) */}
+                  {SEO_SLUGS.filter((s) => s !== "features" && s !== "pricing-plans").map((slug) => (
                     <Route
                       key={`en-${slug}`}
                       path={`/${slug}`}
                       element={<SeoTopicPage lang="en" slug={slug} />}
                     />
                   ))}
-                  {SEO_SLUGS.map((slug) => (
+                  {SEO_SLUGS.filter((s) => s !== "features" && s !== "pricing-plans").map((slug) => (
                     <Route
                       key={`ar-${slug}`}
                       path={`/ar/${slug}`}
                       element={<SeoTopicPage lang="ar" slug={slug} />}
                     />
                   ))}
+                  {/* Legacy SEO pricing slug also redirects to features */}
+                  <Route path="/pricing-plans" element={<Navigate to="/features" replace />} />
+                  <Route path="/ar/pricing-plans" element={<Navigate to="/ar/features" replace />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route
                     path="/admin"
