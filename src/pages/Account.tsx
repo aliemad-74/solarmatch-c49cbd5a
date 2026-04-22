@@ -176,6 +176,7 @@ const Account = () => {
           </Card>
 
           {/* Reports Usage card removed — SolarMatch is fully free with unlimited reports. */}
+        </div>
 
         {/* Account Settings */}
         <Card className="mt-6">
