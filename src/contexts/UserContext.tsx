@@ -84,8 +84,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const canGenerateReport = user ? user.reports_generated < user.report_limit : false;
-  const remainingReports = user ? Math.max(0, user.report_limit - user.reports_generated) : 0;
+  // SolarMatch is fully free — unlimited reports for everyone.
+  const canGenerateReport = !!user;
+  const remainingReports = user ? Number.POSITIVE_INFINITY : 0;
 
   const registerUser = async (name: string, email: string, phone: string): Promise<{ success: boolean; error?: string }> => {
     try {

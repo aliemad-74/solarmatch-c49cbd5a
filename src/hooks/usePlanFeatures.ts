@@ -1,5 +1,4 @@
-import { useUserAuth } from '@/contexts/UserAuthContext';
-import { PlanId, FeatureFlag, PLANS, getFeatureAccess, getMinimumPlan, dbTypeToPlanId } from '@/lib/plans';
+import { PlanId, FeatureFlag, PLANS, getFeatureAccess, getMinimumPlan } from '@/lib/plans';
 
 export interface PlanFeatures extends Record<FeatureFlag, boolean> {
   planId: PlanId;
@@ -9,34 +8,21 @@ export interface PlanFeatures extends Record<FeatureFlag, boolean> {
   getPlanName: (planId: PlanId, isAr: boolean) => string;
 }
 
+// SolarMatch is now fully free — every feature is unlocked for every visitor.
 export function usePlanFeatures(): PlanFeatures {
-  const { profile } = useUserAuth();
-
-  const planId = dbTypeToPlanId(profile?.subscription_type);
-  const plan = PLANS[planId];
-  const features = getFeatureAccess(planId);
-
-  // Reports remaining
-  const reportsGenerated = profile?.reports_generated || 0;
-  const reportsRemaining: number | 'unlimited' =
-    plan.reportLimit === 'unlimited'
-      ? 'unlimited'
-      : Math.max(0, plan.reportLimit - reportsGenerated);
-
-  const canGenerateReport =
-    plan.reportLimit === 'unlimited' || (typeof reportsRemaining === 'number' && reportsRemaining > 0);
-
-  const getRequiredPlan = (feature: FeatureFlag) => getMinimumPlan(feature);
-
-  const getPlanName = (id: PlanId, isAr: boolean) =>
-    isAr ? PLANS[id].displayNameAr : PLANS[id].displayNameEn;
+  const features = getFeatureAccess('business');
+  const allOn = Object.keys(features).reduce((acc, key) => {
+    acc[key as FeatureFlag] = true;
+    return acc;
+  }, {} as Record<FeatureFlag, boolean>);
 
   return {
-    ...features,
-    planId,
-    reportsRemaining,
-    canGenerateReport,
-    getRequiredPlan,
-    getPlanName,
+    ...allOn,
+    planId: 'business',
+    reportsRemaining: 'unlimited',
+    canGenerateReport: true,
+    getRequiredPlan: (feature: FeatureFlag) => getMinimumPlan(feature),
+    getPlanName: (id: PlanId, isAr: boolean) =>
+      isAr ? PLANS[id].displayNameAr : PLANS[id].displayNameEn,
   };
 }
