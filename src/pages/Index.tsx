@@ -12,6 +12,7 @@ import PaywallModal from "@/components/PaywallModal";
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
+import OnboardingTour, { ONBOARDING_FLAG } from "@/components/OnboardingTour";
 
 import ScrollReveal from "@/components/ScrollReveal";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
@@ -125,6 +126,25 @@ const Index = () => {
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
+
+  // Onboarding tour — show only for first-time visitors
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem(ONBOARDING_FLAG);
+      const replay = sessionStorage.getItem("solarmatch_replay_onboarding");
+      if (replay) {
+        sessionStorage.removeItem("solarmatch_replay_onboarding");
+        // Allow replay regardless of flag
+        setTimeout(() => setShowOnboarding(true), 400);
+        return;
+      }
+      if (!seen) {
+        // Small delay so the page can paint and target elements exist
+        setTimeout(() => setShowOnboarding(true), 800);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   // Fetch market data on mount
   useEffect(() => { refreshMarketData(); }, [refreshMarketData]);
@@ -587,6 +607,10 @@ const Index = () => {
       />
 
       <MobileBottomNav />
+
+      {showOnboarding && (
+        <OnboardingTour onComplete={() => setShowOnboarding(false)} />
+      )}
     </div>
   );
 };

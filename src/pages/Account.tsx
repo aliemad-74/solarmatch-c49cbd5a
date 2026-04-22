@@ -22,7 +22,8 @@ import {
   Zap,
   ArrowLeft,
   Shield,
-  Settings
+  Settings,
+  PlayCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
@@ -246,6 +247,29 @@ const Account = () => {
                   toast.success(isAr ? "تم التحديث" : "Updated");
                 }}
               />
+            </div>
+
+            {/* Replay onboarding guide */}
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border">
+              <div className="flex items-center gap-3">
+                <PlayCircle className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="font-medium text-sm">{t("onboarding.replay")}</p>
+                  <p className="text-xs text-muted-foreground">{t("onboarding.replayDescription")}</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem("solarmatch_replay_onboarding", "1");
+                  } catch { /* ignore */ }
+                  navigate("/");
+                }}
+              >
+                {t("onboarding.replay")}
+              </Button>
             </div>
           </CardContent>
         </Card>
