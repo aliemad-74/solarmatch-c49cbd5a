@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { UserProvider } from "@/contexts/UserContext";
 import { UserAuthProvider } from "@/contexts/UserAuthContext";
@@ -14,7 +14,7 @@ import Account from "./pages/Account";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
-import Pricing from "./pages/Pricing";
+import Features from "./pages/Features";
 import WhySolarMatch from "./pages/WhySolarMatch";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -55,8 +55,11 @@ const App = () => (
                   <Route path="/ar/how-it-works" element={<HowItWorks />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/ar/about" element={<About />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/ar/pricing" element={<Pricing />} />
+                  <Route path="/features" element={<Features />} />
+                  <Route path="/ar/features" element={<Features />} />
+                  {/* Legacy pricing URLs now redirect to features (site is fully free) */}
+                  <Route path="/pricing" element={<Navigate to="/features" replace />} />
+                  <Route path="/ar/pricing" element={<Navigate to="/ar/features" replace />} />
                   <Route path="/why-solarmatch" element={<WhySolarMatch />} />
                   <Route path="/ar/why-solarmatch" element={<WhySolarMatch />} />
                   <Route path="/account" element={<Account />} />

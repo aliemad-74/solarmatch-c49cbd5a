@@ -32,7 +32,7 @@ const Header = () => {
 
   const navLinks = [
     { path: "/", label: t('header.home') },
-    { path: "/pricing", label: t('header.pricing') },
+    { path: "/features", label: t('header.features') },
   ];
 
   const aboutSubLinks = [
