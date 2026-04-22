@@ -73,21 +73,24 @@ const App = () => (
                   <Route path="/ar/contact" element={<Contact />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
 
-                  {/* SEO landing pages — EN + AR */}
-                  {SEO_SLUGS.map((slug) => (
+                  {/* SEO landing pages — EN + AR (skip slugs that have dedicated pages) */}
+                  {SEO_SLUGS.filter((s) => s !== "features" && s !== "pricing-plans").map((slug) => (
                     <Route
                       key={`en-${slug}`}
                       path={`/${slug}`}
                       element={<SeoTopicPage lang="en" slug={slug} />}
                     />
                   ))}
-                  {SEO_SLUGS.map((slug) => (
+                  {SEO_SLUGS.filter((s) => s !== "features" && s !== "pricing-plans").map((slug) => (
                     <Route
                       key={`ar-${slug}`}
                       path={`/ar/${slug}`}
                       element={<SeoTopicPage lang="ar" slug={slug} />}
                     />
                   ))}
+                  {/* Legacy SEO pricing slug also redirects to features */}
+                  <Route path="/pricing-plans" element={<Navigate to="/features" replace />} />
+                  <Route path="/ar/pricing-plans" element={<Navigate to="/ar/features" replace />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route
                     path="/admin"
