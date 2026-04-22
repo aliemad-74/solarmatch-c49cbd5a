@@ -90,9 +90,7 @@ const Account = () => {
     return null;
   }
 
-  const reportsUsed = profile.reports_generated;
-  const reportsLimit = profile.report_limit;
-  const reportsRemaining = Math.max(0, reportsLimit - reportsUsed);
+  // SolarMatch is fully free — no per-user report limits.
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
@@ -107,7 +105,8 @@ const Account = () => {
 
         <h1 className="text-3xl font-bold mb-8">{t("account.title")}</h1>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-1">
+          {/* Profile Card only — Reports usage card removed (site is fully free) */}
           {/* Profile Card */}
           <Card>
             <CardHeader>
