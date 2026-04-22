@@ -118,15 +118,17 @@ const InputPanel = ({
   const hasRealClimateData = climateData !== null && climateData !== undefined;
   const climate = climateData ?? defaultClimateData;
 
-  // Auto-detect electricity price from consumption + building type
+  // Auto-detect electricity price from consumption + building type.
+  // In Building Mode each apartment is metered separately → use per-unit consumption
+  // so the tariff bracket reflects a single apartment, not the whole building total.
   useEffect(() => {
-    const consumption = buildingMode ? numberOfUnits * avgUnitConsumption : monthlyConsumption;
-    if (consumption > 0) {
-      const tariffInfo2 = getTariffForConsumption(consumption, buildingType);
+    const consumptionForTariff = buildingMode ? avgUnitConsumption : monthlyConsumption;
+    if (consumptionForTariff > 0) {
+      const tariffInfo2 = getTariffForConsumption(consumptionForTariff, buildingType);
       const price = tariffInfo2.electricityPricePerKwh;
       if (Number.isFinite(price) && price > 0) {
         setElectricityPrice(price);
-        console.log("[InputPanel] Auto electricity price:", price.toFixed(4), "EGP/kWh for", consumption, "kWh, category:", tariffInfo2.tariffCategory);
+        console.log("[InputPanel] Auto electricity price:", price.toFixed(4), "EGP/kWh for", consumptionForTariff, "kWh/unit, buildingMode:", buildingMode, "category:", tariffInfo2.tariffCategory);
       }
     }
   }, [monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption, buildingType, setElectricityPrice]);
