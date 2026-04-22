@@ -192,14 +192,78 @@ export function calculateBillForCategory(
 // Calculate bill after solar offset
 export function calculateBillAfterSolar(
   monthlyConsumption: number,
-  monthlySolarProduction: number
+  monthlySolarProduction: number,
+  customTiers?: TariffTier[]
 ): TariffCalculation & { beforeSolar: TariffCalculation; savingsAmount: number } {
-  const beforeSolar = calculateTieredBill(monthlyConsumption);
+  const beforeSolar = calculateTieredBill(monthlyConsumption, customTiers);
   const netConsumption = Math.max(0, monthlyConsumption - monthlySolarProduction);
-  const afterSolar = calculateTieredBill(netConsumption);
+  const afterSolar = calculateTieredBill(netConsumption, customTiers);
   
   const savingsAmount = beforeSolar.totalCost - afterSolar.totalCost;
   
+  return {
+    ...afterSolar,
+    beforeSolar,
+    savingsAmount,
+    potentialTierAfterSolar: afterSolar.currentTier,
+    monthlySavings: savingsAmount,
+  };
+}
+
+/**
+ * Building Mode: calculate bill PER UNIT (each apartment has its own meter),
+ * then multiply by number of units. This avoids pushing the building total
+ * into the highest tier when individual apartments are actually in lower tiers.
+ *
+ * Solar production is divided equally across units before applying tiers.
+ */
+export function calculateBillAfterSolarPerUnit(
+  avgUnitMonthlyConsumption: number,
+  numberOfUnits: number,
+  totalMonthlySolarProduction: number,
+  buildingType: string = "apartment"
+): TariffCalculation & { beforeSolar: TariffCalculation; savingsAmount: number } {
+  const units = Math.max(1, numberOfUnits);
+  const category = detectTariffCategory(buildingType);
+  const tiers = getTiersForCategory(category);
+
+  const perUnitSolar = totalMonthlySolarProduction / units;
+
+  const perUnitBefore = calculateTieredBill(avgUnitMonthlyConsumption, tiers);
+  const perUnitNet = Math.max(0, avgUnitMonthlyConsumption - perUnitSolar);
+  const perUnitAfter = calculateTieredBill(perUnitNet, tiers);
+
+  const beforeSolar: TariffCalculation = {
+    totalCost: perUnitBefore.totalCost * units,
+    effectiveRate: perUnitBefore.effectiveRate,
+    currentTier: perUnitBefore.currentTier,
+    tierBreakdown: perUnitBefore.tierBreakdown.map((b) => ({
+      tier: b.tier,
+      kWh: b.kWh * units,
+      cost: b.cost * units,
+    })),
+  };
+
+  const afterSolar: TariffCalculation = {
+    totalCost: perUnitAfter.totalCost * units,
+    effectiveRate: perUnitAfter.effectiveRate,
+    currentTier: perUnitAfter.currentTier,
+    tierBreakdown: perUnitAfter.tierBreakdown.map((b) => ({
+      tier: b.tier,
+      kWh: b.kWh * units,
+      cost: b.cost * units,
+    })),
+  };
+
+  const savingsAmount = beforeSolar.totalCost - afterSolar.totalCost;
+
+  console.log(
+    `[per-unit tariff] units: ${units}, avg/unit: ${avgUnitMonthlyConsumption}, ` +
+    `tier/unit: ${perUnitBefore.currentTier.tierName}, ` +
+    `effRate: ${perUnitBefore.effectiveRate.toFixed(4)}, ` +
+    `monthlySavings(total): ${savingsAmount.toFixed(2)}`
+  );
+
   return {
     ...afterSolar,
     beforeSolar,
