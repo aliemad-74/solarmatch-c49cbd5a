@@ -175,45 +175,7 @@ const Account = () => {
             </CardContent>
           </Card>
 
-          {/* Reports Usage Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                {t("account.reportsUsage")}
-              </CardTitle>
-              <CardDescription>{t("account.reportsDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t("account.reportsUsed")}</p>
-                    <p className="text-2xl font-bold">{reportsUsed} / {reportsLimit}</p>
-                  </div>
-                  <div className="text-end">
-                    <p className="text-sm text-muted-foreground">{t("account.remaining")}</p>
-                    <p className="text-2xl font-bold text-primary">{reportsRemaining}</p>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-muted rounded-full h-3">
-                  <div 
-                    className="bg-primary h-3 rounded-full transition-all"
-                    style={{ width: `${Math.min(100, (reportsUsed / reportsLimit) * 100)}%` }}
-                  />
-                </div>
-
-                {reportsRemaining === 0 && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    {t("account.noReportsRemaining")}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Reports Usage card removed — SolarMatch is fully free with unlimited reports. */}
 
         {/* Account Settings */}
         <Card className="mt-6">
