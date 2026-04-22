@@ -1,5 +1,5 @@
 import { ClimateData } from "./climateApi";
-import { calculateBillAfterSolar } from "./egyptTariffs";
+import { calculateBillAfterSolar, calculateBillAfterSolarPerUnit } from "./egyptTariffs";
 
 // ================================================
 // GLOBAL CONSTANTS (Egypt defaults)
@@ -448,8 +448,11 @@ export function calculateSolarFeasibility(
     const energyYear = kWInstalled * SPECIFIC_YIELD;
     
     // Step 6: Savings (using tiered tariff billing)
+    // In Building Mode each apartment has its own meter → calculate per-unit then aggregate.
     const monthlySolarProd = energyYear / 12;
-    const tieredResult = calculateBillAfterSolar(effectiveMonthlyConsumption, monthlySolarProd);
+    const tieredResult = buildingMode && numberOfUnits > 1
+      ? calculateBillAfterSolarPerUnit(avgUnitConsumption, numberOfUnits, monthlySolarProd, buildingType)
+      : calculateBillAfterSolar(effectiveMonthlyConsumption, monthlySolarProd);
     const savingsYear = tieredResult.savingsAmount * 12;
     
     // Step 8: Cost
@@ -532,7 +535,9 @@ export function calculateSolarFeasibility(
   // Uses active tariffs (live or fallback) for accurate tier-based savings
   // ============================================
   const mainMonthlySolarProd = energyYear / 12;
-  const mainTieredResult = calculateBillAfterSolar(effectiveMonthlyConsumption, mainMonthlySolarProd);
+  const mainTieredResult = buildingMode && numberOfUnits > 1
+    ? calculateBillAfterSolarPerUnit(avgUnitConsumption, numberOfUnits, mainMonthlySolarProd, buildingType)
+    : calculateBillAfterSolar(effectiveMonthlyConsumption, mainMonthlySolarProd);
   const savingsYear = mainTieredResult.savingsAmount * 12;
 
   // ============================================
