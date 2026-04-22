@@ -787,28 +787,22 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
           <p className="text-xs text-muted-foreground">{t('results.uncertaintyStatement')}</p>
         </div>
 
-        {/* Actions Bar */}
+        {/* Actions Bar — Report-focused */}
         <div className="mt-4 bg-gradient-to-r from-primary/10 via-solar-green/10 to-solar-gold/10 rounded-2xl border border-primary/20 p-6 md:p-8 print:mt-4">
           <div className="flex flex-col gap-6">
             {/* CTA text */}
             <div className="text-center md:text-start">
-              <h4 className="font-display text-xl md:text-2xl font-bold text-foreground mb-2">{t('results.readyToGoSolar')}</h4>
+              <h4 className="font-display text-xl md:text-2xl font-bold text-foreground mb-2">
+                {isAr ? "تقريرك جاهز" : "Your Report is Ready"}
+              </h4>
               <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
-                {t('results.readyMessage', { kw: results.kWInstalled, savings: formatCurrency(results.savingsYear), co2: formatNumber(results.co2Saved) })}
+                {isAr
+                  ? `حمّل التقرير الكامل أو شاركه — نظام ${results.kWInstalled} كيلوواط، توفير سنوي ${formatCurrency(results.savingsYear)}، خفض ${formatNumber(results.co2Saved)} طن CO₂.`
+                  : `Download the full report or share it — ${results.kWInstalled} kW system, ${formatCurrency(results.savingsYear)} annual savings, ${formatNumber(results.co2Saved)} tons CO₂ reduced.`}
               </p>
             </div>
 
-            {/* Contact Expert — Primary CTA */}
-            <div className="print:hidden">
-              <ContactExpertDialog results={results} locationName={locationName} trigger={
-                <Button size="lg" className="w-full md:w-auto gradient-solar text-primary-foreground shadow-glow text-base md:text-lg px-8 py-6 gap-3 font-semibold">
-                  <Phone className="w-5 h-5" />
-                  {t('results.contactExpert')}
-                </Button>
-              } />
-            </div>
-
-            {/* Secondary actions */}
+            {/* Report actions — Primary */}
             <div className="flex flex-wrap items-center gap-3 print:hidden">
               {/* Report download with language selector */}
               <div className="flex items-center gap-2 bg-card rounded-xl border border-border p-1.5">
@@ -822,7 +816,7 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   </SelectContent>
                 </Select>
                 <LockedFeature feature="canExportPDF">
-                  <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-solar-blue-soft text-solar-blue text-sm font-medium hover:bg-solar-blue hover:text-white transition-colors disabled:opacity-50">
+                  <button onClick={handleDownloadReport} disabled={isGeneratingPdf} className="flex items-center gap-2 px-4 py-2 rounded-lg gradient-solar text-primary-foreground text-sm font-semibold shadow-glow hover:opacity-90 transition-opacity disabled:opacity-50">
                     {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     {isGeneratingPdf ? "..." : t('results.downloadReport')}
                   </button>
