@@ -20,26 +20,8 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/"/>
   </url>
   <url>
-    <loc>https://solarmatch.site/how-it-works</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/how-it-works"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/how-it-works"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/how-it-works"/>
-  </url>
-  <url>
-    <loc>https://solarmatch.site/ar/how-it-works</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/how-it-works"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/how-it-works"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/how-it-works"/>
-  </url>
-  <url>
     <loc>https://solarmatch.site/about</loc>
-    <lastmod>2026-04-19</lastmod>
+    <lastmod>2026-04-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/about"/>
@@ -48,7 +30,7 @@
   </url>
   <url>
     <loc>https://solarmatch.site/ar/about</loc>
-    <lastmod>2026-04-19</lastmod>
+    <lastmod>2026-04-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/about"/>
@@ -56,22 +38,13 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/about"/>
   </url>
   <url>
-    <loc>https://solarmatch.site/pricing</loc>
-    <lastmod>2026-04-19</lastmod>
+    <loc>https://solarmatch.site/features</loc>
+    <lastmod>2026-04-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/pricing"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/pricing"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/pricing"/>
-  </url>
-  <url>
-    <loc>https://solarmatch.site/ar/pricing</loc>
-    <lastmod>2026-04-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/pricing"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/pricing"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/pricing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/features"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/features"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/features"/>
   </url>
   <url>
     <loc>https://solarmatch.site/why-solarmatch</loc>
@@ -142,24 +115,6 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/features"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/features"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/features"/>
-  </url>
-  <url>
-    <loc>https://solarmatch.site/pricing-plans</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/pricing-plans"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/pricing-plans"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/pricing-plans"/>
-  </url>
-  <url>
-    <loc>https://solarmatch.site/ar/pricing-plans</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/pricing-plans"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/pricing-plans"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/pricing-plans"/>
   </url>
   <url>
     <loc>https://solarmatch.site/about-solarmatch</loc>
