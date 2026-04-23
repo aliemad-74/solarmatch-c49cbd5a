@@ -38,15 +38,6 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/about"/>
   </url>
   <url>
-    <loc>https://solarmatch.site/features</loc>
-    <lastmod>2026-04-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://solarmatch.site/features"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://solarmatch.site/ar/features"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://solarmatch.site/features"/>
-  </url>
-  <url>
     <loc>https://solarmatch.site/why-solarmatch</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>monthly</changefreq>
