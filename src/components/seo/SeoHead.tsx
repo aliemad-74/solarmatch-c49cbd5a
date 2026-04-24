@@ -74,9 +74,16 @@ export const orgSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "SolarMatch",
-  alternateName: ["Solar Match", "SolarMatch Egypt"],
+  alternateName: ["Solar Match", "SolarMatch Egypt", "سولار ماتش"],
   url: SITE,
-  logo: `${SITE}/favicon.png`,
+  logo: {
+    "@type": "ImageObject",
+    url: `${SITE}/logo-512.png`,
+    width: 1024,
+    height: 1024,
+    caption: "SolarMatch",
+  },
+  image: `${SITE}/logo-512.png`,
   areaServed: { "@type": "Country", name: "Egypt" },
   sameAs: [],
   description:
