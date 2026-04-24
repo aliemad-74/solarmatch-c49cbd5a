@@ -138,7 +138,7 @@ export const articleSchema = (
   publisher: {
     "@type": "Organization",
     name: "SolarMatch",
-    logo: { "@type": "ImageObject", url: `${SITE}/favicon.png` },
+    logo: { "@type": "ImageObject", url: `${SITE}/logo-512.png`, width: 1024, height: 1024 },
   },
   mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE}${path}` },
   datePublished: "2026-01-01",
@@ -149,7 +149,8 @@ export const localBusinessSchema: Record<string, unknown> = {
   "@type": "LocalBusiness",
   name: "SolarMatch",
   url: SITE,
-  image: `${SITE}/favicon.png`,
+  image: `${SITE}/logo-512.png`,
+  logo: `${SITE}/logo-512.png`,
   telephone: "+201111009619",
   email: "support@solarmatch.app",
   areaServed: { "@type": "Country", name: "Egypt" },
