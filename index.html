@@ -62,11 +62,16 @@
         "logo": {
           "@type": "ImageObject",
           "url": "https://solarmatch.site/logo-512.png",
-          "width": 512,
-          "height": 512,
+          "width": 1024,
+          "height": 1024,
           "caption": "SolarMatch"
         },
-        "image": "https://solarmatch.site/logo-512.png",
+        "image": {
+          "@type": "ImageObject",
+          "url": "https://solarmatch.site/logo-512.png",
+          "width": 1024,
+          "height": 1024
+        },
         "description": "SolarMatch — منصة ذكاء اصطناعي لحساب جدوى الطاقة الشمسية في مصر للمنازل والمزارع والشركات. AI-powered rooftop solar feasibility platform for Egypt covering system size, savings, ROI and payback.",
         "areaServed": { "@type": "Country", "name": "Egypt" },
         "sameAs": []
@@ -95,6 +100,41 @@
           "target": "https://solarmatch.site/?q={search_term_string}",
           "query-input": "required name=search_term_string"
         }
+      }
+    </script>
+
+    <!-- WebApplication schema (helps Google understand the calculator product) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "SolarMatch",
+        "alternateName": ["Solar Match", "سولار ماتش"],
+        "url": "https://solarmatch.site",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript",
+        "inLanguage": ["en", "ar"],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EGP" },
+        "image": "https://solarmatch.site/logo-512.png",
+        "description": "Free AI solar feasibility calculator for Egypt — estimate system size, savings, ROI and payback for homes, farms and businesses. حاسبة مجانية لجدوى الطاقة الشمسية في مصر."
+      }
+    </script>
+
+    <!-- LocalBusiness schema (Egypt service area) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "SolarMatch",
+        "image": "https://solarmatch.site/logo-512.png",
+        "logo": "https://solarmatch.site/logo-512.png",
+        "url": "https://solarmatch.site",
+        "telephone": "+201111009619",
+        "email": "support@solarmatch.app",
+        "priceRange": "Free",
+        "address": { "@type": "PostalAddress", "addressCountry": "EG" },
+        "areaServed": { "@type": "Country", "name": "Egypt" }
       }
     </script>
   </head>
