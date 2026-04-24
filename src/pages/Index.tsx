@@ -13,6 +13,7 @@ import PaywallModal from "@/components/PaywallModal";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
 import OnboardingTour, { ONBOARDING_FLAG } from "@/components/OnboardingTour";
+import DemoCaseStudy from "@/components/DemoCaseStudy";
 
 import ScrollReveal from "@/components/ScrollReveal";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
@@ -576,6 +577,12 @@ const Index = () => {
             />
           </ScrollReveal>
         </div>
+
+        <ScrollReveal>
+          <DemoCaseStudy
+            onCtaClick={() => document.getElementById("map-section")?.scrollIntoView({ behavior: "smooth" })}
+          />
+        </ScrollReveal>
 
         <ScrollReveal>
           <FAQSection />
