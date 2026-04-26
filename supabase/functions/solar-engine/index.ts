@@ -166,17 +166,58 @@ async function getAirQuality(lat: number, lng: number, apiKey: string) {
     const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ location: { latitude: lat, longitude: lng } }),
+      body: JSON.stringify({
+        location: { latitude: lat, longitude: lng },
+        extraComputations: ["DOMINANT_POLLUTANT_CONCENTRATION", "POLLUTANT_CONCENTRATION"],
+      }),
     });
     if (res.ok) {
       const data = await res.json();
       const idx = data?.indexes?.[0];
-      return idx?.aqi ?? idx?.aqiDisplay ? parseInt(idx.aqiDisplay) : 75;
+      const aqi = typeof idx?.aqi === "number" ? idx.aqi : (idx?.aqiDisplay ? parseInt(idx.aqiDisplay) : 75);
+      const dominantPollutant = idx?.dominantPollutant ?? null;
+      const pollutants: any[] = data?.pollutants ?? [];
+      const findConc = (code: string) =>
+        pollutants.find((x) => x?.code === code)?.concentration?.value ?? null;
+      return { aqi, dominantPollutant, pm10: findConc("pm10"), pm25: findConc("pm25") };
     }
   } catch (e) {
     console.error("Air Quality error:", e);
   }
-  return 75; // moderate default for Egypt
+  return { aqi: 75, dominantPollutant: null, pm10: null, pm25: null };
+}
+
+async function getPollenDust(lat: number, lng: number, apiKey: string) {
+  try {
+    const url = `https://pollen.googleapis.com/v1/forecast:lookup?key=${apiKey}&location.latitude=${lat}&location.longitude=${lng}&days=1`;
+    const res = await fetchWithTimeout(url);
+    if (res.ok) {
+      const data = await res.json();
+      const types: any[] = data?.dailyInfo?.[0]?.pollenTypeInfo ?? [];
+      const maxIndex = types.reduce((m, t) => Math.max(m, t?.indexInfo?.value ?? 0), 0);
+      return { pollenIndex: maxIndex, available: true };
+    }
+  } catch (e) {
+    console.error("Pollen API error:", e);
+  }
+  return { pollenIndex: 0, available: false };
+}
+
+// Combined soiling-loss model: PM10 dominates in Egypt; pollen adds a small bump.
+function combinedSoilingLoss(pm10: number | null, pm25: number | null, pollenIndex: number, aqi: number): number {
+  let pmBased: number | null = null;
+  const v = pm10 ?? (pm25 != null ? pm25 * 1.5 : null);
+  if (v != null) {
+    if (v < 50) pmBased = 0.02;
+    else if (v < 100) pmBased = 0.035;
+    else if (v < 200) pmBased = 0.05;
+    else pmBased = 0.065;
+  }
+  const aqiBased = dustLoss(aqi);
+  let base = pmBased ?? aqiBased;
+  // Pollen bump: index 0-5 → up to +1%
+  base += Math.min(pollenIndex, 5) * 0.002;
+  return Math.min(base, 0.10); // cap 10%
 }
 
 /* ───── STEP 4: Elevation ───── */
@@ -258,17 +299,21 @@ serve(async (req) => {
     const pkg = (["economy", "standard", "premium"].includes(pvPackage) ? pvPackage : "standard") as string;
 
     // STEP 1-4: parallel API calls + market prices
-    const [geo, solarData, weather, aqi, elevation, marketPrices] = await Promise.all([
+    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices] = await Promise.all([
       geocode(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getSolarData(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getWeather(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getAirQuality(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getElevation(latitude, longitude, GOOGLE_MAPS_API_KEY),
+      getPollenDust(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getMarketPrices(),
     ]);
 
+    const aqi = airQuality.aqi;
+    const dominantPollutant = airQuality.dominantPollutant;
+
     // STEP 5: Enhanced calculation
-    const dust = dustLoss(aqi);
+    const dust = combinedSoilingLoss(airQuality.pm10, airQuality.pm25, pollen.pollenIndex, aqi);
     const tf = tempFactor(elevation);
     const effectiveArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
     const base_irradiance = solarData.irradiance * 365;
@@ -329,7 +374,9 @@ Payback Period: ${payback_years} years
 Annual Savings: ${annual_savings} EGP
 Total Cost: ${total_cost} EGP
 CO2 Saved: ${co2_saved} tons/year
-Air Quality Index: ${aqi} (${Math.round(dust * 100)}% dust loss)
+Air Quality Index: ${aqi}${dominantPollutant ? ` (dominant: ${dominantPollutant})` : ""}
+PM10: ${airQuality.pm10 ?? "n/a"} µg/m³  PM2.5: ${airQuality.pm25 ?? "n/a"} µg/m³
+Soiling Loss Applied: ${Math.round(dust * 1000) / 10}% (combined dust + pollen index ${pollen.pollenIndex})
 Elevation: ${Math.round(elevation)}m
 Weather: ${weather.temperature}°C, ${weather.cloudCover}% cloud cover
 Data Source: ${solarData.source}
@@ -338,7 +385,7 @@ Feasibility: ${feasibility}
 Provide:
 1. One clear opening sentence about the feasibility verdict
 2. Top 3 factors driving this recommendation (ranked by impact)
-3. One specific insight about this location's conditions
+3. One specific insight about this location's conditions (mention dust/cleaning if soiling > 4%)
 4. One actionable next step
 
 Keep response under 200 words. Be specific with numbers.`;
@@ -359,6 +406,11 @@ Keep response under 200 words. Be specific with numbers.`;
       },
       environmental: {
         aqi,
+        dominant_pollutant: dominantPollutant,
+        pm10: airQuality.pm10,
+        pm25: airQuality.pm25,
+        pollen_index: pollen.pollenIndex,
+        soiling_loss_percent: Math.round(dust * 1000) / 10,
         dust_efficiency_loss: Math.round(dust * 100),
         temperature: weather.temperature,
         humidity: weather.humidity,

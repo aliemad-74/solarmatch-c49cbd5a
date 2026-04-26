@@ -381,6 +381,7 @@ export type Database = {
           annual_production: number | null
           annual_savings: number | null
           aqi: number | null
+          aqi_value: number | null
           area_in_feddans: number | null
           building_type: string | null
           city: string | null
@@ -389,6 +390,7 @@ export type Database = {
           coverage_ratio: number | null
           created_at: string
           data_source: string | null
+          dominant_pollutant: string | null
           dust_efficiency_loss: number | null
           elevation: number | null
           farm_mode: boolean | null
@@ -400,8 +402,10 @@ export type Database = {
           longitude: number
           monthly_consumption: number | null
           payback_years: number | null
+          pollen_dust_index: number | null
           pv_package: string | null
           rooftop_area: number | null
+          soiling_loss_applied: number | null
           system_size_kw: number | null
           temperature: number | null
           total_cost: number | null
@@ -413,6 +417,7 @@ export type Database = {
           annual_production?: number | null
           annual_savings?: number | null
           aqi?: number | null
+          aqi_value?: number | null
           area_in_feddans?: number | null
           building_type?: string | null
           city?: string | null
@@ -421,6 +426,7 @@ export type Database = {
           coverage_ratio?: number | null
           created_at?: string
           data_source?: string | null
+          dominant_pollutant?: string | null
           dust_efficiency_loss?: number | null
           elevation?: number | null
           farm_mode?: boolean | null
@@ -432,8 +438,10 @@ export type Database = {
           longitude: number
           monthly_consumption?: number | null
           payback_years?: number | null
+          pollen_dust_index?: number | null
           pv_package?: string | null
           rooftop_area?: number | null
+          soiling_loss_applied?: number | null
           system_size_kw?: number | null
           temperature?: number | null
           total_cost?: number | null
@@ -445,6 +453,7 @@ export type Database = {
           annual_production?: number | null
           annual_savings?: number | null
           aqi?: number | null
+          aqi_value?: number | null
           area_in_feddans?: number | null
           building_type?: string | null
           city?: string | null
@@ -453,6 +462,7 @@ export type Database = {
           coverage_ratio?: number | null
           created_at?: string
           data_source?: string | null
+          dominant_pollutant?: string | null
           dust_efficiency_loss?: number | null
           elevation?: number | null
           farm_mode?: boolean | null
@@ -464,8 +474,10 @@ export type Database = {
           longitude?: number
           monthly_consumption?: number | null
           payback_years?: number | null
+          pollen_dust_index?: number | null
           pv_package?: string | null
           rooftop_area?: number | null
+          soiling_loss_applied?: number | null
           system_size_kw?: number | null
           temperature?: number | null
           total_cost?: number | null
