@@ -166,17 +166,58 @@ async function getAirQuality(lat: number, lng: number, apiKey: string) {
     const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ location: { latitude: lat, longitude: lng } }),
+      body: JSON.stringify({
+        location: { latitude: lat, longitude: lng },
+        extraComputations: ["DOMINANT_POLLUTANT_CONCENTRATION", "POLLUTANT_CONCENTRATION"],
+      }),
     });
     if (res.ok) {
       const data = await res.json();
       const idx = data?.indexes?.[0];
-      return idx?.aqi ?? idx?.aqiDisplay ? parseInt(idx.aqiDisplay) : 75;
+      const aqi = typeof idx?.aqi === "number" ? idx.aqi : (idx?.aqiDisplay ? parseInt(idx.aqiDisplay) : 75);
+      const dominantPollutant = idx?.dominantPollutant ?? null;
+      const pollutants: any[] = data?.pollutants ?? [];
+      const findConc = (code: string) =>
+        pollutants.find((x) => x?.code === code)?.concentration?.value ?? null;
+      return { aqi, dominantPollutant, pm10: findConc("pm10"), pm25: findConc("pm25") };
     }
   } catch (e) {
     console.error("Air Quality error:", e);
   }
-  return 75; // moderate default for Egypt
+  return { aqi: 75, dominantPollutant: null, pm10: null, pm25: null };
+}
+
+async function getPollenDust(lat: number, lng: number, apiKey: string) {
+  try {
+    const url = `https://pollen.googleapis.com/v1/forecast:lookup?key=${apiKey}&location.latitude=${lat}&location.longitude=${lng}&days=1`;
+    const res = await fetchWithTimeout(url);
+    if (res.ok) {
+      const data = await res.json();
+      const types: any[] = data?.dailyInfo?.[0]?.pollenTypeInfo ?? [];
+      const maxIndex = types.reduce((m, t) => Math.max(m, t?.indexInfo?.value ?? 0), 0);
+      return { pollenIndex: maxIndex, available: true };
+    }
+  } catch (e) {
+    console.error("Pollen API error:", e);
+  }
+  return { pollenIndex: 0, available: false };
+}
+
+// Combined soiling-loss model: PM10 dominates in Egypt; pollen adds a small bump.
+function combinedSoilingLoss(pm10: number | null, pm25: number | null, pollenIndex: number, aqi: number): number {
+  let pmBased: number | null = null;
+  const v = pm10 ?? (pm25 != null ? pm25 * 1.5 : null);
+  if (v != null) {
+    if (v < 50) pmBased = 0.02;
+    else if (v < 100) pmBased = 0.035;
+    else if (v < 200) pmBased = 0.05;
+    else pmBased = 0.065;
+  }
+  const aqiBased = dustLoss(aqi);
+  let base = pmBased ?? aqiBased;
+  // Pollen bump: index 0-5 → up to +1%
+  base += Math.min(pollenIndex, 5) * 0.002;
+  return Math.min(base, 0.10); // cap 10%
 }
 
 /* ───── STEP 4: Elevation ───── */
