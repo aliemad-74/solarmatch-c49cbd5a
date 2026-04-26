@@ -355,6 +355,6 @@ Write in detail (4-6 paragraphs). Do NOT start with "As a" or "As your". Start d
 
   } catch (error) {
     console.error("Top-level error:", error);
-    return jsonResponse({ success: false, error: error?.message || "An unexpected error occurred" }, 500);
+    return jsonResponse({ success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" }, 500);
   }
 });
