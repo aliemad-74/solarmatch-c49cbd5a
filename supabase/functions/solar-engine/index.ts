@@ -299,17 +299,21 @@ serve(async (req) => {
     const pkg = (["economy", "standard", "premium"].includes(pvPackage) ? pvPackage : "standard") as string;
 
     // STEP 1-4: parallel API calls + market prices
-    const [geo, solarData, weather, aqi, elevation, marketPrices] = await Promise.all([
+    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices] = await Promise.all([
       geocode(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getSolarData(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getWeather(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getAirQuality(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getElevation(latitude, longitude, GOOGLE_MAPS_API_KEY),
+      getPollenDust(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getMarketPrices(),
     ]);
 
+    const aqi = airQuality.aqi;
+    const dominantPollutant = airQuality.dominantPollutant;
+
     // STEP 5: Enhanced calculation
-    const dust = dustLoss(aqi);
+    const dust = combinedSoilingLoss(airQuality.pm10, airQuality.pm25, pollen.pollenIndex, aqi);
     const tf = tempFactor(elevation);
     const effectiveArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
     const base_irradiance = solarData.irradiance * 365;
@@ -370,7 +374,9 @@ Payback Period: ${payback_years} years
 Annual Savings: ${annual_savings} EGP
 Total Cost: ${total_cost} EGP
 CO2 Saved: ${co2_saved} tons/year
-Air Quality Index: ${aqi} (${Math.round(dust * 100)}% dust loss)
+Air Quality Index: ${aqi}${dominantPollutant ? ` (dominant: ${dominantPollutant})` : ""}
+PM10: ${airQuality.pm10 ?? "n/a"} µg/m³  PM2.5: ${airQuality.pm25 ?? "n/a"} µg/m³
+Soiling Loss Applied: ${Math.round(dust * 1000) / 10}% (combined dust + pollen index ${pollen.pollenIndex})
 Elevation: ${Math.round(elevation)}m
 Weather: ${weather.temperature}°C, ${weather.cloudCover}% cloud cover
 Data Source: ${solarData.source}
@@ -379,7 +385,7 @@ Feasibility: ${feasibility}
 Provide:
 1. One clear opening sentence about the feasibility verdict
 2. Top 3 factors driving this recommendation (ranked by impact)
-3. One specific insight about this location's conditions
+3. One specific insight about this location's conditions (mention dust/cleaning if soiling > 4%)
 4. One actionable next step
 
 Keep response under 200 words. Be specific with numbers.`;
@@ -400,6 +406,11 @@ Keep response under 200 words. Be specific with numbers.`;
       },
       environmental: {
         aqi,
+        dominant_pollutant: dominantPollutant,
+        pm10: airQuality.pm10,
+        pm25: airQuality.pm25,
+        pollen_index: pollen.pollenIndex,
+        soiling_loss_percent: Math.round(dust * 1000) / 10,
         dust_efficiency_loss: Math.round(dust * 100),
         temperature: weather.temperature,
         humidity: weather.humidity,
