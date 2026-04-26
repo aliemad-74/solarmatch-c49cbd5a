@@ -1,40 +1,71 @@
+# Google APIs to Improve SolarMatch
 
+## Already in use
+- **Maps JavaScript API** — map display
+- **Places Autocomplete API** — address search
+- **Geocoding API** — coordinates ↔ address
+- **Solar API** — building insights, roof segments, sunshine hours
+- **Gemini API** (via Lovable AI Gateway) — chatbot & advisor
 
-## المشكلة
+---
 
-لما المساحة كبيرة والاستهلاك قليل، السيستم بيبقى أكبر بكتير من المطلوب (coverage ratio 300%+). التوفير السنوي محدود بالاستهلاك الفعلي بس التكلفة محسوبة على السيستم الكامل، فالـ payback بيطلع عالي والموقع بيقول "Not Suitable" -- وده غلط لأن الموقع مناسب جداً، بس السيستم أكبر من اللازم.
+## High-impact additions (recommended)
 
-## الحل
+### 1. Air Quality API
+Show local AQI and pollution levels on the results dashboard. Strong selling point for solar — dirty air = more reason to go clean. Also affects panel soiling rate.
+- **Use:** Add an "Environmental Impact" badge showing local AQI next to the CO₂ savings card.
 
-### 1. تعديل منطق الـ Feasibility (ملفين)
+### 2. Pollen API
+Egypt has high dust/pollen seasons that soil panels and reduce output. Use to refine the soiling-loss factor in calculations and warn users about cleaning frequency.
+- **Use:** Adjust annual energy output by 2–5% based on local pollen/dust index.
 
-**`solar-engine/index.ts`** و **`ResultsDashboard.tsx`** -- إضافة حالة رابعة: `oversized`
+### 3. Elevation API
+Roof tilt, shading and irradiance models improve when elevation is known. Already partially used in `solar-engine` — could be expanded.
+- **Use:** More accurate panel orientation recommendations.
 
-المنطق الجديد:
-- لو `coverage_ratio >= 3.0` (300%+) → `oversized` (مناسب بس محتاج تصغير)
-- لو `coverage_ratio >= 0.7` و `payback <= 10` → `suitable`
-- لو `coverage_ratio >= 0.3` و `payback <= 15` → `conditional`
-- غير كده → `not_suitable`
+### 4. Time Zone API
+Critical for accurate peak-sun-hour calculations and time-of-use tariff modeling (when Egypt rolls out ToU pricing).
+- **Use:** Backend calculation precision; no UI change.
 
-### 2. حساب الحجم المثالي في الـ Engine
+### 5. Street View Static API
+Show a street-level photo of the user's property next to the map for confidence ("this is your building").
+- **Use:** Add a small image card in the results header.
 
-لما السيستم oversized، الـ engine هيحسب:
-- **recommended_size_kw** = الحجم اللي يغطي 110% من الاستهلاك
-- **recommended_area** = المساحة المطلوبة فعلياً
-- **recommended_cost** = التكلفة بعد التصغير
-- **savings_from_downsizing** = الفرق في التكلفة
+### 6. Distance Matrix API
+For the **installer/lead matching** flow (Business plan): match users with the nearest verified installers and show distance/drive time.
+- **Use:** Powers a future "Get 3 quotes from nearby installers" feature.
 
-### 3. عرض النتيجة في الـ UI
+---
 
-في `ResultsDashboard.tsx`:
-- أيقونة خضرا مع علامة تعديل (مش أحمر)
-- رسالة: "موقعك ممتاز للطاقة الشمسية! بس السيستم أكبر من اللازم. ممكن تقلل المساحة وتوفر في التكلفة"
-- عرض الحجم المقترح والتكلفة الجديدة والتوفير
+## Medium-impact additions
 
-### الملفات المطلوب تعديلها
+### 7. Weather API (Google Weather, newly GA)
+Replace/augment NASA POWER fallback with live and forecast weather. Better short-term production forecasts ("Expected output this week: X kWh").
+- **Use:** Add a 7-day production forecast widget.
 
-1. **`supabase/functions/solar-engine/index.ts`** -- إضافة منطق `oversized` + حساب الحجم المثالي
-2. **`src/components/ResultsDashboard.tsx`** -- إضافة حالة `oversized` في الـ UI مع التوصيات
-3. **`src/pages/Index.tsx`** -- تحديث الـ type ليشمل `oversized`
-4. **`src/i18n/locales/en.json`** + **`ar.json`** -- إضافة ترجمات الحالة الجديدة
+### 8. Routes API
+If you add an installer marketplace, plan service-call routes for installers.
 
+### 9. Address Validation API
+Verify that the entered address is real and deliverable before saving leads — improves lead quality for the Business plan.
+
+### 10. reCAPTCHA Enterprise
+Protect the lead capture and registration endpoints from bots (you already have IP-based limits; this strengthens it).
+
+---
+
+## Lower priority / niche
+
+- **Map Tiles API (Photorealistic 3D Tiles)** — show a 3D view of the building. Visually impressive but heavy and costly.
+- **Aerial View API** — auto-generated cinematic flyover of the property. Wow-factor for shareable reports.
+- **Imagen API (via Gemini)** — generate marketing visuals, social share cards.
+
+---
+
+## Recommended next step
+Pick **2–3** to implement first. My suggestion:
+1. **Air Quality API** — visible value-add on results dashboard
+2. **Pollen API** — improves calculation accuracy (dust/soiling)
+3. **Street View Static API** — quick visual win on the report
+
+Tell me which ones you want and I'll implement them (each needs the Google Maps API key — already configured in your edge functions — with the relevant API enabled in Google Cloud Console).
