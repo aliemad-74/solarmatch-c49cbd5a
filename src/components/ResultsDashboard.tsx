@@ -890,9 +890,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
 
                 <AirQualityCard env={solarEngineData.environmental} />
 
-                {solarEngineData.vision_analysis && (
-                  <SatelliteVisionCard vision={solarEngineData.vision_analysis} />
+                {visionLoading && !visionData && (
+                  <Card className="p-6 border-primary/10">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      {isAr ? "جاري تحليل صورة القمر الصناعي بالذكاء الاصطناعي..." : "Analyzing satellite image with AI..."}
+                    </div>
+                    <div className="mt-4 h-32 rounded-md bg-muted animate-pulse" />
+                  </Card>
                 )}
+                {visionData && <SatelliteVisionCard vision={visionData} />}
 
                 <StreetViewCard
                   lat={solarEngineData.location.coordinates.lat}
