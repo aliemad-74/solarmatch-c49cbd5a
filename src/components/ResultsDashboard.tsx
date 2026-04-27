@@ -28,6 +28,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import type { SolarEngineData } from "@/pages/Index";
 import SatelliteVisionCard from "@/components/SatelliteVisionCard";
+import AirQualityCard from "@/components/AirQualityCard";
+import StreetViewCard from "@/components/StreetViewCard";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -884,9 +886,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   )}
                 </div>
 
+                <AirQualityCard env={solarEngineData.environmental} />
+
                 {solarEngineData.vision_analysis && (
                   <SatelliteVisionCard vision={solarEngineData.vision_analysis} />
                 )}
+
+                <StreetViewCard
+                  lat={solarEngineData.location.coordinates.lat}
+                  lng={solarEngineData.location.coordinates.lng}
+                />
               </div>
             ) : null}
           </div>

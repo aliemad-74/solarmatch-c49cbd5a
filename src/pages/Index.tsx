@@ -38,6 +38,11 @@ export interface SolarEngineData {
   };
   environmental: {
     aqi: number;
+    dominant_pollutant?: string | null;
+    pm10?: number | null;
+    pm25?: number | null;
+    pollen_index?: number;
+    soiling_loss_percent?: number;
     dust_efficiency_loss: number;
     temperature: number;
     humidity?: number;
