@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import type { SolarEngineData } from "@/pages/Index";
 import SatelliteVisionCard from "@/components/SatelliteVisionCard";
+import { Card } from "@/components/ui/card";
 import AirQualityCard from "@/components/AirQualityCard";
 import StreetViewCard from "@/components/StreetViewCard";
 
@@ -43,10 +44,12 @@ interface ResultsDashboardProps {
   electricityPrice?: number;
   solarEngineData?: SolarEngineData | null;
   solarEngineLoading?: boolean;
+  visionData?: NonNullable<SolarEngineData["vision_analysis"]> | null;
+  visionLoading?: boolean;
   aiReviewText?: string;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, visionData, visionLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const { profile } = useUserAuth();
   const planFeatures = usePlanFeatures();
@@ -888,9 +891,16 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
 
                 <AirQualityCard env={solarEngineData.environmental} />
 
-                {solarEngineData.vision_analysis && (
-                  <SatelliteVisionCard vision={solarEngineData.vision_analysis} />
+                {visionLoading && !visionData && (
+                  <Card className="p-6 border-primary/10">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      {isAr ? "جاري تحليل صورة القمر الصناعي بالذكاء الاصطناعي..." : "Analyzing satellite image with AI..."}
+                    </div>
+                    <div className="mt-4 h-32 rounded-md bg-muted animate-pulse" />
+                  </Card>
                 )}
+                {visionData && <SatelliteVisionCard vision={visionData} />}
 
                 <StreetViewCard
                   lat={solarEngineData.location.coordinates.lat}
