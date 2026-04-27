@@ -73,6 +73,17 @@ export interface SolarEngineData {
     recommended_payback: number;
     savings_from_downsizing: number;
   };
+  vision_analysis?: {
+    usableAreaRatio: number;
+    obstacles: { type: string; description: string }[];
+    shadingLevel: "low" | "medium" | "high";
+    orientation: "north" | "south" | "east" | "west" | "mixed" | "flat";
+    warnings: string[];
+    confidence: "low" | "medium" | "high";
+    summary: string;
+    applied_ratio: number;
+    cached?: boolean;
+  };
 }
 
 const Index = () => {
