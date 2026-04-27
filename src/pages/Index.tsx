@@ -105,6 +105,10 @@ const Index = () => {
   // Solar engine enhanced data
   const [solarEngineData, setSolarEngineData] = useState<SolarEngineData | null>(null);
   const [solarEngineLoading, setSolarEngineLoading] = useState(false);
+
+  // Standalone Satellite Vision (called in parallel from frontend so the card appears independently)
+  const [visionData, setVisionData] = useState<NonNullable<SolarEngineData["vision_analysis"]> | null>(null);
+  const [visionLoading, setVisionLoading] = useState(false);
   
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
