@@ -16,6 +16,9 @@ import {
   Calculator,
   Leaf,
   TrendingUp,
+  ScanEye,
+  Wind,
+  Camera,
 } from 'lucide-react';
 import { PageSeo } from '@/components/seo/PageSeo';
 import Header from '@/components/Header';
