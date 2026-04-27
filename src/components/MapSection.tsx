@@ -15,6 +15,7 @@ interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
+  onPolygonChange?: (points: google.maps.LatLngLiteral[]) => void;
 }
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
@@ -26,6 +27,7 @@ const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
+  onPolygonChange,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawingMode, setIsDrawingMode] = useState(false);
