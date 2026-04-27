@@ -384,7 +384,15 @@ const Index = () => {
         marketPriceOverrides
       );
 
-      // Step 2: AI Review checkpoint — validate calculations before showing to user
+      // Step 2: AI Review checkpoint — wait for solar-engine (vision + environmental) first,
+      // so the verification prompt is grounded in the satellite-vision findings even if it adds latency.
+      let engineResult: SolarEngineData | null = null;
+      try {
+        engineResult = await enginePromise;
+      } catch {
+        engineResult = null;
+      }
+
       try {
         const reviewResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/solar-advisor`,
@@ -412,6 +420,9 @@ const Index = () => {
                 buildingType,
                 pvType,
               },
+              // Ground the verification layer in real satellite-vision + air-quality findings
+              visionFindings: engineResult?.vision_analysis ?? visionData ?? null,
+              environmental: engineResult?.environmental ?? null,
               language: i18n.language,
               mode: "review",
             }),
