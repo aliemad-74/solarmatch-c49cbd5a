@@ -73,6 +73,17 @@ export interface SolarEngineData {
     recommended_payback: number;
     savings_from_downsizing: number;
   };
+  vision_analysis?: {
+    usableAreaRatio: number;
+    obstacles: { type: string; description: string }[];
+    shadingLevel: "low" | "medium" | "high";
+    orientation: "north" | "south" | "east" | "west" | "mixed" | "flat";
+    warnings: string[];
+    confidence: "low" | "medium" | "high";
+    summary: string;
+    applied_ratio: number;
+    cached?: boolean;
+  };
 }
 
 const Index = () => {
@@ -95,6 +106,7 @@ const Index = () => {
   const [userEditedConfig, setUserEditedConfig] = useState(false);
   const { panelPrices, tariffs, getCostPerKW, refresh: refreshMarketData } = useMarketData();
   const [polygonDrawn, setPolygonDrawn] = useState(false);
+  const [polygonPoints, setPolygonPoints] = useState<{ lat: number; lng: number }[]>([]);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
@@ -243,6 +255,8 @@ const Index = () => {
             pvPackage: pkg,
             farmMode,
             areaInFeddans: farmMode ? areaInFeddans : undefined,
+            polygonPoints: polygonPoints.length >= 3 ? polygonPoints : undefined,
+            language: i18n.language?.startsWith("ar") ? "ar" : "en",
           }),
           signal: controller.signal,
         }
@@ -496,6 +510,7 @@ const Index = () => {
           <ScrollReveal>
             <MapSection
               onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setPolygonDrawn(true); }}
+              onPolygonChange={(pts) => setPolygonPoints(pts.map((p) => ({ lat: p.lat, lng: p.lng })))}
               onClimateDataFetched={(data) => {
                 setClimateData(data);
                 if (initialLocationLoadRef.current) {

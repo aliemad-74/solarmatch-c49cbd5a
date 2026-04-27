@@ -27,6 +27,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import type { SolarEngineData } from "@/pages/Index";
+import SatelliteVisionCard from "@/components/SatelliteVisionCard";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -883,6 +884,9 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   )}
                 </div>
 
+                {solarEngineData.vision_analysis && (
+                  <SatelliteVisionCard vision={solarEngineData.vision_analysis} />
+                )}
               </div>
             ) : null}
           </div>
