@@ -43,10 +43,12 @@ interface ResultsDashboardProps {
   electricityPrice?: number;
   solarEngineData?: SolarEngineData | null;
   solarEngineLoading?: boolean;
+  visionData?: NonNullable<SolarEngineData["vision_analysis"]> | null;
+  visionLoading?: boolean;
   aiReviewText?: string;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, visionData, visionLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const { profile } = useUserAuth();
   const planFeatures = usePlanFeatures();
