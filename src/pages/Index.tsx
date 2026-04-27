@@ -342,6 +342,8 @@ const Index = () => {
           } catch {
             // Silent - don't bother user
           }
+
+          return data;
         }
       }
     } catch {
@@ -349,6 +351,7 @@ const Index = () => {
     } finally {
       setSolarEngineLoading(false);
     }
+    return null;
   };
 
   const performCalculation = async () => {
