@@ -90,8 +90,9 @@ const MapSection = ({
       const area = calculatePolygonArea(polygonPoints);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) onAreaCalculated(area);
+      onPolygonChange?.(polygonPoints);
     }
-  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated, onPolygonChange]);
 
   // Fetch climate data
   const fetchClimateForLocation = useCallback(
