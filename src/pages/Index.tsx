@@ -231,8 +231,8 @@ const Index = () => {
     }
   }, [user, profile, canGenerateReport, pendingCalculation]);
 
-  // Call solar-engine in parallel (fire and forget enhancement)
-  const callSolarEngine = async () => {
+  // Call solar-engine and return its data so callers can await environmental + vision findings
+  const callSolarEngine = async (): Promise<SolarEngineData | null> => {
     const packageMap: Record<string, string> = {
       'C_poly_economy': 'economy', 'low': 'economy',
       'B_standard_mono': 'standard', 'medium': 'standard',
