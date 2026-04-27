@@ -231,8 +231,8 @@ const Index = () => {
     }
   }, [user, profile, canGenerateReport, pendingCalculation]);
 
-  // Call solar-engine in parallel (fire and forget enhancement)
-  const callSolarEngine = async () => {
+  // Call solar-engine and return its data so callers can await environmental + vision findings
+  const callSolarEngine = async (): Promise<SolarEngineData | null> => {
     const packageMap: Record<string, string> = {
       'C_poly_economy': 'economy', 'low': 'economy',
       'B_standard_mono': 'standard', 'medium': 'standard',
@@ -342,6 +342,8 @@ const Index = () => {
           } catch {
             // Silent - don't bother user
           }
+
+          return data;
         }
       }
     } catch {
@@ -349,13 +351,15 @@ const Index = () => {
     } finally {
       setSolarEngineLoading(false);
     }
+    return null;
   };
 
   const performCalculation = async () => {
     setIsCalculating(true);
     
-    // Fire solar-engine in parallel (non-blocking enhancement)
-    callSolarEngine();
+    // Fire solar-engine in parallel — we will await its result before the AI review
+    // so the verification layer receives vision + environmental findings.
+    const enginePromise = callSolarEngine();
     
     try {
       // Build market price overrides from live data
@@ -380,7 +384,15 @@ const Index = () => {
         marketPriceOverrides
       );
 
-      // Step 2: AI Review checkpoint — validate calculations before showing to user
+      // Step 2: AI Review checkpoint — wait for solar-engine (vision + environmental) first,
+      // so the verification prompt is grounded in the satellite-vision findings even if it adds latency.
+      let engineResult: SolarEngineData | null = null;
+      try {
+        engineResult = await enginePromise;
+      } catch {
+        engineResult = null;
+      }
+
       try {
         const reviewResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/solar-advisor`,
@@ -408,6 +420,9 @@ const Index = () => {
                 buildingType,
                 pvType,
               },
+              // Ground the verification layer in real satellite-vision + air-quality findings
+              visionFindings: engineResult?.vision_analysis ?? visionData ?? null,
+              environmental: engineResult?.environmental ?? null,
               language: i18n.language,
               mode: "review",
             }),

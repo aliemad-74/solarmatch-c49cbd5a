@@ -381,6 +381,18 @@ serve(async (req) => {
     }
 
     // STEP 6: AI Analysis
+    const visionBlock = visionAnalysis ? `
+Satellite Vision AI (Gemini 2.5 Pro):
+- Usable area ratio: ${Math.round((visionAnalysis.usableAreaRatio ?? 1) * 100)}% (applied: ${Math.round(visionRatio * 100)}%)
+- Obstacles detected: ${(visionAnalysis.obstacles ?? []).length} (${(visionAnalysis.obstacles ?? []).map((o: any) => o.type).join(", ") || "none"})
+- Shading level: ${visionAnalysis.shadingLevel ?? "n/a"}
+- Roof orientation: ${visionAnalysis.orientation ?? "n/a"}
+- Vision confidence: ${visionAnalysis.confidence ?? "n/a"}
+- Effective area used in calc: ${Math.round(effectiveArea)} m² (raw: ${Math.round(baseArea)} m²)
+` : `
+Satellite Vision AI: not run (no polygon drawn). Calculation used full rooftop area without obstacle deduction.
+`;
+
     const aiPrompt = `You are SolarMatch AI, Egypt's expert solar feasibility advisor. Analyze this solar assessment and provide a personalized recommendation in the same language as the user's location (Arabic for Egyptian locations, English otherwise).
 
 Location: ${geo.formatted_address}
@@ -400,6 +412,7 @@ Elevation: ${Math.round(elevation)}m
 Weather: ${weather.temperature}°C, ${weather.cloudCover}% cloud cover
 Data Source: ${solarData.source}
 Feasibility: ${feasibility}
+${visionBlock}
 
 Provide:
 1. One clear opening sentence about the feasibility verdict
