@@ -95,6 +95,7 @@ const Index = () => {
   const [userEditedConfig, setUserEditedConfig] = useState(false);
   const { panelPrices, tariffs, getCostPerKW, refresh: refreshMarketData } = useMarketData();
   const [polygonDrawn, setPolygonDrawn] = useState(false);
+  const [polygonPoints, setPolygonPoints] = useState<{ lat: number; lng: number }[]>([]);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
@@ -243,6 +244,8 @@ const Index = () => {
             pvPackage: pkg,
             farmMode,
             areaInFeddans: farmMode ? areaInFeddans : undefined,
+            polygonPoints: polygonPoints.length >= 3 ? polygonPoints : undefined,
+            language: i18n.language?.startsWith("ar") ? "ar" : "en",
           }),
           signal: controller.signal,
         }
