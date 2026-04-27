@@ -329,7 +329,12 @@ serve(async (req) => {
     // STEP 5: Enhanced calculation
     const dust = combinedSoilingLoss(airQuality.pm10, airQuality.pm25, pollen.pollenIndex, aqi);
     const tf = tempFactor(elevation);
-    const effectiveArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
+    // Apply Vision AI usable-area ratio (defaults to 1.0 when vision unavailable)
+    const visionRatio: number = (visionAnalysis && typeof visionAnalysis.usableAreaRatio === "number")
+      ? Math.max(0.3, Math.min(1, visionAnalysis.usableAreaRatio))
+      : 1.0;
+    const baseArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
+    const effectiveArea = baseArea * visionRatio;
     const base_irradiance = solarData.irradiance * 365;
     const adjusted_irradiance_factor =
       solarData.irradiance * (1 - dust) * tf * (1 - weather.cloudCover / 200);
@@ -454,6 +459,7 @@ Keep response under 200 words. Be specific with numbers.`;
         confidence,
       },
       ...(recommended ? { recommended } : {}),
+      ...(visionAnalysis ? { vision_analysis: { ...visionAnalysis, applied_ratio: visionRatio } } : {}),
     };
 
     return new Response(JSON.stringify(result), {
