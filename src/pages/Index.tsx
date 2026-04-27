@@ -499,6 +499,7 @@ const Index = () => {
           <ScrollReveal>
             <MapSection
               onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setPolygonDrawn(true); }}
+              onPolygonChange={(pts) => setPolygonPoints(pts.map((p) => ({ lat: p.lat, lng: p.lng })))}
               onClimateDataFetched={(data) => {
                 setClimateData(data);
                 if (initialLocationLoadRef.current) {
