@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import type { SolarEngineData } from "@/pages/Index";
 import SatelliteVisionCard from "@/components/SatelliteVisionCard";
+import { Card } from "@/components/ui/card";
 import AirQualityCard from "@/components/AirQualityCard";
 import StreetViewCard from "@/components/StreetViewCard";
 
