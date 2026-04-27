@@ -357,8 +357,9 @@ const Index = () => {
   const performCalculation = async () => {
     setIsCalculating(true);
     
-    // Fire solar-engine in parallel (non-blocking enhancement)
-    callSolarEngine();
+    // Fire solar-engine in parallel — we will await its result before the AI review
+    // so the verification layer receives vision + environmental findings.
+    const enginePromise = callSolarEngine();
     
     try {
       // Build market price overrides from live data
