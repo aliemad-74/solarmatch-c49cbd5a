@@ -639,11 +639,13 @@ const Index = () => {
           </ScrollReveal>
         </div>
 
-        <ScrollReveal>
-          <DemoCaseStudy
-            onCtaClick={() => document.getElementById("map-section")?.scrollIntoView({ behavior: "smooth" })}
-          />
-        </ScrollReveal>
+        {!showResults && !isCalculating && (
+          <ScrollReveal>
+            <DemoCaseStudy
+              onCtaClick={() => document.getElementById("map-section")?.scrollIntoView({ behavior: "smooth" })}
+            />
+          </ScrollReveal>
+        )}
 
         <ScrollReveal>
           <FAQSection />
