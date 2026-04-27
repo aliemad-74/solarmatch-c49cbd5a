@@ -482,9 +482,20 @@ const Index = () => {
         await recordReportGeneration(locationName, calculation.kWInstalled);
       }
 
+      // Subtle delight: gentle haptic + success toast
+      try { if ("vibrate" in navigator) (navigator as any).vibrate?.(30); } catch { /* ignore */ }
+      toast.success(
+        i18n.language === 'ar' ? "تم تجهيز تقريرك ✨" : "Your report is ready ✨",
+        { duration: 2500 }
+      );
+
       setTimeout(() => {
-        document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+        const el = document.getElementById("results");
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      }, 150);
     } catch (error) {
       console.error("Calculation error:", error);
       toast.error(i18n.language === 'ar' ? "حدث خطأ في الحسابات" : "Calculation error");
