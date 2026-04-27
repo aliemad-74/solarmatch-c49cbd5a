@@ -883,6 +883,9 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   )}
                 </div>
 
+                {solarEngineData.vision_analysis && (
+                  <SatelliteVisionCard vision={solarEngineData.vision_analysis} />
+                )}
               </div>
             ) : null}
           </div>
