@@ -657,6 +657,23 @@ const Index = () => {
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
+
+          {showResults && !isCalculating && results && (
+            <ScrollReveal>
+              <div className="max-w-4xl mx-auto px-4 mt-8">
+                <FeedbackCard
+                  pageContext="results"
+                  metadata={{
+                    feasibility: results?.calculation?.feasibility,
+                    system_size_kw: results?.calculation?.system_size_kw,
+                    building_type: buildingType,
+                    farm_mode: farmMode,
+                    location: locationName,
+                  }}
+                />
+              </div>
+            </ScrollReveal>
+          )}
         </div>
 
         {!showResults && !isCalculating && (
