@@ -664,8 +664,6 @@ const Index = () => {
                 <FeedbackCard
                   pageContext="results"
                   metadata={{
-                    feasibility: results?.calculation?.feasibility,
-                    system_size_kw: results?.calculation?.system_size_kw,
                     building_type: buildingType,
                     farm_mode: farmMode,
                     location: locationName,
