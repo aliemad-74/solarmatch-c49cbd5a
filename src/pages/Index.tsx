@@ -246,7 +246,7 @@ const Index = () => {
     // Fire satellite-vision in parallel (independent of solar-engine)
     const lat = climateData?.location?.lat;
     const lng = climateData?.location?.lng;
-    if (lat != null && lng != null && polygonPoints.length >= 3 && !farmMode) {
+    if (lat != null && lng != null && polygonPoints.length >= 3) {
       setVisionLoading(true);
       setVisionData(null);
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/satellite-vision`, {
@@ -255,7 +255,15 @@ const Index = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ lat, lng, polygonPoints, language: i18n.language?.startsWith("ar") ? "ar" : "en" }),
+        body: JSON.stringify({
+          lat,
+          lng,
+          polygonPoints,
+          language: i18n.language?.startsWith("ar") ? "ar" : "en",
+          buildingType,
+          farmMode,
+          agriculturalActivity: farmMode ? agriculturalActivity : undefined,
+        }),
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((json) => { if (json && typeof json.usableAreaRatio === "number") setVisionData(json); })
