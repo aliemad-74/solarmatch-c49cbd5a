@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
+import FeedbackCard from "@/components/FeedbackCard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -656,6 +657,21 @@ const Index = () => {
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
+
+          {showResults && !isCalculating && results && (
+            <ScrollReveal>
+              <div className="max-w-4xl mx-auto px-4 mt-8">
+                <FeedbackCard
+                  pageContext="results"
+                  metadata={{
+                    building_type: buildingType,
+                    farm_mode: farmMode,
+                    location: locationName,
+                  }}
+                />
+              </div>
+            </ScrollReveal>
+          )}
         </div>
 
         {!showResults && !isCalculating && (
