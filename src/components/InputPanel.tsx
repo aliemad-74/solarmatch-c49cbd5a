@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD, systemPackages, agriculturalActivities, AgriculturalActivity, FEDDAN_TO_SQM } from "@/lib/solarData";
+import { pvTypes, PVType, buildingTypes, BuildingType, costScenarios, CostScenario, defaultClimateData, SPECIFIC_YIELD, systemPackages, agriculturalActivities, AgriculturalActivity, FEDDAN_TO_SQM, QIRAT_PER_FEDDAN, QIRAT_TO_SQM } from "@/lib/solarData";
 import { ClimateData } from "@/lib/climateApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, useEffect } from "react";
@@ -371,27 +371,55 @@ const InputPanel = ({
             <div className="border-t border-border pt-6 mb-6">
               <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
                 <CardContent className="p-4 space-y-4">
-                  {/* Area in Feddans */}
+                  {/* Area in Feddans + Qirat */}
                   <div className="space-y-3">
                     <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-primary" />
-                      {isArabic ? "المساحة بالفدان" : "Area in Feddans"}
+                      {isArabic ? "المساحة (فدان وقيراط)" : "Area (Feddans & Qirats)"}
                     </Label>
-                    <Input
-                      type="number"
-                      value={areaInFeddans || ''}
-                      onChange={(e) => setAreaInFeddans(e.target.value === '' ? 0 : Number(e.target.value))}
-                      min={0.1}
-                      step={0.1}
-                      className="h-12 text-lg font-medium"
-                      placeholder={isArabic ? "مثال: 2.5" : "Example: 2.5"}
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">{isArabic ? "فدان" : "Feddans"}</Label>
+                        <Input
+                          type="number"
+                          value={Math.floor(areaInFeddans) || ''}
+                          onChange={(e) => {
+                            const f = e.target.value === '' ? 0 : Math.max(0, Math.floor(Number(e.target.value)));
+                            const currentQirat = Math.round((areaInFeddans - Math.floor(areaInFeddans)) * QIRAT_PER_FEDDAN);
+                            setAreaInFeddans(f + currentQirat / QIRAT_PER_FEDDAN);
+                          }}
+                          min={0}
+                          step={1}
+                          className="h-12 text-lg font-medium"
+                          placeholder={isArabic ? "مثال: 2" : "e.g. 2"}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">{isArabic ? "قيراط (0-23)" : "Qirats (0-23)"}</Label>
+                        <Input
+                          type="number"
+                          value={Math.round((areaInFeddans - Math.floor(areaInFeddans)) * QIRAT_PER_FEDDAN) || ''}
+                          onChange={(e) => {
+                            const q = e.target.value === '' ? 0 : Math.min(23, Math.max(0, Math.floor(Number(e.target.value))));
+                            const currentFeddans = Math.floor(areaInFeddans);
+                            setAreaInFeddans(currentFeddans + q / QIRAT_PER_FEDDAN);
+                          }}
+                          min={0}
+                          max={23}
+                          step={1}
+                          className="h-12 text-lg font-medium"
+                          placeholder={isArabic ? "مثال: 12" : "e.g. 12"}
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-1 text-sm">
                       <p className="text-muted-foreground">
-                        = <span className="font-bold text-primary">{Math.round(areaInFeddans * FEDDAN_TO_SQM).toLocaleString()}</span> {isArabic ? "م² تقريباً" : "m² approximately"}
+                        = <span className="font-bold text-primary">{areaInFeddans.toFixed(2)}</span> {isArabic ? "فدان" : "feddan"}
+                        {" • "}
+                        <span className="font-bold text-primary">{Math.round(areaInFeddans * FEDDAN_TO_SQM).toLocaleString()}</span> {isArabic ? "م²" : "m²"}
                       </p>
-                      <p className="text-muted-foreground">
-                        ≈ <span className="font-bold text-primary">{(areaInFeddans * 5.88).toFixed(1)}</span> {isArabic ? "ملعب كرة قدم" : "football fields"}
+                      <p className="text-xs text-muted-foreground">
+                        {isArabic ? "1 فدان = 24 قيراط ≈ 4,200 م²" : "1 Feddan = 24 Qirat ≈ 4,200 m²"}
                       </p>
                     </div>
                   </div>
