@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
+import FeedbackCard from "@/components/FeedbackCard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
