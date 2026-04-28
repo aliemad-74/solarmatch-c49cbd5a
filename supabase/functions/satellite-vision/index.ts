@@ -191,7 +191,7 @@ serve(async (req) => {
     if (!GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY not configured");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { lat, lng, polygonPoints, language = "en" } = await req.json();
+    const { lat, lng, polygonPoints, language = "en", buildingType, farmMode, agriculturalActivity } = await req.json();
 
     if (typeof lat !== "number" || typeof lng !== "number") {
       return new Response(JSON.stringify({ error: "lat and lng required" }), {
@@ -206,7 +206,8 @@ serve(async (req) => {
       });
     }
 
-    const key = cacheKey(lat, lng, polygonPoints);
+    const ctxKey = `${buildingType ?? "?"}|${farmMode ? "farm" : "bld"}|${agriculturalActivity ?? "-"}`;
+    const key = cacheKey(lat, lng, polygonPoints) + "::" + ctxKey;
     const cached = cache.get(key);
     if (cached && cached.expiresAt > Date.now()) {
       return new Response(JSON.stringify({ ...cached.data, cached: true }), {
@@ -214,13 +215,16 @@ serve(async (req) => {
       });
     }
 
+    const ctx = buildContextDescription(buildingType, farmMode, agriculturalActivity, language);
     const url = buildStaticMapUrl(lat, lng, polygonPoints);
     const imageB64 = await fetchImageAsBase64(url);
-    const analysis = await analyzeWithGemini(imageB64, language);
+    const analysis = await analyzeWithGemini(imageB64, language, ctx);
 
     // Sanitize ratio
     const ratio = Math.max(0, Math.min(1, Number(analysis.usableAreaRatio) || 0.85));
     const result = {
+      siteType: analysis.siteType ?? "other",
+      sceneDescription: analysis.sceneDescription ?? "",
       usableAreaRatio: ratio,
       obstacles: analysis.obstacles ?? [],
       shadingLevel: analysis.shadingLevel ?? "low",
@@ -228,6 +232,7 @@ serve(async (req) => {
       warnings: analysis.warnings ?? [],
       confidence: analysis.confidence ?? "medium",
       summary: analysis.summary ?? "",
+      contextLabel: ctx.contextLabel,
       analyzedAt: new Date().toISOString(),
     };
 
