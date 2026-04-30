@@ -329,10 +329,14 @@ serve(async (req) => {
     // STEP 5: Enhanced calculation
     const dust = combinedSoilingLoss(airQuality.pm10, airQuality.pm25, pollen.pollenIndex, aqi);
     const tf = tempFactor(elevation);
-    // Apply Vision AI usable-area ratio (defaults to 1.0 when vision unavailable)
-    const visionRatio: number = (visionAnalysis && typeof visionAnalysis.usableAreaRatio === "number")
+    // Apply Vision AI: detected target ratio (real building/farm ÷ drawn polygon) × usable ratio (after obstacles)
+    const detectedRatio: number = (visionAnalysis && typeof visionAnalysis.detectedAreaRatio === "number")
+      ? Math.max(0.1, Math.min(1, visionAnalysis.detectedAreaRatio))
+      : 1.0;
+    const usableInsideTarget: number = (visionAnalysis && typeof visionAnalysis.usableAreaRatio === "number")
       ? Math.max(0.3, Math.min(1, visionAnalysis.usableAreaRatio))
       : 1.0;
+    const visionRatio: number = detectedRatio * usableInsideTarget;
     const baseArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
     const effectiveArea = baseArea * visionRatio;
     const base_irradiance = solarData.irradiance * 365;
