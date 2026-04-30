@@ -142,7 +142,10 @@ async function analyzeWithGemini(imageBase64: string, language: string, ctx: { c
           properties: {
             siteType: { type: "string", enum: ["residential_roof", "apartment_roof", "commercial_roof", "industrial_roof", "warehouse_roof", "cold_storage_building", "greenhouse", "open_farmland", "irrigated_field", "mixed_site", "other"], description: "What you actually see in the marked red area." },
             sceneDescription: { type: "string", description: "1-2 sentence factual description of what is inside the red polygon (in the requested language)." },
-            usableAreaRatio: { type: "number", description: "0.0-1.0, fraction of marked area usable for panels after subtracting obstacles" },
+            detectedAreaRatio: { type: "number", description: "0.05-1.0. Fraction of the drawn polygon that is occupied by the actual intended target (building/farm/structure). Use ~1.0 if the polygon tightly matches the target. Use <1.0 if the user drew a coarse big square around a smaller building." },
+            detectedAreaSqm: { type: "number", description: "Estimated real footprint of the detected target in square meters (must be consistent with detectedAreaRatio × drawn polygon area)." },
+            detectionNote: { type: "string", description: "1 short sentence (in the requested language) explaining what was detected as the real target inside the drawn polygon." },
+            usableAreaRatio: { type: "number", description: "0.0-1.0, fraction of the DETECTED target usable for panels after subtracting visible obstacles (NOT of the drawn polygon)." },
             obstacles: {
               type: "array",
               items: {
@@ -160,7 +163,7 @@ async function analyzeWithGemini(imageBase64: string, language: string, ctx: { c
             confidence: { type: "string", enum: ["low", "medium", "high"] },
             summary: { type: "string", description: "1-2 sentence summary in the requested language tying the scene to the solar installation purpose." },
           },
-          required: ["siteType", "sceneDescription", "usableAreaRatio", "obstacles", "shadingLevel", "orientation", "warnings", "confidence", "summary"],
+          required: ["siteType", "sceneDescription", "detectedAreaRatio", "detectedAreaSqm", "detectionNote", "usableAreaRatio", "obstacles", "shadingLevel", "orientation", "warnings", "confidence", "summary"],
           additionalProperties: false,
         },
       },
