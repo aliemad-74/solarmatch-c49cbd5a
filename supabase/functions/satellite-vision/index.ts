@@ -23,6 +23,25 @@ function cacheKey(lat: number, lng: number, points: PolygonPoint[]): string {
   return `${lat.toFixed(5)},${lng.toFixed(5)}::${poly}`;
 }
 
+// Approximate polygon area in m² using equirectangular projection + shoelace.
+function polygonAreaSqm(points: PolygonPoint[]): number {
+  if (points.length < 3) return 0;
+  const R = 6378137; // earth radius m
+  const latRef = (points.reduce((s, p) => s + p.lat, 0) / points.length) * Math.PI / 180;
+  const xy = points.map((p) => {
+    const x = (p.lng * Math.PI / 180) * R * Math.cos(latRef);
+    const y = (p.lat * Math.PI / 180) * R;
+    return { x, y };
+  });
+  let sum = 0;
+  for (let i = 0; i < xy.length; i++) {
+    const a = xy[i];
+    const b = xy[(i + 1) % xy.length];
+    sum += a.x * b.y - b.x * a.y;
+  }
+  return Math.abs(sum) / 2;
+}
+
 function buildStaticMapUrl(lat: number, lng: number, points: PolygonPoint[]): string {
   const base = "https://maps.googleapis.com/maps/api/staticmap";
   const params = new URLSearchParams({
