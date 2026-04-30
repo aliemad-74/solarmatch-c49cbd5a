@@ -242,16 +242,33 @@ serve(async (req) => {
     }
 
     const ctx = buildContextDescription(buildingType, farmMode, agriculturalActivity, language);
+    const drawnAreaSqm = polygonAreaSqm(polygonPoints);
     const url = buildStaticMapUrl(lat, lng, polygonPoints);
     const imageB64 = await fetchImageAsBase64(url);
-    const analysis = await analyzeWithGemini(imageB64, language, ctx);
+    const analysis = await analyzeWithGemini(imageB64, language, ctx, drawnAreaSqm);
 
-    // Sanitize ratio
-    const ratio = Math.max(0, Math.min(1, Number(analysis.usableAreaRatio) || 0.85));
+    // Sanitize ratios
+    const usableRatio = Math.max(0, Math.min(1, Number(analysis.usableAreaRatio) || 0.85));
+    let detectedRatio = Math.max(0.05, Math.min(1, Number(analysis.detectedAreaRatio) || 1));
+    let detectedSqm = Number(analysis.detectedAreaSqm);
+    if (!isFinite(detectedSqm) || detectedSqm <= 0) {
+      detectedSqm = drawnAreaSqm * detectedRatio;
+    } else if (drawnAreaSqm > 0) {
+      // Reconcile detectedSqm with drawn area; trust ratio more if they conflict
+      const ratioFromSqm = detectedSqm / drawnAreaSqm;
+      if (Math.abs(ratioFromSqm - detectedRatio) > 0.15) {
+        detectedRatio = Math.max(0.05, Math.min(1, ratioFromSqm));
+      }
+    }
+
     const result = {
       siteType: analysis.siteType ?? "other",
       sceneDescription: analysis.sceneDescription ?? "",
-      usableAreaRatio: ratio,
+      drawnAreaSqm: Math.round(drawnAreaSqm),
+      detectedAreaRatio: Math.round(detectedRatio * 1000) / 1000,
+      detectedAreaSqm: Math.round(detectedSqm),
+      detectionNote: analysis.detectionNote ?? "",
+      usableAreaRatio: usableRatio,
       obstacles: analysis.obstacles ?? [],
       shadingLevel: analysis.shadingLevel ?? "low",
       orientation: analysis.orientation ?? "flat",
