@@ -190,14 +190,22 @@ async function analyzeWithGemini(imageBase64: string, language: string, ctx: { c
     tool_choice: { type: "function", function: { name: "report_rooftop_analysis" } },
   };
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  const aiController = new AbortController();
+  const aiTimeout = setTimeout(() => aiController.abort(), 110000);
+  let res: Response;
+  try {
+    res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: aiController.signal,
+    });
+  } finally {
+    clearTimeout(aiTimeout);
+  }
 
   if (!res.ok) {
     const txt = await res.text();
