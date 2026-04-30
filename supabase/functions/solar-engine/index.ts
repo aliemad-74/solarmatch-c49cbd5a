@@ -395,7 +395,6 @@ Satellite Vision AI (Gemini 2.5 Pro):
 - Shading: ${visionAnalysis.shadingLevel ?? "n/a"}, Orientation: ${visionAnalysis.orientation ?? "n/a"}, Confidence: ${visionAnalysis.confidence ?? "n/a"}
 - Effective area used in calc: ${Math.round(effectiveArea)} m² (raw drawn: ${Math.round(baseArea)} m²)
 ` : `
-` : `
 Satellite Vision AI: not run (no polygon drawn). Calculation used full rooftop area without obstacle deduction.
 `;
 
