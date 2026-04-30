@@ -140,7 +140,7 @@ async function analyzeWithGemini(imageBase64: string, language: string, ctx: { c
     : `Analyze the area outlined in red.${drawnText}\n\nUser context: ${ctx.contextLabel}.\nPurpose of solar installation: ${ctx.goal}\n\n${ctx.expectedScene}\n\nTask (be precise):\n1) Describe what you actually see (house roof, apartment, greenhouse, farmland, cold-storage building, empty land...).\n2) **Detect the real target**: if the drawing is a coarse big square and the actual building/structure inside is smaller, identify it and estimate its real footprint in m² (detectedAreaSqm) and its fraction of the drawn polygon (detectedAreaRatio = real target ÷ drawn, 0-1).\n3) If the drawing tightly matches the target, detectedAreaRatio ≈ 1.0.\n4) Then identify visible obstacles and estimate usableAreaRatio (fraction of the **detected target** actually usable for panels after deducting obstacles, 0-1).\n5) Assess shading and orientation. Be conservative.`;
 
   const body = {
-    model: "google/gemini-2.5-pro",
+    model: "google/gemini-2.5-flash",
     messages: [
       { role: "system", content: systemPrompt },
       {
@@ -190,14 +190,22 @@ async function analyzeWithGemini(imageBase64: string, language: string, ctx: { c
     tool_choice: { type: "function", function: { name: "report_rooftop_analysis" } },
   };
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  const aiController = new AbortController();
+  const aiTimeout = setTimeout(() => aiController.abort(), 110000);
+  let res: Response;
+  try {
+    res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: aiController.signal,
+    });
+  } finally {
+    clearTimeout(aiTimeout);
+  }
 
   if (!res.ok) {
     const txt = await res.text();
