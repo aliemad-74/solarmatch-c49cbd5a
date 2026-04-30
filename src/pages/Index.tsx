@@ -80,6 +80,12 @@ export interface SolarEngineData {
     savings_from_downsizing: number;
   };
   vision_analysis?: {
+    siteType?: string;
+    sceneDescription?: string;
+    drawnAreaSqm?: number;
+    detectedAreaRatio?: number;
+    detectedAreaSqm?: number;
+    detectionNote?: string;
     usableAreaRatio: number;
     obstacles: { type: string; description: string }[];
     shadingLevel: "low" | "medium" | "high";
