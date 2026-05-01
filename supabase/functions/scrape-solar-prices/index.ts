@@ -188,6 +188,26 @@ ${combinedContent}` },
       };
     }
 
+    // Sanity validation: enforce realistic ranges and Economy < Standard < Premium ordering
+    const eco = Number(priceData.economy?.costPerKW);
+    const std = Number(priceData.standard?.costPerKW);
+    const prm = Number(priceData.premium?.costPerKW);
+    const inRange = (v: number, min: number, max: number) => Number.isFinite(v) && v >= min && v <= max;
+    const isOrderValid = eco < std && std < prm;
+    const allInRange = inRange(eco, 12000, 22000) && inRange(std, 16000, 26000) && inRange(prm, 22000, 35000);
+
+    if (!isOrderValid || !allInRange) {
+      console.warn(`⚠️ Invalid price extraction (eco=${eco}, std=${std}, prm=${prm}) — overriding with safe fallback`);
+      priceData = {
+        economy: { costPerKW: 15000, confidence: "low", notes: "AI extracted invalid values; using safe fallback" },
+        standard: { costPerKW: 19000, confidence: "low", notes: "AI extracted invalid values; using safe fallback" },
+        premium: { costPerKW: 26000, confidence: "low", notes: "AI extracted invalid values; using safe fallback" },
+        currency: "EGP",
+        market_date: new Date().toISOString().split("T")[0],
+        sources_analyzed: 0,
+      };
+    }
+
     // Store in database using service role
     await supabase.from("market_data").insert({
       type: "panel_price",
