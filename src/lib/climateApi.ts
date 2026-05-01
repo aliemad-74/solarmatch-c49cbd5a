@@ -177,7 +177,7 @@ export async function getLocationName(lat: number, lng: number): Promise<string>
  */
 export async function searchLocation(query: string): Promise<{ lat: number; lng: number; name: string }[]> {
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=country:EG&key=AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=country:EG&key=${GOOGLE_MAPS_API_KEY}`;
     const response = await fetch(url);
     if (!response.ok) return [];
     const data = await response.json();
