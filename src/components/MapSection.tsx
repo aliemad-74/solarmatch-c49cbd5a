@@ -9,7 +9,8 @@ import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi
 import { toast } from "sonner";
 
 const GOOGLE_MAPS_API_KEY =
-  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ?? "";
+  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ||
+  "AIzaSyAuvna58z-9zjIfs8aBsZqHMq7t6_JisXY";
 const LIBRARIES: ("places")[] = ["places"];
 
 interface MapSectionProps {
