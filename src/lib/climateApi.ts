@@ -138,8 +138,7 @@ function extractMonthlyValues(data: Record<string, number> | undefined): number[
  * Get location name using Google Maps Geocoding API
  */
 const GOOGLE_MAPS_API_KEY =
-  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ??
-  "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
+  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ?? "";
 
 export async function getLocationName(lat: number, lng: number): Promise<string> {
   try {
