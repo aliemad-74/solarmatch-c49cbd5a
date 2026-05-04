@@ -519,7 +519,11 @@ const Index = () => {
   };
 
   const handleCalculate = () => {
-    // Auth gating disabled — open access for testing committee
+    if (!user) {
+      setPendingCalculation(true);
+      setShowAuthModal(true);
+      return;
+    }
     performCalculation();
   };
 
