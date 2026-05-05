@@ -307,6 +307,7 @@ const MapSection = ({
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
                 clearPolygon();
+                resetIOSTouchState();
               }}
               variant="ghost"
               size="icon"
