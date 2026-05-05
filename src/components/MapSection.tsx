@@ -118,19 +118,10 @@ const MapSection = ({
   }, []);
 
   const cleanupGoogleMapInteractions = useCallback(() => {
-    const map = mapRef.current;
-    if (!map || typeof google === "undefined") return;
-
-    google.maps.event.clearInstanceListeners(map);
-    map.setOptions({
-      draggable: false,
-      scrollwheel: false,
-      disableDoubleClickZoom: true,
-      keyboardShortcuts: false,
-      clickableIcons: false,
-      gestureHandling: "none",
-      draggableCursor: "default",
-    });
+    // Intentionally a no-op: messing with map options or clearing listeners
+    // after drawing leaves Google Maps' touch layer in an inconsistent state
+    // on iOS Safari and causes every subsequent tap on the page to be
+    // swallowed once. The fullscreen overlay simply unmounts cleanly.
   }, []);
 
   // Complete polygon
