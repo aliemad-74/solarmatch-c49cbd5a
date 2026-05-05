@@ -69,43 +69,19 @@ const SatelliteVisionCard = ({ vision }: Props) => {
         </p>
       )}
 
-      {/* Auto-detected target inside drawn polygon */}
-      {typeof vision.detectedAreaRatio === "number" && typeof vision.detectedAreaSqm === "number" && (
-        <div className="p-3 rounded-md bg-primary/5 border border-primary/20 space-y-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium">
-              {isAr ? "الهدف الفعلي المكتشف داخل الرسمة" : "Auto-detected real target inside your drawing"}
-            </span>
-            <span className="text-sm font-bold text-primary">
-              {Math.round(vision.detectedAreaSqm)} m²
-            </span>
-          </div>
-          {vision.detectionNote && (
-            <p className="text-xs text-muted-foreground">{vision.detectionNote}</p>
-          )}
-          {typeof vision.drawnAreaSqm === "number" && vision.drawnAreaSqm > 0 && (
-            <p className="text-[11px] text-muted-foreground">
-              {isAr
-                ? `رسمت تقريباً ${Math.round(vision.drawnAreaSqm)} م² — اكتشفنا أن الهدف الحقيقي ${Math.round((vision.detectedAreaRatio ?? 1) * 100)}% من الرسمة (${Math.round(vision.detectedAreaSqm)} م²) وتم استخدامه في الحسابات.`
-                : `You drew ~${Math.round(vision.drawnAreaSqm)} m² — we detected the real target is ${Math.round((vision.detectedAreaRatio ?? 1) * 100)}% of that (${Math.round(vision.detectedAreaSqm)} m²) and used it in the math.`}
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Usable area */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">
-            {isAr ? "المساحة الفعلية القابلة للاستخدام" : "Usable area inside the detected target"}
+            {isAr ? "المساحة الفعلية القابلة للاستخدام" : "Effective usable area"}
           </span>
           <span className="text-sm font-bold text-primary">{usablePct}%</span>
         </div>
         <Progress value={usablePct} className="h-2" />
         <p className="text-xs text-muted-foreground">
           {isAr
-            ? `بعد خصم العوائق المرئية (${100 - usablePct}%). يتم تطبيق هذه النسبة على الهدف المكتشف، وليس على الرسمة الكاملة.`
-            : `After deducting visible obstacles (${100 - usablePct}%). Applied to the detected target, not the full drawing.`}
+            ? `تم تطبيق هذه النسبة على حسابات حجم النظام. (${100 - usablePct}% خصمت بسبب العوائق المرئية)`
+            : `Applied to system sizing. (${100 - usablePct}% deducted for visible obstacles)`}
         </p>
       </div>
 

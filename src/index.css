@@ -231,14 +231,6 @@
 ::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.35); }
 
-/* ── Touch devices: minimal tap tweaks ── */
-@media (hover: none) and (pointer: coarse) {
-  a, button, [role="button"], [role="menuitem"], [role="tab"], [role="link"], label, summary, .cursor-pointer {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-}
-
 /* ── RTL Support ─────────────────────────────── */
 [dir="rtl"] { direction: rtl; }
 [dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }

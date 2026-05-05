@@ -521,45 +521,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_feedback: {
-        Row: {
-          category: string
-          comment: string | null
-          created_at: string
-          id: string
-          ip_hash: string | null
-          metadata: Json | null
-          page_context: string | null
-          rating: number
-          status: string
-          user_id: string | null
-        }
-        Insert: {
-          category?: string
-          comment?: string | null
-          created_at?: string
-          id?: string
-          ip_hash?: string | null
-          metadata?: Json | null
-          page_context?: string | null
-          rating: number
-          status?: string
-          user_id?: string | null
-        }
-        Update: {
-          category?: string
-          comment?: string | null
-          created_at?: string
-          id?: string
-          ip_hash?: string | null
-          metadata?: Json | null
-          page_context?: string | null
-          rating?: number
-          status?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string

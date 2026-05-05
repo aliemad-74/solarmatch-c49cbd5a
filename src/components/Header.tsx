@@ -159,8 +159,7 @@ const Header = () => {
         </nav>
         
         {/* Mobile Navigation */}
-        <div className="md:hidden flex items-center gap-1">
-          <ThemeToggle />
+        <div className="md:hidden flex items-center gap-2">
           <LanguageToggle />
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
