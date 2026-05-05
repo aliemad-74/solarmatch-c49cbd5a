@@ -7,7 +7,7 @@ import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyAuvna58z-9zjIfs8aBsZqHMq7t6_JisXY";
+const GOOGLE_MAPS_API_KEY = "AIzaSyBpp8YMnGRI_O2c48bdPc6gS_vbMRVHWJo";
 const LIBRARIES: ("places")[] = ["places"];
 
 interface MapSectionProps {
