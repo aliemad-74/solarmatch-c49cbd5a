@@ -211,6 +211,8 @@ const MapSection = ({
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
       setDrawingPhase("idle");
+      // iOS Safari: blur active element so next tap registers as click, not focus-loss
+      (document.activeElement as HTMLElement | null)?.blur?.();
     } else {
       clearPolygon();
       setIsDrawingMode(true);
@@ -289,7 +291,8 @@ const MapSection = ({
         <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => {
+              onClick={(e) => {
+                (e.currentTarget as HTMLElement).blur();
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
                 clearPolygon();
@@ -322,7 +325,8 @@ const MapSection = ({
               </Button>
             )}
             <Button
-              onClick={() => {
+              onClick={(e) => {
+                (e.currentTarget as HTMLElement).blur();
                 if (polygonPoints.length >= MIN_POLYGON_POINTS) {
                   completePolygon(polygonPoints);
                 }
