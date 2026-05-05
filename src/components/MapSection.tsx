@@ -2,13 +2,88 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, PenTool, Trash2, Loader2, Undo2, Navigation, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
+import { GoogleMap, Polygon, Marker } from "@react-google-maps/api";
 import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyBpp8YMnGRI_O2c48bdPc6gS_vbMRVHWJo";
-const LIBRARIES: ("places")[] = ["places"];
+const GOOGLE_MAPS_SCRIPT_ID = "solarmatch-google-maps-script";
+const GOOGLE_MAPS_LIBRARIES = "places,geometry";
+
+const getGoogleMapsScripts = () =>
+  Array.from(document.querySelectorAll<HTMLScriptElement>('script[src*="maps.googleapis.com/maps/api/js"]'));
+
+const getGoogleMapsScriptKey = (src: string) => {
+  try {
+    return new URL(src).searchParams.get("key");
+  } catch {
+    return null;
+  }
+};
+
+const getGoogleMapsScriptUrl = () => {
+  const params = new URLSearchParams({
+    key: GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+    language: "en",
+    region: "US",
+    v: "weekly",
+    loading: "async",
+    auth_referrer_policy: "origin",
+  });
+  return `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
+};
+
+const useGoogleMapsScript = () => {
+  const [isLoaded, setIsLoaded] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const hasMatchingScript = getGoogleMapsScripts().some(
+      (script) => getGoogleMapsScriptKey(script.src) === GOOGLE_MAPS_API_KEY
+    );
+    return hasMatchingScript && Boolean(window.google?.maps?.places);
+  });
+
+  useEffect(() => {
+    const scripts = getGoogleMapsScripts();
+    const matchingScript = scripts.find((script) => getGoogleMapsScriptKey(script.src) === GOOGLE_MAPS_API_KEY);
+    const hasStaleScript = scripts.some((script) => getGoogleMapsScriptKey(script.src) !== GOOGLE_MAPS_API_KEY);
+
+    if (hasStaleScript || (!matchingScript && window.google?.maps)) {
+      scripts.forEach((script) => script.remove());
+      delete (window as typeof window & { google?: typeof google }).google;
+      setIsLoaded(false);
+    }
+
+    if (!hasStaleScript && matchingScript && window.google?.maps?.places) {
+      setIsLoaded(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = GOOGLE_MAPS_SCRIPT_ID;
+    script.src = getGoogleMapsScriptUrl();
+    script.async = true;
+    script.defer = true;
+
+    const handleLoad = () => setIsLoaded(Boolean(window.google?.maps?.places));
+    const handleError = () => {
+      console.error("[MapSection] Failed to load Google Maps script");
+      setIsLoaded(false);
+    };
+
+    script.addEventListener("load", handleLoad);
+    script.addEventListener("error", handleError);
+    document.head.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", handleLoad);
+      script.removeEventListener("error", handleError);
+    };
+  }, []);
+
+  return isLoaded;
+};
 
 interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
@@ -44,10 +119,7 @@ const MapSection = ({
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-  });
+  const isLoaded = useGoogleMapsScript();
 
   // Cleanup all Google Maps listeners and reset interaction state on the current map.
   const cleanupGoogleMapInteractions = useCallback(() => {
