@@ -42,7 +42,6 @@ const MapSection = ({
   const mapRef = useRef<google.maps.Map | null>(null);
   const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const dblClickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
@@ -118,23 +117,9 @@ const MapSection = ({
     fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
   }, []);
 
-  const cleanupGoogleMapInteractions = useCallback(() => {
-    if (!mapRef.current) return;
-
-    mapRef.current.setOptions({
-      clickableIcons: false,
-      draggableCursor: "grab",
-      gestureHandling: "greedy",
-    });
-  }, []);
-
   // Complete polygon
   const completePolygon = useCallback(
     async (points: google.maps.LatLngLiteral[]) => {
-      cleanupGoogleMapInteractions();
-      setIsDrawingMode(false);
-      setDrawingPhase("idle");
-
       if (points.length >= MIN_POLYGON_POINTS) {
         const area = calculatePolygonArea(points);
         setCalculatedArea(area);
@@ -151,8 +136,9 @@ const MapSection = ({
         onLocationChange?.(locationName);
         fetchClimateForLocation(lat, lng);
       }
+      setIsDrawingMode(false);
     },
-    [calculatePolygonArea, cleanupGoogleMapInteractions, onAreaCalculated, onLocationChange, fetchClimateForLocation]
+    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]
   );
 
   // Update location
@@ -219,28 +205,18 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
-  // iOS Safari: after closing the fullscreen drawing overlay we just need to
-  // drop focus from the (about-to-unmount) button. No pointer-events / scroll
-  // hacks — those were causing the next tap on every UI element to be eaten.
-  const resetIOSTouchState = useCallback(() => {
-    if (typeof document === "undefined") return;
-    (document.activeElement as HTMLElement | null)?.blur?.();
-  }, []);
-
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
-      cleanupGoogleMapInteractions();
       setIsDrawingMode(false);
       setDrawingPhase("idle");
-      resetIOSTouchState();
     } else {
       clearPolygon();
       setIsDrawingMode(true);
       setDrawingPhase("fullscreen");
     }
-  }, [isDrawingMode, polygonPoints, completePolygon, cleanupGoogleMapInteractions, clearPolygon, resetIOSTouchState]);
+  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
   // Map click handler
   const handleMapClick = useCallback(
@@ -280,11 +256,6 @@ const MapSection = ({
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-    dblClickListenerRef.current?.remove();
-    // Prevent dblclick from interfering with subsequent single-click events
-    dblClickListenerRef.current = map.addListener("dblclick", (e: google.maps.MapMouseEvent) => {
-      e.stop();
-    });
   }, []);
 
   const mapContainerStyle = { width: "100%", height: "100%" };
@@ -295,8 +266,6 @@ const MapSection = ({
     tilt: 0,
     maxZoom: 22,
     draggableCursor: isDrawingMode ? "crosshair" : "grab",
-    gestureHandling: "greedy",
-    clickableIcons: false,
   };
 
   if (!isLoaded) {
@@ -320,12 +289,10 @@ const MapSection = ({
         <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
           <div className="flex items-center gap-3">
             <Button
-              onClick={(e) => {
-                (e.currentTarget as HTMLElement).blur();
+              onClick={() => {
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
                 clearPolygon();
-                resetIOSTouchState();
               }}
               variant="ghost"
               size="icon"
@@ -355,14 +322,12 @@ const MapSection = ({
               </Button>
             )}
             <Button
-              onClick={(e) => {
-                (e.currentTarget as HTMLElement).blur();
+              onClick={() => {
                 if (polygonPoints.length >= MIN_POLYGON_POINTS) {
                   completePolygon(polygonPoints);
                 }
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
-                resetIOSTouchState();
               }}
               disabled={polygonPoints.length < MIN_POLYGON_POINTS}
               className="gap-1 gradient-solar text-primary-foreground shadow-glow"
