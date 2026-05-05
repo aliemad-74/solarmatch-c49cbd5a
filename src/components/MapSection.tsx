@@ -119,10 +119,7 @@ const MapSection = ({
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-  });
+  const isLoaded = useGoogleMapsScript();
 
   // Cleanup all Google Maps listeners and reset interaction state on the current map.
   const cleanupGoogleMapInteractions = useCallback(() => {
