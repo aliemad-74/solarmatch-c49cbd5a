@@ -205,15 +205,44 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
-  // iOS Safari: after closing fullscreen overlay, force a touch/hit-test reset
-  // so the next tap on any button registers on first touch instead of second.
+  // iOS Safari: after closing the fullscreen drawing overlay, the map's
+  // gesture/hit-test layer can stay "armed" and swallow the first tap on any
+  // UI element. We forcibly reset focus + hit-testing so taps work on first try.
   const resetIOSTouchState = useCallback(() => {
     if (typeof window === "undefined") return;
+
+    // 1) Drop focus from anything inside the (about-to-unmount) overlay.
     (document.activeElement as HTMLElement | null)?.blur?.();
-    // Tiny scroll nudge wakes iOS Safari's hit-testing after overlay unmounts
+
+    // 2) Move focus to body so Safari has a known interactive root.
+    const body = document.body;
+    const prevTabIndex = body.getAttribute("tabindex");
+    body.setAttribute("tabindex", "-1");
+    try {
+      body.focus({ preventScroll: true });
+    } catch {
+      /* noop */
+    }
+
+    // 3) Toggle pointer-events on the html element on the next frame. This
+    //    reliably forces iOS Safari (and Chrome on iOS) to drop any cached
+    //    hit-test target left over from the Google Maps canvas.
     requestAnimationFrame(() => {
+      const html = document.documentElement;
+      const prevPE = html.style.pointerEvents;
+      html.style.pointerEvents = "none";
+      // Force reflow so the style change actually flushes.
+      void html.offsetHeight;
+      html.style.pointerEvents = prevPE;
+
+      // 4) Tiny scroll nudge — also helps Safari rebuild its compositor layer.
       window.scrollBy(0, 1);
-      requestAnimationFrame(() => window.scrollBy(0, -1));
+      requestAnimationFrame(() => {
+        window.scrollBy(0, -1);
+        // Restore tabindex so we don't pollute a11y.
+        if (prevTabIndex === null) body.removeAttribute("tabindex");
+        else body.setAttribute("tabindex", prevTabIndex);
+      });
     });
   }, []);
 
