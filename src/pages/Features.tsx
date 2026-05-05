@@ -56,10 +56,10 @@ const Features = () => {
     },
     {
       icon: <ScanEye className="w-6 h-6" />,
-      titleEn: 'Satellite Vision AI Analysis',
-      titleAr: 'تحليل الأقمار الصناعية بالذكاء الاصطناعي',
-      descEn: 'Gemini Vision inspects your rooftop satellite image to detect water tanks, dishes, AC units, and shading — then adjusts the usable area automatically.',
-      descAr: 'يفحص Gemini Vision صورة سطحك من القمر الصناعي ويكتشف خزانات المياه والدشات والمكيفات والتظليل — ثم يعدّل المساحة الصالحة تلقائياً.',
+      titleEn: 'Auto-Detect Real Building Boundary',
+      titleAr: 'كشف تلقائي لحدود المبنى الحقيقي',
+      descEn: "Drew a rough big square around your house? Gemini Vision automatically finds the actual building or farm inside your drawing, calculates its real footprint, and uses that — not the oversized square — in every calculation. It also detects water tanks, dishes, AC units, and shading.",
+      descAr: 'رسمت مربع تقريبي كبير حوالين بيتك؟ Gemini Vision يكتشف تلقائياً المبنى أو المزرعة الحقيقية جوا الرسمة، يحسب مساحتها الفعلية، ويستخدمها هي — مش المربع الكبير — في كل الحسابات. وكمان يكتشف خزانات المياه والدشات والمكيفات والتظليل.',
     },
     {
       icon: <Wind className="w-6 h-6" />,

@@ -137,10 +137,14 @@ function extractMonthlyValues(data: Record<string, number> | undefined): number[
 /**
  * Get location name using Google Maps Geocoding API
  */
+const GOOGLE_MAPS_API_KEY =
+  ((import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined)?.trim() ||
+    "AIzaSyAuvna58z-9zjIfs8aBsZqHMq7t6_JisXY");
+
 export async function getLocationName(lat: number, lng: number): Promise<string> {
   try {
     // Try Google Geocoding first (using the Maps API key from the client)
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=${GOOGLE_MAPS_API_KEY}`;
     const response = await fetch(url);
     if (response.ok) {
       const data = await response.json();
@@ -173,7 +177,7 @@ export async function getLocationName(lat: number, lng: number): Promise<string>
  */
 export async function searchLocation(query: string): Promise<{ lat: number; lng: number; name: string }[]> {
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=country:EG&key=AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=country:EG&key=${GOOGLE_MAPS_API_KEY}`;
     const response = await fetch(url);
     if (!response.ok) return [];
     const data = await response.json();
