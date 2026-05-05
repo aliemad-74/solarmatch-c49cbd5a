@@ -307,7 +307,7 @@ serve(async (req) => {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}` },
           body: JSON.stringify({ lat: latitude, lng: longitude, polygonPoints, language }),
-        }, 30000).then((r) => r.ok ? r.json() : null).catch((e) => { console.error("vision call failed:", e); return null; })
+        }, 120000).then((r) => r.ok ? r.json() : null).catch((e) => { console.error("vision call failed:", e); return null; })
       : Promise.resolve(null);
 
     // STEP 1-4: parallel API calls + market prices + vision
@@ -394,7 +394,6 @@ Satellite Vision AI (Gemini 2.5 Pro):
 - Obstacles detected: ${(visionAnalysis.obstacles ?? []).length} (${(visionAnalysis.obstacles ?? []).map((o: any) => o.type).join(", ") || "none"})
 - Shading: ${visionAnalysis.shadingLevel ?? "n/a"}, Orientation: ${visionAnalysis.orientation ?? "n/a"}, Confidence: ${visionAnalysis.confidence ?? "n/a"}
 - Effective area used in calc: ${Math.round(effectiveArea)} m² (raw drawn: ${Math.round(baseArea)} m²)
-` : `
 ` : `
 Satellite Vision AI: not run (no polygon drawn). Calculation used full rooftop area without obstacle deduction.
 `;
