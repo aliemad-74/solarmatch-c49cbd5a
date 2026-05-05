@@ -233,9 +233,12 @@
 
 /* ── Touch devices: prevent iOS Safari double-tap on interactive elements ── */
 @media (hover: none) and (pointer: coarse) {
+  /* iOS Safari fix: ensures click events fire on first tap after overlays close */
+  html, body { cursor: pointer; }
   a, button, [role="button"], [role="menuitem"], [role="tab"], [role="link"], label, summary, .cursor-pointer {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    cursor: pointer;
   }
 }
 
