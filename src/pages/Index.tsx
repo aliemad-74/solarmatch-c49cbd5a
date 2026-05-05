@@ -519,17 +519,11 @@ const Index = () => {
   };
 
   const handleCalculate = () => {
-    if (!user || !profile) {
-      setShowAuthModal(true);
+    if (!user) {
       setPendingCalculation(true);
+      setShowAuthModal(true);
       return;
     }
-
-    if (!canGenerateReport) {
-      setShowLimitReachedModal(true);
-      return;
-    }
-
     performCalculation();
   };
 

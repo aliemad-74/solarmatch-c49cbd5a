@@ -307,7 +307,7 @@ serve(async (req) => {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}` },
           body: JSON.stringify({ lat: latitude, lng: longitude, polygonPoints, language }),
-        }, 30000).then((r) => r.ok ? r.json() : null).catch((e) => { console.error("vision call failed:", e); return null; })
+        }, 120000).then((r) => r.ok ? r.json() : null).catch((e) => { console.error("vision call failed:", e); return null; })
       : Promise.resolve(null);
 
     // STEP 1-4: parallel API calls + market prices + vision
