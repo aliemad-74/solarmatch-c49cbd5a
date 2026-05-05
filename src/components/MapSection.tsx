@@ -211,6 +211,8 @@ const MapSection = ({
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
       setDrawingPhase("idle");
+      // iOS Safari: blur active element so next tap registers as click, not focus-loss
+      (document.activeElement as HTMLElement | null)?.blur?.();
     } else {
       clearPolygon();
       setIsDrawingMode(true);
