@@ -42,6 +42,7 @@ const MapSection = ({
   const mapRef = useRef<google.maps.Map | null>(null);
   const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const dblClickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
@@ -118,10 +119,13 @@ const MapSection = ({
   }, []);
 
   const cleanupGoogleMapInteractions = useCallback(() => {
-    // Intentionally a no-op: messing with map options or clearing listeners
-    // after drawing leaves Google Maps' touch layer in an inconsistent state
-    // on iOS Safari and causes every subsequent tap on the page to be
-    // swallowed once. The fullscreen overlay simply unmounts cleanly.
+    if (!mapRef.current) return;
+
+    mapRef.current.setOptions({
+      clickableIcons: false,
+      draggableCursor: "grab",
+      gestureHandling: "greedy",
+    });
   }, []);
 
   // Complete polygon
@@ -276,8 +280,9 @@ const MapSection = ({
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
+    dblClickListenerRef.current?.remove();
     // Prevent dblclick from interfering with subsequent single-click events
-    map.addListener("dblclick", (e: google.maps.MapMouseEvent) => {
+    dblClickListenerRef.current = map.addListener("dblclick", (e: google.maps.MapMouseEvent) => {
       e.stop();
     });
   }, []);
