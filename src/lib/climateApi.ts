@@ -139,7 +139,7 @@ function extractMonthlyValues(data: Record<string, number> | undefined): number[
  */
 const GOOGLE_MAPS_API_KEY =
   ((import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined)?.trim() ||
-    "AIzaSyAuvna58z-9zjIfs8aBsZqHMq7t6_JisXY");
+    "AIzaSyBpp8YMnGRI_O2c48bdPc6gS_vbMRVHWJo");
 
 export async function getLocationName(lat: number, lng: number): Promise<string> {
   try {
