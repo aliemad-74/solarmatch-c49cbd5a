@@ -344,6 +344,7 @@ const MapSection = ({
                 }
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
+                resetIOSTouchState();
               }}
               disabled={polygonPoints.length < MIN_POLYGON_POINTS}
               className="gap-1 gradient-solar text-primary-foreground shadow-glow"
