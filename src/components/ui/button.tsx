@@ -37,43 +37,13 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, onClick, onTouchEnd, disabled, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-    const touchClickAtRef = React.useRef(0);
-
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      const isSyntheticFollowUpClick =
-        touchClickAtRef.current > 0 &&
-        event.detail > 0 &&
-        typeof performance !== "undefined" &&
-        performance.now() - touchClickAtRef.current < 700;
-
-      if (isSyntheticFollowUpClick) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      onClick?.(event);
-    };
-
-    const handleTouchEnd = (event: React.TouchEvent<HTMLButtonElement>) => {
-      onTouchEnd?.(event);
-      if (event.defaultPrevented || disabled || !onClick) return;
-
-      touchClickAtRef.current = typeof performance !== "undefined" ? performance.now() : Date.now();
-      if (event.cancelable) event.preventDefault();
-      (event.currentTarget as HTMLElement).blur();
-      event.currentTarget.click();
-    };
 
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        disabled={disabled}
-        onClick={handleClick}
-        onTouchEnd={handleTouchEnd}
         {...props}
       />
     );
