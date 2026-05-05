@@ -231,14 +231,11 @@
 ::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.35); }
 
-/* ── Touch devices: prevent iOS Safari double-tap on interactive elements ── */
+/* ── Touch devices: minimal tap tweaks ── */
 @media (hover: none) and (pointer: coarse) {
-  /* iOS Safari fix: ensures click events fire on first tap after overlays close */
-  html, body { cursor: pointer; }
   a, button, [role="button"], [role="menuitem"], [role="tab"], [role="link"], label, summary, .cursor-pointer {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    cursor: pointer;
   }
 }
 
