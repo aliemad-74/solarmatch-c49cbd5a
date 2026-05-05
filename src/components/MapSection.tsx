@@ -286,6 +286,11 @@ const MapSection = ({
     tilt: 0,
     maxZoom: 22,
     draggableCursor: isDrawingMode ? "crosshair" : "grab",
+    // Prevent Google Maps from swallowing the first click waiting for a
+    // potential dblclick-zoom gesture (root cause of the "needs double-click"
+    // bug after drawing — Maps installs a 300ms click delay otherwise).
+    disableDoubleClickZoom: true,
+    clickableIcons: false,
   };
 
   if (!isLoaded) {
