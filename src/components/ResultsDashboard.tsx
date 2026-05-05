@@ -30,7 +30,7 @@ import type { SolarEngineData } from "@/pages/Index";
 import SatelliteVisionCard from "@/components/SatelliteVisionCard";
 import { Card } from "@/components/ui/card";
 import AirQualityCard from "@/components/AirQualityCard";
-
+import StreetViewCard from "@/components/StreetViewCard";
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -901,6 +901,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   </Card>
                 )}
                 {visionData && <SatelliteVisionCard vision={visionData} />}
+
+                <StreetViewCard
+                  lat={solarEngineData.location.coordinates.lat}
+                  lng={solarEngineData.location.coordinates.lng}
+                />
               </div>
             ) : null}
           </div>

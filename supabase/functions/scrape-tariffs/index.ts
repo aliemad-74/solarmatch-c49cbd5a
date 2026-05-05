@@ -11,10 +11,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const FIRECRAWL_API_KEY =
-      Deno.env.get("FIRECRAWL_API_KEY_2") ||
-      Deno.env.get("FIRECRAWL_API_KEY_1") ||
-      Deno.env.get("FIRECRAWL_API_KEY");
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || Deno.env.get("FIRECRAWL_API_KEY_1");
     if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
