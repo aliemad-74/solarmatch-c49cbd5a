@@ -205,20 +205,31 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
+  // iOS Safari: after closing fullscreen overlay, force a touch/hit-test reset
+  // so the next tap on any button registers on first touch instead of second.
+  const resetIOSTouchState = useCallback(() => {
+    if (typeof window === "undefined") return;
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    // Tiny scroll nudge wakes iOS Safari's hit-testing after overlay unmounts
+    requestAnimationFrame(() => {
+      window.scrollBy(0, 1);
+      requestAnimationFrame(() => window.scrollBy(0, -1));
+    });
+  }, []);
+
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
       setDrawingPhase("idle");
-      // iOS Safari: blur active element so next tap registers as click, not focus-loss
-      (document.activeElement as HTMLElement | null)?.blur?.();
+      resetIOSTouchState();
     } else {
       clearPolygon();
       setIsDrawingMode(true);
       setDrawingPhase("fullscreen");
     }
-  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
+  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon, resetIOSTouchState]);
 
   // Map click handler
   const handleMapClick = useCallback(
