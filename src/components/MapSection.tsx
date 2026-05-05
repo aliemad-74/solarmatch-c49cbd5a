@@ -117,9 +117,29 @@ const MapSection = ({
     fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
   }, []);
 
+  const cleanupGoogleMapInteractions = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || typeof google === "undefined") return;
+
+    google.maps.event.clearInstanceListeners(map);
+    map.setOptions({
+      draggable: false,
+      scrollwheel: false,
+      disableDoubleClickZoom: true,
+      keyboardShortcuts: false,
+      clickableIcons: false,
+      gestureHandling: "none",
+      draggableCursor: "default",
+    });
+  }, []);
+
   // Complete polygon
   const completePolygon = useCallback(
     async (points: google.maps.LatLngLiteral[]) => {
+      cleanupGoogleMapInteractions();
+      setIsDrawingMode(false);
+      setDrawingPhase("idle");
+
       if (points.length >= MIN_POLYGON_POINTS) {
         const area = calculatePolygonArea(points);
         setCalculatedArea(area);
@@ -136,9 +156,8 @@ const MapSection = ({
         onLocationChange?.(locationName);
         fetchClimateForLocation(lat, lng);
       }
-      setIsDrawingMode(false);
     },
-    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]
+    [calculatePolygonArea, cleanupGoogleMapInteractions, onAreaCalculated, onLocationChange, fetchClimateForLocation]
   );
 
   // Update location
@@ -250,6 +269,7 @@ const MapSection = ({
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
+      cleanupGoogleMapInteractions();
       setIsDrawingMode(false);
       setDrawingPhase("idle");
       resetIOSTouchState();
@@ -258,7 +278,7 @@ const MapSection = ({
       setIsDrawingMode(true);
       setDrawingPhase("fullscreen");
     }
-  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon, resetIOSTouchState]);
+  }, [isDrawingMode, polygonPoints, completePolygon, cleanupGoogleMapInteractions, clearPolygon, resetIOSTouchState]);
 
   // Map click handler
   const handleMapClick = useCallback(
