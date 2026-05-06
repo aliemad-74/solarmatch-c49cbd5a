@@ -160,50 +160,6 @@ serve(async (req) => {
       totalCost, savingsYear, paybackYears, co2Reduction, buildingType, pvType,
     });
 
-    // Vision + environmental findings (optional, passed from frontend after solar-engine returns)
-    const vision = (d.visionFindings as Record<string, unknown>) || null;
-    const env = (d.environmental as Record<string, unknown>) || null;
-
-    const visionBlockAr = vision
-      ? `\n\nتحليل صورة القمر الصناعي بالذكاء الاصطناعي (Gemini Vision):
-- نسبة المساحة الصالحة فعلياً للألواح: ${Math.round(((vision.usableAreaRatio as number) ?? 1) * 100)}% من المساحة المرسومة
-- النسبة المطبقة في الحساب: ${Math.round(((vision.applied_ratio as number) ?? 1) * 100)}%
-- العوائق المرصودة: ${Array.isArray(vision.obstacles) ? (vision.obstacles as any[]).length : 0} (${Array.isArray(vision.obstacles) ? (vision.obstacles as any[]).map((o: any) => o.type).join("، ") || "لا يوجد" : "غير متاح"})
-- مستوى الظل: ${vision.shadingLevel ?? "غير محدد"}
-- اتجاه السطح: ${vision.orientation ?? "غير محدد"}
-- ثقة التحليل البصري: ${vision.confidence ?? "متوسطة"}
-- ملخص التحليل: ${vision.summary ?? ""}`
-      : "\n\nملاحظة: لم يتم رسم حدود السطح، لذا الحساب يعتمد على المساحة الإجمالية بدون خصم للعوائق المحتملة.";
-
-    const envBlockAr = env
-      ? `\n\nالعوامل البيئية المؤثرة على الإنتاج:
-- مؤشر جودة الهواء AQI: ${env.aqi ?? "غير متاح"} (الملوث المهيمن: ${env.dominant_pollutant ?? "غير محدد"})
-- PM10: ${env.pm10 ?? "غير متاح"} ميكروجرام/م³ — PM2.5: ${env.pm25 ?? "غير متاح"} ميكروجرام/م³
-- مؤشر الغبار/حبوب اللقاح: ${env.pollen_index ?? 0}
-- نسبة الفقد بسبب الغبار/الاتساخ المطبقة: ${env.soiling_loss_percent ?? 0}%
-- درجة الحرارة: ${env.temperature ?? "غير متاح"}°م — السحب: ${env.cloud_cover ?? 0}%`
-      : "";
-
-    const visionBlockEn = vision
-      ? `\n\nSatellite Image AI Analysis (Gemini Vision):
-- Actual usable rooftop ratio: ${Math.round(((vision.usableAreaRatio as number) ?? 1) * 100)}% of drawn area
-- Ratio applied to calculation: ${Math.round(((vision.applied_ratio as number) ?? 1) * 100)}%
-- Obstacles detected: ${Array.isArray(vision.obstacles) ? (vision.obstacles as any[]).length : 0} (${Array.isArray(vision.obstacles) ? (vision.obstacles as any[]).map((o: any) => o.type).join(", ") || "none" : "n/a"})
-- Shading level: ${vision.shadingLevel ?? "n/a"}
-- Roof orientation: ${vision.orientation ?? "n/a"}
-- Vision confidence: ${vision.confidence ?? "medium"}
-- Vision summary: ${vision.summary ?? ""}`
-      : "\n\nNote: No rooftop polygon was drawn, so calculation used full area without obstacle deduction.";
-
-    const envBlockEn = env
-      ? `\n\nEnvironmental factors affecting production:
-- Air Quality Index (AQI): ${env.aqi ?? "n/a"} (dominant pollutant: ${env.dominant_pollutant ?? "n/a"})
-- PM10: ${env.pm10 ?? "n/a"} µg/m³ — PM2.5: ${env.pm25 ?? "n/a"} µg/m³
-- Pollen/dust index: ${env.pollen_index ?? 0}
-- Soiling/dust loss applied to production: ${env.soiling_loss_percent ?? 0}%
-- Temperature: ${env.temperature ?? "n/a"}°C — Cloud cover: ${env.cloud_cover ?? 0}%`
-      : "";
-
     // ==========================================
     // MODE: REVIEW (AI checkpoint before display)
     // ==========================================
@@ -211,7 +167,7 @@ serve(async (req) => {
       const reviewPrompt = language === "ar"
         ? `أنت مهندس طاقة شمسية خبير في السوق المصري ومطلع على أحدث أسعار السوق حتى تاريخ اليوم.
 
-مهمتك: راجع نتائج حسابات جدوى الطاقة الشمسية التالية وتحقق من دقتها مع الأخذ في الاعتبار التحليل البصري للسطح والظروف البيئية.
+مهمتك: راجع نتائج حسابات جدوى الطاقة الشمسية التالية وتحقق من دقتها.
 
 بيانات المشروع:
 - الموقع: ${locationName}
@@ -228,7 +184,7 @@ serve(async (req) => {
 - فترة الاسترداد: ${paybackYears} سنة
 - تخفيض CO2: ${co2Saved || co2Reduction} طن/سنة
 - نوع المبنى: ${buildingType}
-- نوع الألواح: ${pvType}${visionBlockAr}${envBlockAr}
+- نوع الألواح: ${pvType}
 
 راجع هذه البيانات وأرجع JSON بالشكل التالي:
 {
@@ -236,23 +192,23 @@ serve(async (req) => {
   "confidenceScore": رقم من 1 إلى 100,
   "issues": ["أي مشكلة وجدتها"],
   "adjustments": {
-    "totalCost": التكلفة المعدلة أو null,
+    "totalCost": التكلفة المعدلة أو null إذا صحيحة,
     "costPerKW": تكلفة الكيلوواط المعدلة أو null,
     "paybackYears": فترة الاسترداد المعدلة أو null
   },
-  "interpretation": "تفسير شامل ومفصل في 4-6 فقرات. ادمج صراحةً نتائج التحليل البصري للسطح (العوائق، نسبة المساحة الفعلية، الظل) ومستوى الغبار/التلوث. وضح كيف أثرت هذه العوامل على الحساب. ابدأ مباشرة بالتقييم بدون 'بصفتي' أو 'كـ'."
+  "interpretation": "تفسير شامل ومفصل للنتائج في 4-6 فقرات يوضح: هل المشروع يستحق؟ لماذا؟ ما المميزات والعيوب؟ ما الخطوة التالية الموصى بها؟ نصائح عملية لهذا الموقع تحديداً. اكتب بأسلوب احترافي ودافئ كأنك تتحدث مباشرة للعميل. لا تبدأ بـ 'بصفتي' أو 'كـ' أو 'أنا'. ابدأ مباشرة بالتقييم."
 }
 
 ملاحظات مهمة:
-- إذا كانت نسبة المساحة الصالحة من تحليل القمر الصناعي أقل من 60%، نبه العميل أن السطح مزدحم بالعوائق
-- إذا كانت نسبة الغبار المطبقة أكثر من 5%، انصح بجدول تنظيف شهري
-- إذا كان مستوى الظل عالي (high)، نبه أن الإنتاج الفعلي قد يقل بنسبة 10-15%
-- أسعار السوق المصري الحالية: 18,000 - 25,000 جنيه/كيلوواط
-- لا تعدل الأرقام إلا إذا كان الانحراف أكثر من 20%
-- إذا كانت التغطية أكثر من 150%، انصح بتقليل حجم النظام`
+- أسعار السوق المصري الحالية تتراوح بين 18,000 - 25,000 جنيه/كيلوواط حسب نوع الألواح
+- إذا كانت التكلفة ضمن النطاق المعقول، اترك adjustments بقيمة null
+- لا تعدل إلا إذا كان هناك انحراف واضح أكثر من 20%
+- التفسير يجب أن يكون مفصلاً وعملياً ومخصصاً لهذا المشروع
+- لا تبدأ التفسير بـ "بصفتي" أو "كـ" أو "أنا". ابدأ مباشرة بالتقييم
+- إذا كانت نسبة التغطية أكثر من 150%، انصح العميل بإمكانية تقليل حجم النظام والاكتفاء بنسبة تغطية 100-120% لتوفير التكلفة، ووضح كم سيوفر تقريباً`
         : `You are an expert solar energy engineer for the Egyptian market, up-to-date with current market prices.
 
-Task: Review the following solar feasibility calculation results, considering the satellite vision analysis of the rooftop and environmental conditions.
+Task: Review the following solar feasibility calculation results and validate their accuracy.
 
 Project Data:
 - Location: ${locationName}
@@ -269,28 +225,27 @@ Project Data:
 - Payback Period: ${paybackYears} years
 - CO2 Reduction: ${co2Saved || co2Reduction} tons/year
 - Building Type: ${buildingType}
-- Panel Type: ${pvType}${visionBlockEn}${envBlockEn}
+- Panel Type: ${pvType}
 
-Review and return JSON in this format:
+Review this data and return JSON in this format:
 {
   "validated": true or false,
   "confidenceScore": number from 1 to 100,
   "issues": ["any issues found"],
   "adjustments": {
-    "totalCost": adjusted cost or null,
+    "totalCost": adjusted cost or null if correct,
     "costPerKW": adjusted cost per kW or null,
     "paybackYears": adjusted payback or null
   },
-  "interpretation": "A 4-6 paragraph interpretation. Explicitly weave in the satellite vision findings (obstacles, actual usable ratio, shading) and the dust/pollution level. Explain how these factors influenced the calculation. Start directly with the assessment, no 'As a' or 'As your'."
+  "interpretation": "A comprehensive 4-6 paragraph interpretation explaining: Is this project worth it? Why? What are the pros and cons? What's the recommended next step? Practical tips for this specific location. Write in a professional yet warm tone as if speaking directly to the client."
 }
 
 Important notes:
-- If satellite vision usable ratio is below 60%, warn the client the roof is crowded with obstacles
-- If applied soiling loss exceeds 5%, recommend a monthly cleaning schedule
-- If shading level is high, warn that real production may drop 10-15%
-- Current Egyptian market prices: 18,000 - 25,000 EGP/kW
-- Only adjust numbers if deviation exceeds 20%
-- If coverage exceeds 150%, advise reducing system size`;
+- Current Egyptian market prices range from 18,000 - 25,000 EGP/kW depending on panel type
+- Only set adjustments if there's a clear deviation of more than 20%
+- If values are within reasonable range, leave adjustments as null
+- The interpretation should be detailed, practical, and specific to this project
+- If coverage ratio exceeds 150%, advise the client they could reduce system size to 100-120% coverage to save costs, and estimate how much they would save`;
 
       const result = await callGemini(LOVABLE_API_KEY, reviewPrompt, true, 55000);
 
@@ -400,6 +355,6 @@ Write in detail (4-6 paragraphs). Do NOT start with "As a" or "As your". Start d
 
   } catch (error) {
     console.error("Top-level error:", error);
-    return jsonResponse({ success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" }, 500);
+    return jsonResponse({ success: false, error: error?.message || "An unexpected error occurred" }, 500);
   }
 });

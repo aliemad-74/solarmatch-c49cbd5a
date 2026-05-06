@@ -122,8 +122,6 @@ export type BuildingType = keyof typeof buildingTypes;
 // ================================================
 
 export const FEDDAN_TO_SQM = 4200.83; // 1 Egyptian Feddan = 4,200.83 m²
-export const QIRAT_PER_FEDDAN = 24; // 1 Feddan = 24 Qirat
-export const QIRAT_TO_SQM = FEDDAN_TO_SQM / QIRAT_PER_FEDDAN; // ~175.03 m²
 
 export type AgriculturalActivity = keyof typeof agriculturalActivities;
 
