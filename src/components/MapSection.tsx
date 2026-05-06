@@ -314,6 +314,7 @@ const MapSection = ({
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
                 clearPolygon();
+                releaseStuckFocus();
               }}
               variant="ghost"
               size="icon"
