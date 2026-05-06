@@ -9,6 +9,14 @@ project_id = "hgskuophhidgbuluxiel"
     verify_jwt = false
   [functions.google-solar]
     verify_jwt = false
+  [functions.google-air-quality]
+    verify_jwt = false
+  [functions.google-pollen]
+    verify_jwt = false
+  [functions.google-street-view]
+    verify_jwt = false
+  [functions.satellite-vision]
+    verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
   [functions.scrape-solar-prices]

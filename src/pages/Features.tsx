@@ -16,6 +16,9 @@ import {
   Calculator,
   Leaf,
   TrendingUp,
+  ScanEye,
+  Wind,
+  Camera,
 } from 'lucide-react';
 import { PageSeo } from '@/components/seo/PageSeo';
 import Header from '@/components/Header';
@@ -50,6 +53,27 @@ const Features = () => {
       titleAr: 'رسم الأسطح على خرائط جوجل',
       descEn: 'Pinpoint your location and trace your roof on satellite imagery for accurate area measurement.',
       descAr: 'حدد موقعك وارسم سطحك على صور الأقمار الصناعية لقياس دقيق للمساحة.',
+    },
+    {
+      icon: <ScanEye className="w-6 h-6" />,
+      titleEn: 'Auto-Detect Real Building Boundary',
+      titleAr: 'كشف تلقائي لحدود المبنى الحقيقي',
+      descEn: "Drew a rough big square around your house? Gemini Vision automatically finds the actual building or farm inside your drawing, calculates its real footprint, and uses that — not the oversized square — in every calculation. It also detects water tanks, dishes, AC units, and shading.",
+      descAr: 'رسمت مربع تقريبي كبير حوالين بيتك؟ Gemini Vision يكتشف تلقائياً المبنى أو المزرعة الحقيقية جوا الرسمة، يحسب مساحتها الفعلية، ويستخدمها هي — مش المربع الكبير — في كل الحسابات. وكمان يكتشف خزانات المياه والدشات والمكيفات والتظليل.',
+    },
+    {
+      icon: <Wind className="w-6 h-6" />,
+      titleEn: 'Live Air Quality & Dust Soiling',
+      titleAr: 'جودة الهواء وفقد الغبار المباشر',
+      descEn: 'Real-time AQI, PM2.5/PM10, and pollen data from Google to estimate panel soiling losses and recommend a cleaning schedule.',
+      descAr: 'بيانات حية لجودة الهواء وPM2.5/PM10 وحبوب اللقاح من جوجل لتقدير فقد الغبار على الألواح واقتراح جدول تنظيف.',
+    },
+    {
+      icon: <Camera className="w-6 h-6" />,
+      titleEn: 'Street View Building Preview',
+      titleAr: 'معاينة المبنى من Street View',
+      descEn: 'See an actual street-level photo of your building right inside the report for extra context and verification.',
+      descAr: 'شاهد صورة فعلية لمبناك من مستوى الشارع داخل التقرير لمزيد من السياق والتحقق.',
     },
     {
       icon: <Sun className="w-6 h-6" />,

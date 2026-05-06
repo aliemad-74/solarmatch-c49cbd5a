@@ -21,7 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, MoreHorizontal, Eye, Trash2, ShieldCheck, ShieldOff, UserCog, Crown, CreditCard } from "lucide-react";
+import { Search, MoreHorizontal, Eye, Trash2, ShieldCheck, UserCog } from "lucide-react";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import UserDetailModal from "./UserDetailModal";
@@ -78,20 +78,20 @@ const UsersTable = () => {
     },
   });
 
-  const updateSubscriptionMutation = useMutation({
-    mutationFn: async ({ userId, updates }: { userId: string; updates: Record<string, any> }) => {
+  const resetUsageMutation = useMutation({
+    mutationFn: async (userId: string) => {
       const { error } = await supabase
         .from("profiles")
-        .update(updates)
+        .update({ reports_generated: 0 })
         .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });
-      toast({ title: "Subscription updated", description: "User subscription has been updated." });
+      toast({ title: "Usage reset", description: "User report usage has been reset." });
     },
     onError: () => {
-      toast({ title: t("admin.error"), description: "Failed to update subscription", variant: "destructive" });
+      toast({ title: t("admin.error"), description: "Failed to reset usage", variant: "destructive" });
     },
   });
 
@@ -198,7 +198,6 @@ const UsersTable = () => {
               <TableHead>{t("admin.users.email")}</TableHead>
               <TableHead>{t("admin.users.phone")}</TableHead>
               <TableHead>{t("admin.users.reports")}</TableHead>
-              <TableHead>Subscription</TableHead>
               <TableHead>{t("admin.userDetail.role")}</TableHead>
               <TableHead>{t("admin.users.type")}</TableHead>
               <TableHead>{t("admin.users.createdAt")}</TableHead>
@@ -208,7 +207,7 @@ const UsersTable = () => {
           <TableBody>
             {filteredProfiles?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   {t("admin.users.noUsers")}
                 </TableCell>
               </TableRow>
@@ -224,24 +223,6 @@ const UsersTable = () => {
                       <Badge variant="secondary">
                         {user.reports_generated} / {user.report_limit}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={(user as any).subscription_type || 'free'}
-                        onValueChange={(val) =>
-                          updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { subscription_type: val } })
-                        }
-                      >
-                        <SelectTrigger className="w-[120px] h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="free">Free</SelectItem>
-                          <SelectItem value="single_report">Single Report</SelectItem>
-                          <SelectItem value="premium">Premium</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </TableCell>
                     <TableCell>
                       <Select
@@ -298,37 +279,10 @@ const UsersTable = () => {
                             {t("admin.users.resetLimit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => {
-                              const extra = prompt("Add extra reports balance:", "1");
-                              if (extra !== null) {
-                                const val = parseInt(extra, 10);
-                                if (!isNaN(val) && val > 0) {
-                                  const current = (user as any).extra_reports_balance || 0;
-                                  updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { extra_reports_balance: current + val } });
-                                }
-                              }
-                            }}
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Add Extra Reports
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { reports_generated: 0 } });
-                            }}
+                            onClick={() => resetUsageMutation.mutate(user.user_id)}
                           >
                             <ShieldCheck className="h-4 w-4 mr-2" />
                             Reset Usage
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const currentStatus = (user as any).subscription_status || 'active';
-                              const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-                              updateSubscriptionMutation.mutate({ userId: user.user_id, updates: { subscription_status: newStatus } });
-                            }}
-                          >
-                            <ShieldOff className="h-4 w-4 mr-2" />
-                            {(user as any).subscription_status === 'suspended' ? 'Reactivate' : 'Suspend'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

@@ -8,13 +8,16 @@ import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
+const GOOGLE_MAPS_API_KEY =
+  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ??
+  "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
 const LIBRARIES: ("places")[] = ["places"];
 
 interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
+  onPolygonChange?: (points: google.maps.LatLngLiteral[]) => void;
 }
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
@@ -26,6 +29,7 @@ const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
+  onPolygonChange,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawingMode, setIsDrawingMode] = useState(false);
@@ -88,8 +92,9 @@ const MapSection = ({
       const area = calculatePolygonArea(polygonPoints);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) onAreaCalculated(area);
+      onPolygonChange?.(polygonPoints);
     }
-  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated, onPolygonChange]);
 
   // Fetch climate data
   const fetchClimateForLocation = useCallback(
