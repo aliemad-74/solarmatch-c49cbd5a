@@ -207,18 +207,37 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
+  // Mobile fix: clear stuck :hover/:focus state after closing fullscreen drawing.
+  // Without this, the first tap on any button after closing only blurs the previously
+  // focused Done/X button instead of triggering a click (causing "double-tap" UX).
+  const releaseStuckFocus = useCallback(() => {
+    try {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && typeof active.blur === "function") active.blur();
+      // Force a hover-state reset by briefly nudging body pointer
+      if (document.body) {
+        document.body.style.pointerEvents = "none";
+        // restore on next frame
+        requestAnimationFrame(() => {
+          document.body.style.pointerEvents = "";
+        });
+      }
+    } catch { /* noop */ }
+  }, []);
+
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
       setDrawingPhase("idle");
+      releaseStuckFocus();
     } else {
       clearPolygon();
       setIsDrawingMode(true);
       setDrawingPhase("fullscreen");
     }
-  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
+  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon, releaseStuckFocus]);
 
   // Map click handler
   const handleMapClick = useCallback(
@@ -295,6 +314,7 @@ const MapSection = ({
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
                 clearPolygon();
+                releaseStuckFocus();
               }}
               variant="ghost"
               size="icon"
@@ -330,6 +350,7 @@ const MapSection = ({
                 }
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
+                releaseStuckFocus();
               }}
               disabled={polygonPoints.length < MIN_POLYGON_POINTS}
               className="gap-1 gradient-solar text-primary-foreground shadow-glow"
