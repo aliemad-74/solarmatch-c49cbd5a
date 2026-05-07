@@ -256,22 +256,33 @@ Deno.serve(async (req) => {
     // 1. Vision analysis (with fallback)
     let vision: any = null;
     if (gmaps && lovableKey) {
-      const img = await fetchSatelliteImage(center, selectedArea, gmaps);
-      if (img) {
-        try { vision = await visionAnalyze(img, selectedArea, buildingTypeHint, lovableKey); }
-        catch (e) { console.warn("vision failed", e); }
+      const shot = await fetchSatelliteImage(center, polygon, gmaps);
+      if (shot) {
+        try {
+          vision = await visionAnalyze(
+            shot.image, selectedArea, shot.metersPerPixel, shot.zoom, buildingTypeHint, lovableKey,
+          );
+        } catch (e) { console.warn("vision failed", e); }
       }
     }
 
-    const detectedRoofArea = vision
+    // Sanity floor: if AI radically under-reports (<55% of polygon), the user most
+    // likely traced a single building tightly → trust the polygon more.
+    let detectedRoofArea = vision
       ? Math.max(0, Math.min(vision.detectedRoofArea, selectedArea * 1.15))
       : Math.round(selectedArea * 0.92);
-    const usableArea = vision
+    if (vision && detectedRoofArea < selectedArea * 0.55) {
+      detectedRoofArea = Math.round(selectedArea * 0.9);
+    }
+    let usableArea = vision
       ? Math.max(0, Math.min(vision.usableArea, detectedRoofArea))
       : Math.round(detectedRoofArea * 0.65);
-    const unusablePercentage = vision
-      ? Math.max(0, Math.min(vision.unusablePercentage, 100))
-      : 35;
+    if (vision && usableArea < detectedRoofArea * 0.4) {
+      usableArea = Math.round(detectedRoofArea * 0.7);
+    }
+    const unusablePercentage = Math.round(
+      Math.max(0, Math.min(100, (1 - usableArea / Math.max(detectedRoofArea, 1)) * 100)),
+    );
     const obstacles: string[] = Array.isArray(vision?.obstacles) ? vision.obstacles.slice(0, 12) : [];
     const propertyType: string = vision?.propertyType ?? (selectedArea > 4000 ? "farm" : "residential");
     const confidenceScore = vision ? Math.max(0, Math.min(Number(vision.confidenceScore) || 0.5, 1)) : 0.3;
