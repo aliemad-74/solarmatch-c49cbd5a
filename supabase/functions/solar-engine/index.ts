@@ -366,18 +366,6 @@ serve(async (req) => {
     }
 
     // STEP 6: AI Analysis
-    const visionBlock = visionAnalysis ? `
-Satellite Vision AI (Gemini 2.5 Pro):
-- Detected target: ${visionAnalysis.siteType ?? "n/a"} — ${visionAnalysis.detectionNote ?? ""}
-- Drawn polygon: ${Math.round(visionAnalysis.drawnAreaSqm ?? baseArea)} m² → Detected real footprint: ${Math.round(visionAnalysis.detectedAreaSqm ?? baseArea)} m² (${Math.round((visionAnalysis.detectedAreaRatio ?? 1) * 100)}% of drawn)
-- Usable inside target (after obstacles): ${Math.round((visionAnalysis.usableAreaRatio ?? 1) * 100)}%
-- Combined applied ratio: ${Math.round(visionRatio * 100)}%
-- Obstacles detected: ${(visionAnalysis.obstacles ?? []).length} (${(visionAnalysis.obstacles ?? []).map((o: any) => o.type).join(", ") || "none"})
-- Shading: ${visionAnalysis.shadingLevel ?? "n/a"}, Orientation: ${visionAnalysis.orientation ?? "n/a"}, Confidence: ${visionAnalysis.confidence ?? "n/a"}
-- Effective area used in calc: ${Math.round(effectiveArea)} m² (raw drawn: ${Math.round(baseArea)} m²)
-` : `
-Satellite Vision AI: not run (no polygon drawn). Calculation used full rooftop area without obstacle deduction.
-`;
 
     const aiPrompt = `You are SolarMatch AI, Egypt's expert solar feasibility advisor. Analyze this solar assessment and provide a personalized recommendation in the same language as the user's location (Arabic for Egyptian locations, English otherwise).
 
