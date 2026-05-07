@@ -287,6 +287,7 @@ const MapSection = ({
     zoomControl: true,
     tilt: 0,
     maxZoom: 22,
+    gestureHandling: "greedy",
     draggableCursor: isDrawingMode ? "crosshair" : "grab",
   };
 
