@@ -82,7 +82,7 @@ const Index = () => {
   
   // Auth modal state
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
+  // Subscription limit modal removed — site is fully free.
   const [pendingCalculation, setPendingCalculation] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   
@@ -639,10 +639,6 @@ const Index = () => {
         onSuccess={() => {}}
       />
 
-      <PaywallModal
-        open={showLimitReachedModal}
-        onOpenChange={setShowLimitReachedModal}
-      />
 
       <MobileBottomNav />
 
