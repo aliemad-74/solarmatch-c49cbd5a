@@ -312,10 +312,28 @@ const Index = () => {
 
   const performCalculation = async () => {
     setIsCalculating(true);
-    
     // Fire solar-engine in parallel (non-blocking enhancement)
     callSolarEngine();
-    
+
+    // Fire backend AI roof-report in parallel — results merge into report when ready.
+    if (polygonInfo) {
+      generateRoofReport({
+        polygon: polygonInfo.polygon,
+        center: polygonInfo.center,
+        selectedArea: rooftopArea,
+        buildingTypeHint: buildingType,
+        language: i18n.language === "ar" ? "ar" : "en",
+      })
+        .then((rep) => {
+          setRoofReport(rep);
+          // Adopt AI usable area if confident.
+          if (rep.confidenceScore >= 0.4 && rep.detectedRoofArea > 0) {
+            setRooftopArea(Math.round(rep.detectedRoofArea));
+          }
+        })
+        .catch((err) => console.warn("roof-report failed:", err));
+    }
+
     try {
       // Build market price overrides from live data
       const marketPriceOverrides: MarketPriceOverrides = {
