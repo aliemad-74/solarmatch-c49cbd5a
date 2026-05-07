@@ -300,18 +300,8 @@ serve(async (req) => {
 
     const pkg = (["economy", "standard", "premium"].includes(pvPackage) ? pvPackage : "standard") as string;
 
-    // Vision analysis (optional — only if polygon provided & not farm mode)
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const visionPromise: Promise<any> = (polygonPoints && Array.isArray(polygonPoints) && polygonPoints.length >= 3 && !farmMode && supabaseUrl)
-      ? fetchWithTimeout(`${supabaseUrl}/functions/v1/satellite-vision`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}` },
-          body: JSON.stringify({ lat: latitude, lng: longitude, polygonPoints, language }),
-        }, 120000).then((r) => r.ok ? r.json() : null).catch((e) => { console.error("vision call failed:", e); return null; })
-      : Promise.resolve(null);
-
-    // STEP 1-4: parallel API calls + market prices + vision
-    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices, visionAnalysis] = await Promise.all([
+    // STEP 1-4: parallel API calls + market prices
+    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices] = await Promise.all([
       geocode(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getSolarData(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getWeather(latitude, longitude, GOOGLE_MAPS_API_KEY),
@@ -319,7 +309,6 @@ serve(async (req) => {
       getElevation(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getPollenDust(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getMarketPrices(),
-      visionPromise,
     ]);
 
 
@@ -329,16 +318,8 @@ serve(async (req) => {
     // STEP 5: Enhanced calculation
     const dust = combinedSoilingLoss(airQuality.pm10, airQuality.pm25, pollen.pollenIndex, aqi);
     const tf = tempFactor(elevation);
-    // Apply Vision AI: detected target ratio (real building/farm ÷ drawn polygon) × usable ratio (after obstacles)
-    const detectedRatio: number = (visionAnalysis && typeof visionAnalysis.detectedAreaRatio === "number")
-      ? Math.max(0.1, Math.min(1, visionAnalysis.detectedAreaRatio))
-      : 1.0;
-    const usableInsideTarget: number = (visionAnalysis && typeof visionAnalysis.usableAreaRatio === "number")
-      ? Math.max(0.3, Math.min(1, visionAnalysis.usableAreaRatio))
-      : 1.0;
-    const visionRatio: number = detectedRatio * usableInsideTarget;
     const baseArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
-    const effectiveArea = baseArea * visionRatio;
+    const effectiveArea = baseArea;
     const base_irradiance = solarData.irradiance * 365;
     const adjusted_irradiance_factor =
       solarData.irradiance * (1 - dust) * tf * (1 - weather.cloudCover / 200);
@@ -385,18 +366,6 @@ serve(async (req) => {
     }
 
     // STEP 6: AI Analysis
-    const visionBlock = visionAnalysis ? `
-Satellite Vision AI (Gemini 2.5 Pro):
-- Detected target: ${visionAnalysis.siteType ?? "n/a"} — ${visionAnalysis.detectionNote ?? ""}
-- Drawn polygon: ${Math.round(visionAnalysis.drawnAreaSqm ?? baseArea)} m² → Detected real footprint: ${Math.round(visionAnalysis.detectedAreaSqm ?? baseArea)} m² (${Math.round((visionAnalysis.detectedAreaRatio ?? 1) * 100)}% of drawn)
-- Usable inside target (after obstacles): ${Math.round((visionAnalysis.usableAreaRatio ?? 1) * 100)}%
-- Combined applied ratio: ${Math.round(visionRatio * 100)}%
-- Obstacles detected: ${(visionAnalysis.obstacles ?? []).length} (${(visionAnalysis.obstacles ?? []).map((o: any) => o.type).join(", ") || "none"})
-- Shading: ${visionAnalysis.shadingLevel ?? "n/a"}, Orientation: ${visionAnalysis.orientation ?? "n/a"}, Confidence: ${visionAnalysis.confidence ?? "n/a"}
-- Effective area used in calc: ${Math.round(effectiveArea)} m² (raw drawn: ${Math.round(baseArea)} m²)
-` : `
-Satellite Vision AI: not run (no polygon drawn). Calculation used full rooftop area without obstacle deduction.
-`;
 
     const aiPrompt = `You are SolarMatch AI, Egypt's expert solar feasibility advisor. Analyze this solar assessment and provide a personalized recommendation in the same language as the user's location (Arabic for Egyptian locations, English otherwise).
 
@@ -417,7 +386,7 @@ Elevation: ${Math.round(elevation)}m
 Weather: ${weather.temperature}°C, ${weather.cloudCover}% cloud cover
 Data Source: ${solarData.source}
 Feasibility: ${feasibility}
-${visionBlock}
+
 
 Provide:
 1. One clear opening sentence about the feasibility verdict
@@ -477,7 +446,6 @@ Keep response under 200 words. Be specific with numbers.`;
         confidence,
       },
       ...(recommended ? { recommended } : {}),
-      ...(visionAnalysis ? { vision_analysis: { ...visionAnalysis, applied_ratio: visionRatio } } : {}),
     };
 
     return new Response(JSON.stringify(result), {

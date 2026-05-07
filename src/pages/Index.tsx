@@ -79,23 +79,6 @@ export interface SolarEngineData {
     recommended_payback: number;
     savings_from_downsizing: number;
   };
-  vision_analysis?: {
-    siteType?: string;
-    sceneDescription?: string;
-    drawnAreaSqm?: number;
-    detectedAreaRatio?: number;
-    detectedAreaSqm?: number;
-    detectionNote?: string;
-    usableAreaRatio: number;
-    obstacles: { type: string; description: string }[];
-    shadingLevel: "low" | "medium" | "high";
-    orientation: "north" | "south" | "east" | "west" | "mixed" | "flat";
-    warnings: string[];
-    confidence: "low" | "medium" | "high";
-    summary: string;
-    applied_ratio: number;
-    cached?: boolean;
-  };
 }
 
 const Index = () => {
@@ -113,10 +96,8 @@ const Index = () => {
   const [solarEngineData, setSolarEngineData] = useState<SolarEngineData | null>(null);
   const [solarEngineLoading, setSolarEngineLoading] = useState(false);
 
-  // Standalone Satellite Vision (called in parallel from frontend so the card appears independently)
-  const [visionData, setVisionData] = useState<NonNullable<SolarEngineData["vision_analysis"]> | null>(null);
-  const [visionLoading, setVisionLoading] = useState(false);
-  
+
+
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
   const [userEditedConfig, setUserEditedConfig] = useState(false);
@@ -249,34 +230,6 @@ const Index = () => {
 
     setSolarEngineLoading(true);
     setSolarEngineData(null);
-
-    // Fire satellite-vision in parallel (independent of solar-engine)
-    const lat = climateData?.location?.lat;
-    const lng = climateData?.location?.lng;
-    if (lat != null && lng != null && polygonPoints.length >= 3) {
-      setVisionLoading(true);
-      setVisionData(null);
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/satellite-vision`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          lat,
-          lng,
-          polygonPoints,
-          language: i18n.language?.startsWith("ar") ? "ar" : "en",
-          buildingType,
-          farmMode,
-          agriculturalActivity: farmMode ? agriculturalActivity : undefined,
-        }),
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json) => { if (json && typeof json.usableAreaRatio === "number") setVisionData(json); })
-        .catch((e) => console.error("vision error:", e))
-        .finally(() => setVisionLoading(false));
-    }
 
     try {
       const controller = new AbortController();
@@ -435,8 +388,6 @@ const Index = () => {
                 buildingType,
                 pvType,
               },
-              // Ground the verification layer in real satellite-vision + air-quality findings
-              visionFindings: engineResult?.vision_analysis ?? visionData ?? null,
               environmental: engineResult?.environmental ?? null,
               language: i18n.language,
               mode: "review",
@@ -658,8 +609,6 @@ const Index = () => {
               electricityPrice={electricityPrice}
               solarEngineData={solarEngineData}
               solarEngineLoading={solarEngineLoading}
-              visionData={visionData}
-              visionLoading={visionLoading}
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
