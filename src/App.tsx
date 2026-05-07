@@ -13,7 +13,6 @@ import Account from "./pages/Account";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
-import Features from "./pages/Features";
 import WhySolarMatch from "./pages/WhySolarMatch";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -55,11 +54,11 @@ const App = () => (
                   <Route path="/ar/how-it-works" element={<Navigate to="/ar" replace />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/ar/about" element={<About />} />
-                  <Route path="/features" element={<Features />} />
-                  <Route path="/ar/features" element={<Features />} />
-                  {/* Legacy pricing URLs now redirect to features (site is fully free) */}
-                  <Route path="/pricing" element={<Navigate to="/features" replace />} />
-                  <Route path="/ar/pricing" element={<Navigate to="/ar/features" replace />} />
+                  {/* Legacy features/pricing URLs now redirect home — site is fully free */}
+                  <Route path="/features" element={<Navigate to="/" replace />} />
+                  <Route path="/ar/features" element={<Navigate to="/ar" replace />} />
+                  <Route path="/pricing" element={<Navigate to="/" replace />} />
+                  <Route path="/ar/pricing" element={<Navigate to="/ar" replace />} />
                   <Route path="/why-solarmatch" element={<WhySolarMatch />} />
                   <Route path="/ar/why-solarmatch" element={<WhySolarMatch />} />
                   <Route path="/account" element={<Account />} />
@@ -89,8 +88,8 @@ const App = () => (
                     />
                   ))}
                   {/* Legacy SEO pricing slug also redirects to features */}
-                  <Route path="/pricing-plans" element={<Navigate to="/features" replace />} />
-                  <Route path="/ar/pricing-plans" element={<Navigate to="/ar/features" replace />} />
+                  <Route path="/pricing-plans" element={<Navigate to="/" replace />} />
+                  <Route path="/ar/pricing-plans" element={<Navigate to="/ar" replace />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route
                     path="/admin"
