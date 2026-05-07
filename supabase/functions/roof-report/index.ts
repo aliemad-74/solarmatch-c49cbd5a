@@ -194,6 +194,7 @@ Return JSON via the tool only.`;
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "google/gemini-2.5-pro",
+      temperature: 0.1,
       messages: [
         { role: "system", content: sys },
         { role: "user", content: [
