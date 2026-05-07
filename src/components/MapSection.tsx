@@ -76,6 +76,17 @@ const MapSection = ({
     autocompleteRef.current = autocomplete;
   }, [isLoaded]);
 
+  // Close Places dropdown on scroll so it doesn't overlay other content
+  useEffect(() => {
+    const handleScroll = () => {
+      if (document.activeElement === autocompleteInputRef.current) {
+        autocompleteInputRef.current?.blur();
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Calculate polygon area using Turf.js
   const calculatePolygonArea = useCallback((points: google.maps.LatLngLiteral[]) => {
     if (points.length < MIN_POLYGON_POINTS) return 0;
