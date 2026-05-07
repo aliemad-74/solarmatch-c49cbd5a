@@ -105,6 +105,7 @@ const App = () => (
                     <Route path="reports" element={<AdminReports />} />
                     <Route path="leads" element={<AdminLeads />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
+                    <Route path="feedback" element={<AdminFeedback />} />
                   </Route>
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
