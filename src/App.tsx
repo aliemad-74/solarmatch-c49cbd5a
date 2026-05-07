@@ -31,8 +31,10 @@ import AdminReports from "./pages/admin/AdminReports";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminFeedback from "./pages/admin/AdminFeedback";
+import AdminVisitors from "./pages/admin/AdminVisitors";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
+import VisitTracker from "./components/VisitTracker";
 
 import "./i18n"; // Initialize i18n
 
@@ -48,6 +50,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <VisitTracker />
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
@@ -109,6 +112,7 @@ const App = () => (
                     <Route path="leads" element={<AdminLeads />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
                     <Route path="feedback" element={<AdminFeedback />} />
+                    <Route path="visitors" element={<AdminVisitors />} />
                   </Route>
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
