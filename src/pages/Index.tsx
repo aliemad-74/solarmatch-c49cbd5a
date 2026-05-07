@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
+import RoofAnalysisCard from "@/components/RoofAnalysisCard";
+import type { RoofAnalysisResult } from "@/lib/roofAnalysis";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
@@ -127,6 +129,9 @@ const Index = () => {
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
+  const [roofAnalysis, setRoofAnalysis] = useState<RoofAnalysisResult | null>(null);
+  const [roofAnalysisLoading, setRoofAnalysisLoading] = useState(false);
+  const [roofAnalysisError, setRoofAnalysisError] = useState<string | null>(null);
 
   // Onboarding tour — show only for first-time visitors
   const [showOnboarding, setShowOnboarding] = useState(false);
