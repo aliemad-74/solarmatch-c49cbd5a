@@ -469,10 +469,7 @@ const Index = () => {
       return;
     }
 
-    if (!canGenerateReport) {
-      setShowLimitReachedModal(true);
-      return;
-    }
+    // Report limit removed — fully free.
 
     performCalculation();
   };
