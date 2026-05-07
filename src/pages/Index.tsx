@@ -500,7 +500,10 @@ const Index = () => {
         <div id="map-section">
           <ScrollReveal>
             <MapSection
-              onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setPolygonDrawn(true); }}
+              onAreaCalculated={(area) => {
+                setRooftopArea(Math.round(area));
+                setPolygonDrawn(true);
+              }}
               onClimateDataFetched={(data) => {
                 setClimateData(data);
                 if (initialLocationLoadRef.current) {
@@ -510,9 +513,27 @@ const Index = () => {
                 }
               }}
               onLocationChange={(name) => { setLocationName(name); }}
-              
+              onRoofAnalysis={(result, loading, error) => {
+                setRoofAnalysis(result);
+                setRoofAnalysisLoading(loading);
+                setRoofAnalysisError(error);
+                // Use AI-detected usable area for calculations when confident
+                if (result && result.usableArea > 0 && result.confidenceScore >= 0.4) {
+                  // detectedRoofArea reflects the real building footprint inside the drawn polygon
+                  setRooftopArea(Math.round(result.detectedRoofArea));
+                }
+              }}
             />
           </ScrollReveal>
+          {(roofAnalysisLoading || roofAnalysis || roofAnalysisError) && (
+            <div className="container mx-auto px-4 mt-3">
+              <RoofAnalysisCard
+                loading={roofAnalysisLoading}
+                result={roofAnalysis}
+                error={roofAnalysisError}
+              />
+            </div>
+          )}
         </div>
 
         {/* Product Role Clarification */}
