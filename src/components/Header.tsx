@@ -154,27 +154,8 @@ const Header = () => {
                   </Link>
                 ))}
 
-                {/* About sub-links */}
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                    {t('header.about')}
-                  </span>
-                  {aboutSubLinks.map((link) => (
-                    <Link
-                      key={link.path}
-                      to={link.path}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`block text-lg transition-colors ps-3 ${
-                        isActive(link.path)
-                          ? "text-primary font-medium"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-                
+
+
                 {user && (
                   <Link
                     to="/account"
