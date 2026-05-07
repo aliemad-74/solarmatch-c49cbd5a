@@ -608,10 +608,21 @@ const Index = () => {
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
-          {showResults && roofReport && (
+          {showResults && (
             <div className="container mx-auto px-4 mt-4 space-y-4">
-              <RoofReportSection report={roofReport} />
-              <ReportFeedback context={{ location: locationName, area: rooftopArea, propertyType: roofReport.propertyType }} />
+              {roofReport ? (
+                <>
+                  <RoofReportSection report={roofReport} />
+                  <ReportFeedback context={{ location: locationName, area: rooftopArea, propertyType: roofReport.propertyType }} />
+                </>
+              ) : polygonInfo ? (
+                <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  {i18n.language === "ar"
+                    ? "جارٍ تحليل صورة السطح بالذكاء الاصطناعي…"
+                    : "Analyzing rooftop satellite imagery with AI…"}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
