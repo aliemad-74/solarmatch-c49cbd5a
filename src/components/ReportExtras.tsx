@@ -93,13 +93,13 @@ export const ReportFeedback = ({ context }: { context?: Record<string, unknown> 
   const submit = async () => {
     if (!rating) return;
     setBusy(true);
-    const { error } = await supabase.from("user_feedback").insert({
+    const { error } = await supabase.from("user_feedback").insert([{
       rating,
       comment: comment.slice(0, 2000) || null,
       category: "report",
       page_context: typeof window !== "undefined" ? window.location.pathname : null,
-      metadata: context ?? {},
-    });
+      metadata: (context ?? {}) as never,
+    }]);
     setBusy(false);
     if (error) {
       toast.error(ar ? "تعذر إرسال التقييم" : "Could not submit feedback");
