@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
@@ -313,26 +314,29 @@ const Index = () => {
 
   const performCalculation = async () => {
     setIsCalculating(true);
+    setRoofReport(null);
     // Fire solar-engine in parallel (non-blocking enhancement)
     callSolarEngine();
 
-    // Fire backend AI roof-report in parallel — results merge into report when ready.
+    // Fire backend AI roof-report fully decoupled from calculation flow.
+    // Runs in background; results render inside the report section only.
+    // Does NOT mutate inputs (no state races, no map re-renders).
     if (polygonInfo) {
-      generateRoofReport({
-        polygon: polygonInfo.polygon,
-        center: polygonInfo.center,
-        selectedArea: rooftopArea,
-        buildingTypeHint: buildingType,
-        language: i18n.language === "ar" ? "ar" : "en",
-      })
-        .then((rep) => {
-          setRoofReport(rep);
-          // Adopt AI usable area if confident.
-          if (rep.confidenceScore >= 0.4 && rep.detectedRoofArea > 0) {
-            setRooftopArea(Math.round(rep.detectedRoofArea));
-          }
+      const polygonSnapshot = polygonInfo;
+      const areaSnapshot = rooftopArea;
+      const buildingSnapshot = buildingType;
+      const langSnapshot = i18n.language === "ar" ? "ar" : "en";
+      queueMicrotask(() => {
+        generateRoofReport({
+          polygon: polygonSnapshot.polygon,
+          center: polygonSnapshot.center,
+          selectedArea: areaSnapshot,
+          buildingTypeHint: buildingSnapshot,
+          language: langSnapshot as "ar" | "en",
         })
-        .catch((err) => console.warn("roof-report failed:", err));
+          .then((rep) => setRoofReport(rep))
+          .catch((err) => console.warn("roof-report failed:", err));
+      });
     }
 
     try {
@@ -605,10 +609,21 @@ const Index = () => {
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
-          {showResults && roofReport && (
+          {showResults && (
             <div className="container mx-auto px-4 mt-4 space-y-4">
-              <RoofReportSection report={roofReport} />
-              <ReportFeedback context={{ location: locationName, area: rooftopArea, propertyType: roofReport.propertyType }} />
+              {roofReport ? (
+                <>
+                  <RoofReportSection report={roofReport} />
+                  <ReportFeedback context={{ location: locationName, area: rooftopArea, propertyType: roofReport.propertyType }} />
+                </>
+              ) : polygonInfo ? (
+                <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  {i18n.language === "ar"
+                    ? "جارٍ تحليل صورة السطح بالذكاء الاصطناعي…"
+                    : "Analyzing rooftop satellite imagery with AI…"}
+                </div>
+              ) : null}
             </div>
           )}
         </div>

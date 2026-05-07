@@ -330,11 +330,16 @@ const MapSection = ({
             )}
             <Button
               onClick={() => {
-                if (polygonPoints.length >= MIN_POLYGON_POINTS) {
-                  completePolygon(polygonPoints);
-                }
-                setIsDrawingMode(false);
+                // Idempotent: exit drawing mode FIRST, then finalize.
+                if (drawingPhase !== "fullscreen") return;
                 setDrawingPhase("idle");
+                setIsDrawingMode(false);
+                if (polygonPoints.length >= MIN_POLYGON_POINTS) {
+                  // Defer to next tick so React fully unmounts the overlay
+                  // before any async work touches state. Guarantees the map
+                  // returns to normal interaction immediately.
+                  setTimeout(() => completePolygon(polygonPoints), 0);
+                }
               }}
               disabled={polygonPoints.length < MIN_POLYGON_POINTS}
               className="gap-1 gradient-solar text-primary-foreground shadow-glow"
