@@ -207,22 +207,23 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
-  // Mobile fix: clear stuck :hover/:focus state after closing fullscreen drawing.
-  // Without this, the first tap on any button after closing only blurs the previously
-  // focused Done/X button instead of triggering a click (causing "double-tap" UX).
-  const releaseStuckFocus = useCallback(() => {
+  // Proper cleanup of Google Maps interaction state when fullscreen overlay unmounts.
+  // Without this, internal gesture/touch handlers persist and swallow the first tap on
+  // any UI element afterwards (manifesting as "double-tap required" on mobile).
+  const cleanupGoogleMapInteractions = useCallback(() => {
+    if (!mapRef.current || !window.google) return;
     try {
-      const active = document.activeElement as HTMLElement | null;
-      if (active && typeof active.blur === "function") active.blur();
-      // Force a hover-state reset by briefly nudging body pointer
-      if (document.body) {
-        document.body.style.pointerEvents = "none";
-        // restore on next frame
-        requestAnimationFrame(() => {
-          document.body.style.pointerEvents = "";
-        });
-      }
+      google.maps.event.clearInstanceListeners(mapRef.current);
+      mapRef.current.setOptions({
+        draggableCursor: "default",
+        gestureHandling: "auto",
+      });
     } catch { /* noop */ }
+    mapRef.current = null;
+    // Force layout recalculation so any stale fixed-positioned listeners detach
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 100);
   }, []);
 
   // Toggle drawing mode
@@ -231,13 +232,13 @@ const MapSection = ({
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
       setDrawingPhase("idle");
-      releaseStuckFocus();
+      cleanupGoogleMapInteractions();
     } else {
       clearPolygon();
       setIsDrawingMode(true);
       setDrawingPhase("fullscreen");
     }
-  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon, releaseStuckFocus]);
+  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon, cleanupGoogleMapInteractions]);
 
   // Map click handler
   const handleMapClick = useCallback(
