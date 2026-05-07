@@ -887,6 +887,11 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                 </div>
 
                 <AirQualityCard env={solarEngineData.environmental} />
+              </div>
+            ) : null}
+          </div>
+        )}
+
 
         {/* Technical Specifications - only for technical profile users */}
         {profile?.profile_type === 'technical' && (
