@@ -388,8 +388,7 @@ const Index = () => {
                 buildingType,
                 pvType,
               },
-              // Ground the verification layer in real satellite-vision + air-quality findings
-              visionFindings: engineResult?.vision_analysis ?? visionData ?? null,
+              environmental: engineResult?.environmental ?? null,
               environmental: engineResult?.environmental ?? null,
               language: i18n.language,
               mode: "review",
