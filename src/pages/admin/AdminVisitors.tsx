@@ -83,7 +83,8 @@ const AdminVisitors = () => {
       v.path?.toLowerCase().includes(s) ||
       v.browser?.toLowerCase().includes(s) ||
       v.os?.toLowerCase().includes(s) ||
-      v.device_type?.toLowerCase().includes(s)
+      v.device_type?.toLowerCase().includes(s) ||
+      v.device_model?.toLowerCase().includes(s)
     );
   });
 
@@ -94,7 +95,8 @@ const AdminVisitors = () => {
       [
         { key: "created_at" as any, label: "Date" },
         { key: "ip_address" as any, label: "IP" },
-        { key: "device_type" as any, label: "Device" },
+        { key: "device_model" as any, label: "Device Model" },
+        { key: "device_type" as any, label: "Device Type" },
         { key: "browser" as any, label: "Browser" },
         { key: "os" as any, label: "OS" },
         { key: "path" as any, label: "Path" },
@@ -283,7 +285,8 @@ const AdminVisitors = () => {
                   <TableRow>
                     <TableHead>Time</TableHead>
                     <TableHead>IP</TableHead>
-                    <TableHead>Device</TableHead>
+                    <TableHead>Device Model</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Browser</TableHead>
                     <TableHead>OS</TableHead>
                     <TableHead>Path</TableHead>
@@ -297,6 +300,7 @@ const AdminVisitors = () => {
                         {format(new Date(v.created_at), "MMM dd HH:mm")}
                       </TableCell>
                       <TableCell className="font-mono text-xs">{v.ip_address || "-"}</TableCell>
+                      <TableCell className="text-sm font-medium">{v.device_model || "-"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
                           {v.device_type || "-"}
