@@ -290,19 +290,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Sanity floor: if AI radically under-reports (<55% of polygon), the user most
-    // likely traced a single building tightly → trust the polygon more.
+    // Trust the AI's measurement of the real building footprint. Polygons are
+    // intentionally over-drawn by users — DO NOT floor detectedRoofArea against
+    // the polygon. Only cap an obvious AI hallucination above the polygon (+15%).
     let detectedRoofArea = vision
       ? Math.max(0, Math.min(vision.detectedRoofArea, selectedArea * 1.15))
-      : Math.round(selectedArea * 0.92);
-    if (vision && detectedRoofArea < selectedArea * 0.55) {
-      detectedRoofArea = Math.round(selectedArea * 0.9);
-    }
+      : Math.round(selectedArea * 0.85);
     let usableArea = vision
       ? Math.max(0, Math.min(vision.usableArea, detectedRoofArea))
       : Math.round(detectedRoofArea * 0.65);
-    if (vision && usableArea < detectedRoofArea * 0.4) {
-      usableArea = Math.round(detectedRoofArea * 0.7);
+    if (vision && usableArea < detectedRoofArea * 0.3) {
+      usableArea = Math.round(detectedRoofArea * 0.6);
     }
     const unusablePercentage = Math.round(
       Math.max(0, Math.min(100, (1 - usableArea / Math.max(detectedRoofArea, 1)) * 100)),
