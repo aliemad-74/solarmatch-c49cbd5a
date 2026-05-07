@@ -194,6 +194,7 @@ Return JSON via the tool only.`;
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "google/gemini-2.5-pro",
+      temperature: 0.1,
       messages: [
         { role: "system", content: sys },
         { role: "user", content: [
@@ -277,37 +278,76 @@ Deno.serve(async (req) => {
     const gmaps = Deno.env.get("GOOGLE_MAPS_API_KEY");
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
 
-    // 1. Vision analysis (with fallback)
+    // 1. Vision analysis — TWO independent passes in parallel, then median.
+    // Single-shot vision is too noisy (Gemini swings ±50% between calls);
+    // taking the median of 2 independent measurements stabilises the output.
     let vision: any = null;
+    let visionPasses: any[] = [];
     if (gmaps && lovableKey) {
       const shot = await fetchSatelliteImage(center, polygon, gmaps);
       if (shot) {
-        try {
-          vision = await visionAnalyze(
-            shot.image, selectedArea, shot.metersPerPixel, shot.zoom, buildingTypeHint, lovableKey,
-          );
-        } catch (e) { console.warn("vision failed", e); }
+        const passes = await Promise.allSettled([
+          visionAnalyze(shot.image, selectedArea, shot.metersPerPixel, shot.zoom, buildingTypeHint, lovableKey),
+          visionAnalyze(shot.image, selectedArea, shot.metersPerPixel, shot.zoom, buildingTypeHint, lovableKey),
+        ]);
+        visionPasses = passes
+          .filter((p): p is PromiseFulfilledResult<any> => p.status === "fulfilled" && p.value)
+          .map((p) => p.value);
+        if (visionPasses.length > 0) {
+          const median = (xs: number[]) => {
+            const s = xs.slice().sort((a, b) => a - b);
+            return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
+          };
+          vision = {
+            detectedRoofArea: median(visionPasses.map((v) => Number(v.detectedRoofArea) || 0)),
+            usableArea: median(visionPasses.map((v) => Number(v.usableArea) || 0)),
+            obstacles: visionPasses[0].obstacles,
+            propertyType: visionPasses[0].propertyType,
+            propertyTypeReasoning: visionPasses[0].propertyTypeReasoning,
+            confidenceScore: median(visionPasses.map((v) => Number(v.confidenceScore) || 0.5)),
+            notes: visionPasses.map((v) => v.notes).filter(Boolean).join(" | "),
+          };
+          console.log(`Vision passes: ${visionPasses.length}, median detectedRoofArea=${Math.round(vision.detectedRoofArea)}, usableArea=${Math.round(vision.usableArea)}`);
+        }
       }
     }
 
-    // Trust the AI's measurement of the real building footprint. Polygons are
-    // intentionally over-drawn by users — DO NOT floor detectedRoofArea against
-    // the polygon. Only cap an obvious AI hallucination above the polygon (+15%).
+    // Property-type-aware usable ratio bands (tight, deterministic).
+    const propertyType: string = vision?.propertyType ?? (selectedArea > 4000 ? "farm" : "residential");
+    const usableBand: Record<string, [number, number]> = {
+      residential: [0.55, 0.78],
+      commercial:  [0.62, 0.85],
+      industrial:  [0.68, 0.90],
+      warehouse:   [0.70, 0.92],
+      farm:        [0.78, 0.92],
+      mixed:       [0.58, 0.82],
+    };
+    const [minUR, maxUR] = usableBand[propertyType] ?? [0.55, 0.80];
+
+    // detectedRoofArea: cap above polygon+15%, but ALSO floor at polygon*0.55
+    // for dense urban (residential/commercial/mixed) where a tight polygon
+    // almost certainly traces one building — AI under-detection is the #1 bug.
+    const denseFloor = ["residential", "commercial", "mixed", "industrial"].includes(propertyType) ? 0.55 : 0.40;
     let detectedRoofArea = vision
-      ? Math.max(0, Math.min(vision.detectedRoofArea, selectedArea * 1.15))
+      ? Math.max(
+          selectedArea * denseFloor,
+          Math.min(vision.detectedRoofArea, selectedArea * 1.15),
+        )
       : Math.round(selectedArea * 0.85);
-    let usableArea = vision
-      ? Math.max(0, Math.min(vision.usableArea, detectedRoofArea))
-      : Math.round(detectedRoofArea * 0.65);
-    if (vision && usableArea < detectedRoofArea * 0.3) {
-      usableArea = Math.round(detectedRoofArea * 0.6);
-    }
+
+    // usableArea: clamp into the per-type band — no more 20% or 95% outliers.
+    const aiUsableRatio = vision ? vision.usableArea / Math.max(vision.detectedRoofArea, 1) : (minUR + maxUR) / 2;
+    const clampedRatio = Math.max(minUR, Math.min(maxUR, aiUsableRatio));
+    let usableArea = Math.round(detectedRoofArea * clampedRatio);
+
     const unusablePercentage = Math.round(
       Math.max(0, Math.min(100, (1 - usableArea / Math.max(detectedRoofArea, 1)) * 100)),
     );
     const obstacles: string[] = Array.isArray(vision?.obstacles) ? vision.obstacles.slice(0, 12) : [];
-    const propertyType: string = vision?.propertyType ?? (selectedArea > 4000 ? "farm" : "residential");
-    const confidenceScore = vision ? Math.max(0, Math.min(Number(vision.confidenceScore) || 0.5, 1)) : 0.3;
+    const confidenceScore = vision
+      ? Math.max(0, Math.min(Number(vision.confidenceScore) || 0.5, 1)) * (visionPasses.length === 2 ? 1 : 0.85)
+      : 0.3;
+
 
     // 2. Environment
     const air = await fetchAirQuality(center.lat, center.lng, lang);
