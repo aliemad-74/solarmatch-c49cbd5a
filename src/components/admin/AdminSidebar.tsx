@@ -32,6 +32,7 @@ const AdminSidebar = () => {
     { to: "/admin/reports", icon: FileText, label: t("admin.nav.reports") },
     { to: "/admin/leads", icon: UserCheck, label: t("admin.nav.leads") },
     { to: "/admin/analytics", icon: BarChart3, label: t("admin.nav.analytics") },
+    { to: "/admin/feedback", icon: MessageSquare, label: i18n.language === "ar" ? "الملاحظات" : "Feedback" },
   ];
 
   const SidebarContent = () => (
