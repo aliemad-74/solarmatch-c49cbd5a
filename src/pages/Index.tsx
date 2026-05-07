@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
