@@ -315,7 +315,7 @@ const MapSection = ({
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
                 clearPolygon();
-                releaseStuckFocus();
+                cleanupGoogleMapInteractions();
               }}
               variant="ghost"
               size="icon"
@@ -351,7 +351,7 @@ const MapSection = ({
                 }
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
-                releaseStuckFocus();
+                cleanupGoogleMapInteractions();
               }}
               disabled={polygonPoints.length < MIN_POLYGON_POINTS}
               className="gap-1 gradient-solar text-primary-foreground shadow-glow"
