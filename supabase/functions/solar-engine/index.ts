@@ -386,7 +386,7 @@ Elevation: ${Math.round(elevation)}m
 Weather: ${weather.temperature}°C, ${weather.cloudCover}% cloud cover
 Data Source: ${solarData.source}
 Feasibility: ${feasibility}
-${visionBlock}
+
 
 Provide:
 1. One clear opening sentence about the feasibility verdict
