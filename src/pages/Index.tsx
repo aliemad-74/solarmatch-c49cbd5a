@@ -231,34 +231,6 @@ const Index = () => {
     setSolarEngineLoading(true);
     setSolarEngineData(null);
 
-    // Fire satellite-vision in parallel (independent of solar-engine)
-    const lat = climateData?.location?.lat;
-    const lng = climateData?.location?.lng;
-    if (lat != null && lng != null && polygonPoints.length >= 3) {
-      setVisionLoading(true);
-      setVisionData(null);
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/satellite-vision`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          lat,
-          lng,
-          polygonPoints,
-          language: i18n.language?.startsWith("ar") ? "ar" : "en",
-          buildingType,
-          farmMode,
-          agriculturalActivity: farmMode ? agriculturalActivity : undefined,
-        }),
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json) => { if (json && typeof json.usableAreaRatio === "number") setVisionData(json); })
-        .catch((e) => console.error("vision error:", e))
-        .finally(() => setVisionLoading(false));
-    }
-
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 45000);
