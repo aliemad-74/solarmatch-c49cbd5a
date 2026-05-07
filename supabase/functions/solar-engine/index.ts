@@ -446,7 +446,6 @@ Keep response under 200 words. Be specific with numbers.`;
         confidence,
       },
       ...(recommended ? { recommended } : {}),
-      ...(visionAnalysis ? { vision_analysis: { ...visionAnalysis, applied_ratio: visionRatio } } : {}),
     };
 
     return new Response(JSON.stringify(result), {
