@@ -300,18 +300,8 @@ serve(async (req) => {
 
     const pkg = (["economy", "standard", "premium"].includes(pvPackage) ? pvPackage : "standard") as string;
 
-    // Vision analysis (optional — only if polygon provided & not farm mode)
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const visionPromise: Promise<any> = (polygonPoints && Array.isArray(polygonPoints) && polygonPoints.length >= 3 && !farmMode && supabaseUrl)
-      ? fetchWithTimeout(`${supabaseUrl}/functions/v1/satellite-vision`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}` },
-          body: JSON.stringify({ lat: latitude, lng: longitude, polygonPoints, language }),
-        }, 120000).then((r) => r.ok ? r.json() : null).catch((e) => { console.error("vision call failed:", e); return null; })
-      : Promise.resolve(null);
-
-    // STEP 1-4: parallel API calls + market prices + vision
-    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices, visionAnalysis] = await Promise.all([
+    // STEP 1-4: parallel API calls + market prices
+    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices] = await Promise.all([
       geocode(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getSolarData(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getWeather(latitude, longitude, GOOGLE_MAPS_API_KEY),
@@ -319,7 +309,6 @@ serve(async (req) => {
       getElevation(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getPollenDust(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getMarketPrices(),
-      visionPromise,
     ]);
 
 
