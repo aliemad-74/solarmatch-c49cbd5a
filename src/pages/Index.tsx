@@ -313,26 +313,29 @@ const Index = () => {
 
   const performCalculation = async () => {
     setIsCalculating(true);
+    setRoofReport(null);
     // Fire solar-engine in parallel (non-blocking enhancement)
     callSolarEngine();
 
-    // Fire backend AI roof-report in parallel — results merge into report when ready.
+    // Fire backend AI roof-report fully decoupled from calculation flow.
+    // Runs in background; results render inside the report section only.
+    // Does NOT mutate inputs (no state races, no map re-renders).
     if (polygonInfo) {
-      generateRoofReport({
-        polygon: polygonInfo.polygon,
-        center: polygonInfo.center,
-        selectedArea: rooftopArea,
-        buildingTypeHint: buildingType,
-        language: i18n.language === "ar" ? "ar" : "en",
-      })
-        .then((rep) => {
-          setRoofReport(rep);
-          // Adopt AI usable area if confident.
-          if (rep.confidenceScore >= 0.4 && rep.detectedRoofArea > 0) {
-            setRooftopArea(Math.round(rep.detectedRoofArea));
-          }
+      const polygonSnapshot = polygonInfo;
+      const areaSnapshot = rooftopArea;
+      const buildingSnapshot = buildingType;
+      const langSnapshot = i18n.language === "ar" ? "ar" : "en";
+      queueMicrotask(() => {
+        generateRoofReport({
+          polygon: polygonSnapshot.polygon,
+          center: polygonSnapshot.center,
+          selectedArea: areaSnapshot,
+          buildingTypeHint: buildingSnapshot,
+          language: langSnapshot as "ar" | "en",
         })
-        .catch((err) => console.warn("roof-report failed:", err));
+          .then((rep) => setRoofReport(rep))
+          .catch((err) => console.warn("roof-report failed:", err));
+      });
     }
 
     try {
