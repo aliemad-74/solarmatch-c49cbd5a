@@ -8,16 +8,13 @@ import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
-const GOOGLE_MAPS_API_KEY =
-  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ??
-  "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
+const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
 const LIBRARIES: ("places")[] = ["places"];
 
 interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
-  onPolygonChange?: (points: google.maps.LatLngLiteral[]) => void;
 }
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
@@ -29,7 +26,6 @@ const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
-  onPolygonChange,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawingMode, setIsDrawingMode] = useState(false);
@@ -92,9 +88,8 @@ const MapSection = ({
       const area = calculatePolygonArea(polygonPoints);
       setCalculatedArea(area);
       if (onAreaCalculated && area > 0) onAreaCalculated(area);
-      onPolygonChange?.(polygonPoints);
     }
-  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated, onPolygonChange]);
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
 
   // Fetch climate data
   const fetchClimateForLocation = useCallback(
@@ -207,38 +202,18 @@ const MapSection = ({
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
-  // Proper cleanup of Google Maps interaction state when fullscreen overlay unmounts.
-  // Without this, internal gesture/touch handlers persist and swallow the first tap on
-  // any UI element afterwards (manifesting as "double-tap required" on mobile).
-  const cleanupGoogleMapInteractions = useCallback(() => {
-    if (!mapRef.current || !window.google) return;
-    try {
-      google.maps.event.clearInstanceListeners(mapRef.current);
-      mapRef.current.setOptions({
-        draggableCursor: "default",
-        gestureHandling: "auto",
-      });
-    } catch { /* noop */ }
-    mapRef.current = null;
-    // Force layout recalculation so any stale fixed-positioned listeners detach
-    setTimeout(() => {
-      window.dispatchEvent(new Event("resize"));
-    }, 100);
-  }, []);
-
   // Toggle drawing mode
   const toggleDrawingMode = useCallback(() => {
     if (isDrawingMode) {
       if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
       setIsDrawingMode(false);
       setDrawingPhase("idle");
-      cleanupGoogleMapInteractions();
     } else {
       clearPolygon();
       setIsDrawingMode(true);
       setDrawingPhase("fullscreen");
     }
-  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon, cleanupGoogleMapInteractions]);
+  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
 
   // Map click handler
   const handleMapClick = useCallback(
@@ -287,7 +262,6 @@ const MapSection = ({
     zoomControl: true,
     tilt: 0,
     maxZoom: 22,
-    gestureHandling: "greedy",
     draggableCursor: isDrawingMode ? "crosshair" : "grab",
   };
 
@@ -316,7 +290,6 @@ const MapSection = ({
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
                 clearPolygon();
-                cleanupGoogleMapInteractions();
               }}
               variant="ghost"
               size="icon"
@@ -352,7 +325,6 @@ const MapSection = ({
                 }
                 setIsDrawingMode(false);
                 setDrawingPhase("idle");
-                cleanupGoogleMapInteractions();
               }}
               disabled={polygonPoints.length < MIN_POLYGON_POINTS}
               className="gap-1 gradient-solar text-primary-foreground shadow-glow"

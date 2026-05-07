@@ -410,10 +410,6 @@ export type Database = {
           temperature: number | null
           total_cost: number | null
           user_id: string | null
-          vision_confidence: string | null
-          vision_obstacles_count: number | null
-          vision_shading_level: string | null
-          vision_usable_area_ratio: number | null
         }
         Insert: {
           ai_confidence?: string | null
@@ -450,10 +446,6 @@ export type Database = {
           temperature?: number | null
           total_cost?: number | null
           user_id?: string | null
-          vision_confidence?: string | null
-          vision_obstacles_count?: number | null
-          vision_shading_level?: string | null
-          vision_usable_area_ratio?: number | null
         }
         Update: {
           ai_confidence?: string | null
@@ -490,10 +482,6 @@ export type Database = {
           temperature?: number | null
           total_cost?: number | null
           user_id?: string | null
-          vision_confidence?: string | null
-          vision_obstacles_count?: number | null
-          vision_shading_level?: string | null
-          vision_usable_area_ratio?: number | null
         }
         Relationships: []
       }
@@ -518,45 +506,6 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
-        }
-        Relationships: []
-      }
-      user_feedback: {
-        Row: {
-          category: string
-          comment: string | null
-          created_at: string
-          id: string
-          ip_hash: string | null
-          metadata: Json | null
-          page_context: string | null
-          rating: number
-          status: string
-          user_id: string | null
-        }
-        Insert: {
-          category?: string
-          comment?: string | null
-          created_at?: string
-          id?: string
-          ip_hash?: string | null
-          metadata?: Json | null
-          page_context?: string | null
-          rating: number
-          status?: string
-          user_id?: string | null
-        }
-        Update: {
-          category?: string
-          comment?: string | null
-          created_at?: string
-          id?: string
-          ip_hash?: string | null
-          metadata?: Json | null
-          page_context?: string | null
-          rating?: number
-          status?: string
-          user_id?: string | null
         }
         Relationships: []
       }

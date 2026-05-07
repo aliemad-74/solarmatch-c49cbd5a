@@ -288,8 +288,6 @@ serve(async (req) => {
       pvPackage = "standard",
       farmMode = false,
       areaInFeddans,
-      polygonPoints,
-      language = "en",
     } = body;
 
     if (typeof latitude !== "number" || typeof longitude !== "number" || !isFinite(latitude) || !isFinite(longitude)) {
@@ -311,15 +309,13 @@ serve(async (req) => {
       getMarketPrices(),
     ]);
 
-
     const aqi = airQuality.aqi;
     const dominantPollutant = airQuality.dominantPollutant;
 
     // STEP 5: Enhanced calculation
     const dust = combinedSoilingLoss(airQuality.pm10, airQuality.pm25, pollen.pollenIndex, aqi);
     const tf = tempFactor(elevation);
-    const baseArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
-    const effectiveArea = baseArea;
+    const effectiveArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
     const base_irradiance = solarData.irradiance * 365;
     const adjusted_irradiance_factor =
       solarData.irradiance * (1 - dust) * tf * (1 - weather.cloudCover / 200);
@@ -366,7 +362,6 @@ serve(async (req) => {
     }
 
     // STEP 6: AI Analysis
-
     const aiPrompt = `You are SolarMatch AI, Egypt's expert solar feasibility advisor. Analyze this solar assessment and provide a personalized recommendation in the same language as the user's location (Arabic for Egyptian locations, English otherwise).
 
 Location: ${geo.formatted_address}
@@ -386,7 +381,6 @@ Elevation: ${Math.round(elevation)}m
 Weather: ${weather.temperature}°C, ${weather.cloudCover}% cloud cover
 Data Source: ${solarData.source}
 Feasibility: ${feasibility}
-
 
 Provide:
 1. One clear opening sentence about the feasibility verdict

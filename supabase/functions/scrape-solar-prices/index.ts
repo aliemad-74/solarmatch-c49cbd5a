@@ -11,10 +11,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const FIRECRAWL_API_KEY =
-      Deno.env.get("FIRECRAWL_API_KEY_2") ||
-      Deno.env.get("FIRECRAWL_API_KEY_1") ||
-      Deno.env.get("FIRECRAWL_API_KEY");
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || Deno.env.get("FIRECRAWL_API_KEY_1");
     if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -185,26 +182,6 @@ ${combinedContent}` },
         economy: { costPerKW: 15000, confidence: "low", notes: "Fallback value" },
         standard: { costPerKW: 19000, confidence: "low", notes: "Fallback value" },
         premium: { costPerKW: 26000, confidence: "low", notes: "Fallback value" },
-        currency: "EGP",
-        market_date: new Date().toISOString().split("T")[0],
-        sources_analyzed: 0,
-      };
-    }
-
-    // Sanity validation: enforce realistic ranges and Economy < Standard < Premium ordering
-    const eco = Number(priceData.economy?.costPerKW);
-    const std = Number(priceData.standard?.costPerKW);
-    const prm = Number(priceData.premium?.costPerKW);
-    const inRange = (v: number, min: number, max: number) => Number.isFinite(v) && v >= min && v <= max;
-    const isOrderValid = eco < std && std < prm;
-    const allInRange = inRange(eco, 12000, 22000) && inRange(std, 16000, 26000) && inRange(prm, 22000, 35000);
-
-    if (!isOrderValid || !allInRange) {
-      console.warn(`⚠️ Invalid price extraction (eco=${eco}, std=${std}, prm=${prm}) — overriding with safe fallback`);
-      priceData = {
-        economy: { costPerKW: 15000, confidence: "low", notes: "AI extracted invalid values; using safe fallback" },
-        standard: { costPerKW: 19000, confidence: "low", notes: "AI extracted invalid values; using safe fallback" },
-        premium: { costPerKW: 26000, confidence: "low", notes: "AI extracted invalid values; using safe fallback" },
         currency: "EGP",
         market_date: new Date().toISOString().split("T")[0],
         sources_analyzed: 0,

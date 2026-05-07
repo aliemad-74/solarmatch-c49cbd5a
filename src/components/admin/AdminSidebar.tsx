@@ -8,7 +8,6 @@ import {
   FileText,
   UserCheck,
   BarChart3,
-  MessageSquare,
   LogOut,
   Sun,
   Menu,
@@ -31,7 +30,6 @@ const AdminSidebar = () => {
     { to: "/admin/users", icon: Users, label: t("admin.nav.users") },
     { to: "/admin/reports", icon: FileText, label: t("admin.nav.reports") },
     { to: "/admin/leads", icon: UserCheck, label: t("admin.nav.leads") },
-    { to: "/admin/feedback", icon: MessageSquare, label: i18n.language === "ar" ? "الآراء" : "Feedback" },
     { to: "/admin/analytics", icon: BarChart3, label: t("admin.nav.analytics") },
   ];
 

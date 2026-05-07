@@ -27,9 +27,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import type { SolarEngineData } from "@/pages/Index";
-import { Card } from "@/components/ui/card";
-import AirQualityCard from "@/components/AirQualityCard";
-
 
 interface ResultsDashboardProps {
   results: SolarCalculation | null;
@@ -886,12 +883,10 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
                   )}
                 </div>
 
-                <AirQualityCard env={solarEngineData.environmental} />
               </div>
             ) : null}
           </div>
         )}
-
 
         {/* Technical Specifications - only for technical profile users */}
         {profile?.profile_type === 'technical' && (

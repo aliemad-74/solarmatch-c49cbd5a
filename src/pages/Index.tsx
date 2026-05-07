@@ -5,7 +5,6 @@ import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
-import FeedbackCard from "@/components/FeedbackCard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -39,11 +38,6 @@ export interface SolarEngineData {
   };
   environmental: {
     aqi: number;
-    dominant_pollutant?: string | null;
-    pm10?: number | null;
-    pm25?: number | null;
-    pollen_index?: number;
-    soiling_loss_percent?: number;
     dust_efficiency_loss: number;
     temperature: number;
     humidity?: number;
@@ -95,15 +89,12 @@ const Index = () => {
   // Solar engine enhanced data
   const [solarEngineData, setSolarEngineData] = useState<SolarEngineData | null>(null);
   const [solarEngineLoading, setSolarEngineLoading] = useState(false);
-
-
-
+  
   // Explicit user-interaction flags (not from defaults/persisted)
   const [userSelectedLocation, setUserSelectedLocation] = useState(false);
   const [userEditedConfig, setUserEditedConfig] = useState(false);
   const { panelPrices, tariffs, getCostPerKW, refresh: refreshMarketData } = useMarketData();
   const [polygonDrawn, setPolygonDrawn] = useState(false);
-  const [polygonPoints, setPolygonPoints] = useState<{ lat: number; lng: number }[]>([]);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
@@ -219,8 +210,8 @@ const Index = () => {
     }
   }, [user, profile, canGenerateReport, pendingCalculation]);
 
-  // Call solar-engine and return its data so callers can await environmental + vision findings
-  const callSolarEngine = async (): Promise<SolarEngineData | null> => {
+  // Call solar-engine in parallel (fire and forget enhancement)
+  const callSolarEngine = async () => {
     const packageMap: Record<string, string> = {
       'C_poly_economy': 'economy', 'low': 'economy',
       'B_standard_mono': 'standard', 'medium': 'standard',
@@ -233,7 +224,7 @@ const Index = () => {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/solar-engine`,
@@ -252,8 +243,6 @@ const Index = () => {
             pvPackage: pkg,
             farmMode,
             areaInFeddans: farmMode ? areaInFeddans : undefined,
-            polygonPoints: polygonPoints.length >= 3 ? polygonPoints : undefined,
-            language: i18n.language?.startsWith("ar") ? "ar" : "en",
           }),
           signal: controller.signal,
         }
@@ -310,8 +299,6 @@ const Index = () => {
           } catch {
             // Silent - don't bother user
           }
-
-          return data;
         }
       }
     } catch {
@@ -319,15 +306,13 @@ const Index = () => {
     } finally {
       setSolarEngineLoading(false);
     }
-    return null;
   };
 
   const performCalculation = async () => {
     setIsCalculating(true);
     
-    // Fire solar-engine in parallel — we will await its result before the AI review
-    // so the verification layer receives vision + environmental findings.
-    const enginePromise = callSolarEngine();
+    // Fire solar-engine in parallel (non-blocking enhancement)
+    callSolarEngine();
     
     try {
       // Build market price overrides from live data
@@ -352,15 +337,7 @@ const Index = () => {
         marketPriceOverrides
       );
 
-      // Step 2: AI Review checkpoint — wait for solar-engine (vision + environmental) first,
-      // so the verification prompt is grounded in the satellite-vision findings even if it adds latency.
-      let engineResult: SolarEngineData | null = null;
-      try {
-        engineResult = await enginePromise;
-      } catch {
-        engineResult = null;
-      }
-
+      // Step 2: AI Review checkpoint — validate calculations before showing to user
       try {
         const reviewResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/solar-advisor`,
@@ -388,7 +365,6 @@ const Index = () => {
                 buildingType,
                 pvType,
               },
-              environmental: engineResult?.environmental ?? null,
               language: i18n.language,
               mode: "review",
             }),
@@ -448,20 +424,9 @@ const Index = () => {
         await recordReportGeneration(locationName, calculation.kWInstalled);
       }
 
-      // Subtle delight: gentle haptic + success toast
-      try { if ("vibrate" in navigator) (navigator as any).vibrate?.(30); } catch { /* ignore */ }
-      toast.success(
-        i18n.language === 'ar' ? "تم تجهيز تقريرك ✨" : "Your report is ready ✨",
-        { duration: 2500 }
-      );
-
       setTimeout(() => {
-        const el = document.getElementById("results");
-        if (el) {
-          const y = el.getBoundingClientRect().top + window.scrollY - 80;
-          window.scrollTo({ top: y, behavior: "smooth" });
-        }
-      }, 150);
+        document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (error) {
       console.error("Calculation error:", error);
       toast.error(i18n.language === 'ar' ? "حدث خطأ في الحسابات" : "Calculation error");
@@ -531,7 +496,6 @@ const Index = () => {
           <ScrollReveal>
             <MapSection
               onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setPolygonDrawn(true); }}
-              onPolygonChange={(pts) => setPolygonPoints(pts.map((p) => ({ lat: p.lat, lng: p.lng })))}
               onClimateDataFetched={(data) => {
                 setClimateData(data);
                 if (initialLocationLoadRef.current) {
@@ -612,30 +576,13 @@ const Index = () => {
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
-
-          {showResults && !isCalculating && results && (
-            <ScrollReveal>
-              <div className="max-w-4xl mx-auto px-4 mt-8">
-                <FeedbackCard
-                  pageContext="results"
-                  metadata={{
-                    building_type: buildingType,
-                    farm_mode: farmMode,
-                    location: locationName,
-                  }}
-                />
-              </div>
-            </ScrollReveal>
-          )}
         </div>
 
-        {!showResults && !isCalculating && (
-          <ScrollReveal>
-            <DemoCaseStudy
-              onCtaClick={() => document.getElementById("map-section")?.scrollIntoView({ behavior: "smooth" })}
-            />
-          </ScrollReveal>
-        )}
+        <ScrollReveal>
+          <DemoCaseStudy
+            onCtaClick={() => document.getElementById("map-section")?.scrollIntoView({ behavior: "smooth" })}
+          />
+        </ScrollReveal>
 
         <ScrollReveal>
           <FAQSection />
