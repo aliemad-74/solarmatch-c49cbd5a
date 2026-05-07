@@ -318,25 +318,26 @@ const Index = () => {
     // Fire solar-engine in parallel (non-blocking enhancement)
     callSolarEngine();
 
-    // Fire backend AI roof-report fully decoupled from calculation flow.
-    // Runs in background; results render inside the report section only.
-    // Does NOT mutate inputs (no state races, no map re-renders).
+    // ─────────────────────────────────────────────────────────────
+    // STEP 1 — AI VISION ANALYSIS FIRST (blocking, before math)
+    // The AI inspects the satellite image, isolates the actual building
+    // footprint inside the user's polygon, and returns environment data
+    // (AQI / dust). The math then runs on detected area, not raw polygon.
+    // ─────────────────────────────────────────────────────────────
+    let report: RoofReport | null = null;
     if (polygonInfo) {
-      const polygonSnapshot = polygonInfo;
-      const areaSnapshot = rooftopArea;
-      const buildingSnapshot = buildingType;
-      const langSnapshot = i18n.language === "ar" ? "ar" : "en";
-      queueMicrotask(() => {
-        generateRoofReport({
-          polygon: polygonSnapshot.polygon,
-          center: polygonSnapshot.center,
-          selectedArea: areaSnapshot,
-          buildingTypeHint: buildingSnapshot,
-          language: langSnapshot as "ar" | "en",
-        })
-          .then((rep) => setRoofReport(rep))
-          .catch((err) => console.warn("roof-report failed:", err));
-      });
+      try {
+        report = await generateRoofReport({
+          polygon: polygonInfo.polygon,
+          center: polygonInfo.center,
+          selectedArea: rooftopArea,
+          buildingTypeHint: buildingType,
+          language: i18n.language === "ar" ? "ar" : "en",
+        });
+        setRoofReport(report);
+      } catch (err) {
+        console.warn("roof-report failed (continuing with raw area):", err);
+      }
     }
 
     try {
@@ -347,9 +348,15 @@ const Index = () => {
         premium: getCostPerKW("premium"),
       };
 
-      // Step 1: Always calculate locally first (source of truth)
+      // Step 2: Use AI-detected building footprint (not raw polygon) when available.
+      // The polygon often includes slivers of neighbours / yards — detectedRoofArea
+      // is the actual primary-building footprint.
+      const areaForMath = report?.detectedRoofArea && report.detectedRoofArea > 0
+        ? report.detectedRoofArea
+        : rooftopArea;
+
       const calculation = calculateSolarFeasibility(
-        rooftopArea,
+        areaForMath,
         climateData,
         electricityPrice,
         pvType,
@@ -361,6 +368,25 @@ const Index = () => {
         avgUnitConsumption,
         marketPriceOverrides
       );
+
+      // Step 2b: Apply environmental efficiency loss (AQI / dust soiling)
+      // returned by roof-report → google-air-quality. Scale energy & savings.
+      const soilingLoss = report?.environment?.available
+        ? Math.max(0, Math.min(30, Number(report.environment.soilingLossPercent ?? 0)))
+        : 0;
+      if (soilingLoss > 0) {
+        const factor = 1 - soilingLoss / 100;
+        calculation.energyYear = Math.round(calculation.energyYear * factor);
+        calculation.savingsYear = Math.round(calculation.savingsYear * factor);
+        calculation.co2Saved = +(calculation.co2Saved * factor).toFixed(2);
+        calculation.paybackYears = calculation.savingsYear > 0
+          ? +(calculation.totalCost / calculation.savingsYear).toFixed(1)
+          : 0;
+        const annualConsumption = effectiveMonthlyConsumption * 12;
+        calculation.coverageRatio = annualConsumption > 0
+          ? calculation.energyYear / annualConsumption
+          : calculation.coverageRatio;
+      }
 
       // Step 2: AI Review checkpoint — validate calculations before showing to user
       try {
