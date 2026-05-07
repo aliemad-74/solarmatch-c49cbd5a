@@ -27,7 +27,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import type { SolarEngineData } from "@/pages/Index";
-import SatelliteVisionCard from "@/components/SatelliteVisionCard";
 import { Card } from "@/components/ui/card";
 import AirQualityCard from "@/components/AirQualityCard";
 
@@ -44,12 +43,10 @@ interface ResultsDashboardProps {
   electricityPrice?: number;
   solarEngineData?: SolarEngineData | null;
   solarEngineLoading?: boolean;
-  visionData?: NonNullable<SolarEngineData["vision_analysis"]> | null;
-  visionLoading?: boolean;
   aiReviewText?: string;
 }
 
-const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, visionData, visionLoading, aiReviewText }: ResultsDashboardProps) => {
+const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const { profile } = useUserAuth();
   const planFeatures = usePlanFeatures();
