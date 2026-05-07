@@ -13,9 +13,7 @@ project_id = "hgskuophhidgbuluxiel"
     verify_jwt = false
   [functions.google-pollen]
     verify_jwt = false
-  [functions.google-street-view]
-    verify_jwt = false
-  [functions.roof-analysis]
+  [functions.roof-report]
     verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
