@@ -154,6 +154,27 @@ serve(async (req) => {
         ? Math.round(d.coverageRatio)
         : "N/A";
 
+    // AI roof analysis context (from satellite vision)
+    const ra = (d.roofAnalysis as Record<string, unknown>) || null;
+    const roofAnalysisBlockAr = ra
+      ? `\n\nتحليل القمر الصناعي للسطح (ذكاء اصطناعي):
+- المساحة المرسومة: ${ra.selectedArea} م²
+- المساحة الفعلية للسطح المكتشفة: ${ra.detectedRoofArea} م²
+- المساحة القابلة للاستخدام للألواح: ${ra.usableArea} م²
+- النسبة غير القابلة للاستخدام: ${ra.unusablePercentage}%
+- العوائق المكتشفة: ${Array.isArray(ra.obstacles) && (ra.obstacles as unknown[]).length ? (ra.obstacles as string[]).join("، ") : "لا يوجد"}
+- ثقة التحليل: ${Math.round((Number(ra.confidenceScore) || 0) * 100)}%`
+      : "";
+    const roofAnalysisBlockEn = ra
+      ? `\n\nSatellite AI Roof Analysis:
+- Drawn area: ${ra.selectedArea} m²
+- Detected actual roof area: ${ra.detectedRoofArea} m²
+- Usable solar area: ${ra.usableArea} m²
+- Unusable percentage: ${ra.unusablePercentage}%
+- Detected obstacles: ${Array.isArray(ra.obstacles) && (ra.obstacles as unknown[]).length ? (ra.obstacles as string[]).join(", ") : "none"}
+- Analysis confidence: ${Math.round((Number(ra.confidenceScore) || 0) * 100)}%`
+      : "";
+
     console.log(`Mode: ${mode}, Language: ${language}`);
     console.log("Sanitized solar data:", {
       locationName, kWInstalled, energyYear, coverageRatio,
@@ -184,7 +205,7 @@ serve(async (req) => {
 - فترة الاسترداد: ${paybackYears} سنة
 - تخفيض CO2: ${co2Saved || co2Reduction} طن/سنة
 - نوع المبنى: ${buildingType}
-- نوع الألواح: ${pvType}
+- نوع الألواح: ${pvType}${roofAnalysisBlockAr}
 
 راجع هذه البيانات وأرجع JSON بالشكل التالي:
 {
@@ -225,7 +246,7 @@ Project Data:
 - Payback Period: ${paybackYears} years
 - CO2 Reduction: ${co2Saved || co2Reduction} tons/year
 - Building Type: ${buildingType}
-- Panel Type: ${pvType}
+- Panel Type: ${pvType}${roofAnalysisBlockEn}
 
 Review this data and return JSON in this format:
 {

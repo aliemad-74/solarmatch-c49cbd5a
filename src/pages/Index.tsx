@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
+import RoofAnalysisCard from "@/components/RoofAnalysisCard";
+import type { RoofAnalysisResult } from "@/lib/roofAnalysis";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
@@ -127,6 +129,9 @@ const Index = () => {
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
+  const [roofAnalysis, setRoofAnalysis] = useState<RoofAnalysisResult | null>(null);
+  const [roofAnalysisLoading, setRoofAnalysisLoading] = useState(false);
+  const [roofAnalysisError, setRoofAnalysisError] = useState<string | null>(null);
 
   // Onboarding tour — show only for first-time visitors
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -364,6 +369,14 @@ const Index = () => {
                 co2Saved: calculation.co2Saved,
                 buildingType,
                 pvType,
+                roofAnalysis: roofAnalysis ? {
+                  selectedArea: roofAnalysis.selectedArea,
+                  detectedRoofArea: roofAnalysis.detectedRoofArea,
+                  usableArea: roofAnalysis.usableArea,
+                  unusablePercentage: roofAnalysis.unusablePercentage,
+                  obstacles: roofAnalysis.obstacles,
+                  confidenceScore: roofAnalysis.confidenceScore,
+                } : null,
               },
               language: i18n.language,
               mode: "review",
@@ -495,7 +508,10 @@ const Index = () => {
         <div id="map-section">
           <ScrollReveal>
             <MapSection
-              onAreaCalculated={(area) => { setRooftopArea(Math.round(area)); setPolygonDrawn(true); }}
+              onAreaCalculated={(area) => {
+                setRooftopArea(Math.round(area));
+                setPolygonDrawn(true);
+              }}
               onClimateDataFetched={(data) => {
                 setClimateData(data);
                 if (initialLocationLoadRef.current) {
@@ -505,9 +521,27 @@ const Index = () => {
                 }
               }}
               onLocationChange={(name) => { setLocationName(name); }}
-              
+              onRoofAnalysis={(result, loading, error) => {
+                setRoofAnalysis(result);
+                setRoofAnalysisLoading(loading);
+                setRoofAnalysisError(error);
+                // Use AI-detected usable area for calculations when confident
+                if (result && result.usableArea > 0 && result.confidenceScore >= 0.4) {
+                  // detectedRoofArea reflects the real building footprint inside the drawn polygon
+                  setRooftopArea(Math.round(result.detectedRoofArea));
+                }
+              }}
             />
           </ScrollReveal>
+          {(roofAnalysisLoading || roofAnalysis || roofAnalysisError) && (
+            <div className="container mx-auto px-4 mt-3">
+              <RoofAnalysisCard
+                loading={roofAnalysisLoading}
+                result={roofAnalysis}
+                error={roofAnalysisError}
+              />
+            </div>
+          )}
         </div>
 
         {/* Product Role Clarification */}

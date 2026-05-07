@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
 import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
+import { analyzeRoof, RoofAnalysisResult } from "@/lib/roofAnalysis";
 import { toast } from "sonner";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
@@ -15,6 +16,7 @@ interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
+  onRoofAnalysis?: (result: RoofAnalysisResult | null, loading: boolean, error: string | null) => void;
 }
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
@@ -26,6 +28,7 @@ const MapSection = ({
   onAreaCalculated,
   onClimateDataFetched,
   onLocationChange,
+  onRoofAnalysis,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawingMode, setIsDrawingMode] = useState(false);
@@ -132,10 +135,25 @@ const MapSection = ({
         setCurrentLocation({ lat, lng, name: locationName });
         onLocationChange?.(locationName);
         fetchClimateForLocation(lat, lng);
+
+        // Async backend roof analysis (non-blocking, fully isolated)
+        if (onRoofAnalysis && area > 0) {
+          onRoofAnalysis(null, true, null);
+          analyzeRoof({
+            polygon: points.map((p) => ({ lat: p.lat, lng: p.lng })),
+            center: { lat, lng },
+            selectedArea: area,
+          })
+            .then((res) => onRoofAnalysis(res, false, null))
+            .catch((err) => {
+              console.warn("Roof analysis failed:", err);
+              onRoofAnalysis(null, false, err instanceof Error ? err.message : "Analysis failed");
+            });
+        }
       }
       setIsDrawingMode(false);
     },
-    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation]
+    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation, onRoofAnalysis]
   );
 
   // Update location
