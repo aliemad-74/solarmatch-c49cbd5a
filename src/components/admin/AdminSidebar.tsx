@@ -13,6 +13,7 @@ import {
   Menu,
   Home,
   MessageSquare,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -33,6 +34,7 @@ const AdminSidebar = () => {
     { to: "/admin/leads", icon: UserCheck, label: t("admin.nav.leads") },
     { to: "/admin/analytics", icon: BarChart3, label: t("admin.nav.analytics") },
     { to: "/admin/feedback", icon: MessageSquare, label: i18n.language === "ar" ? "الملاحظات" : "Feedback" },
+    { to: "/admin/visitors", icon: Globe, label: i18n.language === "ar" ? "الزائرون" : "Visitors" },
   ];
 
   const SidebarContent = () => (
