@@ -131,39 +131,63 @@ IMAGE METADATA (use these for ALL measurements):
 - Zoom level: ${zoom}
 - Ground resolution at the image center: ${metersPerPixel.toFixed(3)} meters per CSS pixel.
 - Total ground coverage of the image: ${coverageM.toFixed(1)} m × ${coverageM.toFixed(1)} m.
-- A RED outlined polygon (semi-transparent red fill) is drawn ON the image. This is exactly
-  what the user selected. Its real-world area is ~${Math.round(area)} m².
+- A RED outlined polygon is drawn ON the image. This is what the user selected.
+  Polygon real-world area ≈ ${Math.round(area)} m².
+  WARNING: users routinely draw a SLOPPY/OVERSIZED polygon that includes parts of
+  neighbouring buildings, courtyards, streets, or empty land. The polygon is ONLY a hint
+  for which building they meant. The true footprint is almost always SMALLER.
 
 YOUR TASK:
-Find the SINGLE PRIMARY building (or land parcel) the user actually intended — the one
-whose footprint is most fully and most centrally contained inside the red polygon.
-Then MEASURE that one building's true ground footprint and report it.
+Find the SINGLE PRIMARY building (the one most centrally inside the red polygon) and
+measure ONLY THAT building's true roof footprint — bounded strictly by its OWN external
+walls / parapet edge.
 
-HOW TO MEASURE (do this carefully, do NOT guess low):
-1. Visually estimate the building's length × width in CSS pixels on the image.
-2. Convert to meters: length_m = length_px × ${metersPerPixel.toFixed(3)} ;
-   width_m = width_px × ${metersPerPixel.toFixed(3)} .
-3. detectedRoofArea = length_m × width_m (adjust for non-rectangular shapes; use the
-   true outline, not the bounding box, when shapes are L/T/U-shaped).
-4. Sanity check against the red polygon: if the primary building visibly fills most of the
-   polygon, detectedRoofArea should be CLOSE TO (not far below) ${Math.round(area)} m².
-   Underestimating is a common failure — be honest about what you see.
-5. If the polygon contains one whole building plus thin slivers of neighbor buildings,
-   exclude the slivers. Example: 400 m² polygon with one centered 250 m² house and
-   2× ~75 m² neighbor slivers → return 250 m². But if the polygon mostly contains ONE
-   large building that fills it (e.g. a ~270 m² house in a ~300 m² polygon), return ~270.
-6. usableArea = detectedRoofArea minus obstacles (water tanks, HVAC, dishes, stairwells,
-   parapets, shading, vegetation). Typically 60–85% of detectedRoofArea for residential.
-7. unusablePercentage = round((1 - usableArea/detectedRoofArea) × 100).
-8. propertyType from the surrounding urban pattern, not just one building.
-9. confidenceScore: 0.85+ if roof outline is crisp; 0.5–0.7 if partly shaded/blurry.
+CRITICAL — BOUNDARY DETECTION (Egyptian urban context):
+Buildings here are commonly attached wall-to-wall and from above can look like one large
+rectangle. You MUST distinguish neighbours by looking for:
+  - Thin straight seam line / shadow stripe between roof sections.
+  - Change in roof colour, texture, material, or roof-equipment density.
+  - Different parapet height (different shadow widths along an edge).
+  - Different roof orientation, water tanks, stairwells, or dish positions.
+If you see such a seam INSIDE the polygon, treat each side as a separate building and
+return ONLY the one the polygon is centred on.
+
+DO NOT INCLUDE in detectedRoofArea:
+  - Neighbouring buildings (even attached ones across a seam).
+  - Courtyards, gardens, driveways, sidewalks, streets, parking, empty land.
+  - Anything outside the chosen building's external walls.
+DO NOT extend the footprint to fill the polygon "to be safe" — measure the actual roof.
+
+HOW TO MEASURE (CSS pixels → meters):
+- length_m = length_px × ${metersPerPixel.toFixed(3)} ;
+  width_m  = width_px  × ${metersPerPixel.toFixed(3)}
+- detectedRoofArea = sum of rectangles that cover the true outline of the chosen building
+  only (use the real shape for L / T / U / irregular roofs, not its bounding box).
+- usableArea = detectedRoofArea minus obstacles (water tanks, HVAC, dishes, stairwells,
+  parapets, shading, vegetation). Typically 60–85% residential, 70–90% warehouse/industrial.
+- unusablePercentage = round((1 - usableArea/detectedRoofArea) × 100).
+- propertyType from surrounding urban pattern.
+- confidenceScore: 0.85+ crisp outline; 0.5–0.7 partly shaded/blurry; <0.5 unclear.
+
+EXAMPLES:
+- Polygon ≈ 400 m² containing one centred ~250 m² house + slivers of 2 neighbours
+  → detectedRoofArea ≈ 250.
+- Polygon ≈ 600 m² covering two attached row-houses with a visible seam, centred on the
+  left one → return ONLY the left house, e.g. ~280 m² (NOT 600).
+- Polygon ≈ 300 m² tightly tracing one house that fills it → return that house's true
+  outline (e.g. ~270), NOT the polygon area.
+- Polygon ≈ 500 m² but the building inside is clearly only a ~180 m² villa surrounded by
+  garden → return 180, not 500.
 
 Hint from user (may be wrong, do not trust blindly): ${hint ?? "none"}.
 
-In 'notes', state the measured dimensions and which building you picked, e.g.
-"primary house ~18×15 m = 270 m²; excluded 1 small neighbor sliver on north edge".
+In 'notes' state the measured dimensions, which building you picked, and any seam used
+to separate it from neighbours, e.g.
+"left of two attached row-houses; seam at x≈380px (colour change + parapet shadow);
+measured ~17×16 m = 272 m²; excluded right neighbour and ~80 m² of yard at south".
 
 Return JSON via the tool only.`;
+
 
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
