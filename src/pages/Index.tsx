@@ -389,7 +389,6 @@ const Index = () => {
                 pvType,
               },
               environmental: engineResult?.environmental ?? null,
-              environmental: engineResult?.environmental ?? null,
               language: i18n.language,
               mode: "review",
             }),
