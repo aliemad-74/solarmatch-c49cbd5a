@@ -30,10 +30,8 @@ const Header = () => {
   const { isAdmin, admin, signOut: adminSignOut } = useAdminAuth();
   const { user, signOut: userSignOut, profile } = useUserAuth();
 
-  const isAr = (location.pathname.startsWith("/ar") );
   const navLinks = [
     { path: "/", label: t('header.home') },
-    { path: isAr ? "/ar/financing" : "/financing", label: isAr ? "حاسبة التمويل" : "Financing" },
   ];
 
   const aboutSubLinks = [
