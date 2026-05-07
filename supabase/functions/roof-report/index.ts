@@ -53,11 +53,32 @@ async function fetchSatelliteImage(center: LatLng, area: number, key: string): P
 
 async function visionAnalyze(image: string, area: number, hint: string | undefined, key: string) {
   const sys = `You are a solar rooftop and land-use expert reviewing a satellite image.
-The user drew a polygon of ~${Math.round(area)} m².
-Identify (1) the actual building/land footprint inside the polygon, (2) usable solar area after obstacles
-(water tanks, HVAC units, satellite dishes, parapets, access rooms, shaded zones, vegetation), and
-(3) the property type from the surrounding area pattern. Hint from user (may be wrong): ${hint ?? "none"}.
-Be conservative. Return JSON via the tool only.`;
+
+The user drew a coarse polygon of ~${Math.round(area)} m². The polygon is APPROXIMATE — it
+often spills over onto neighboring buildings, streets, or empty lots. Your job is to find
+the SINGLE PRIMARY building/structure the user actually intended (the one whose footprint
+is most fully and most centrally contained inside the drawn polygon) and report ONLY its
+real footprint.
+
+CRITICAL RULES:
+1. If the polygon contains one whole building plus partial slivers of adjacent buildings,
+   IGNORE the partial neighbors entirely. Use only the fully-contained primary building.
+   Example: user draws 400 m², inside there is one complete house of 250 m² centered, plus
+   ~75 m² slices of two neighbor houses on the sides → return detectedRoofArea ≈ 250 m²
+   and explain in 'notes' that neighbor slivers were excluded.
+2. Prefer the building whose centroid is closest to the polygon centroid AND whose roof
+   outline is FULLY visible inside the polygon. Reject any building cut by the polygon edge.
+3. detectedRoofArea must be the real-world footprint of that one primary building only —
+   never the polygon area, never a sum of multiple buildings.
+4. If the polygon clearly contains a farm/land plot rather than buildings, treat the
+   contiguous land parcel inside the polygon as the target instead.
+5. usableArea = detectedRoofArea minus obstacles (water tanks, HVAC, dishes, parapets,
+   stairwells, shading, vegetation). Be conservative.
+6. propertyType is judged from the SURROUNDING urban pattern, not just the one building.
+7. Hint from user (may be wrong, do not trust blindly): ${hint ?? "none"}.
+
+Return JSON via the tool only. In 'notes', briefly state which building you picked and
+which areas you excluded (e.g. "picked centered 18×14m house; excluded 2 neighbor slivers").`;
 
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -67,7 +88,7 @@ Be conservative. Return JSON via the tool only.`;
       messages: [
         { role: "system", content: sys },
         { role: "user", content: [
-          { type: "text", text: `Selected area ${Math.round(area)} m². Analyze.` },
+          { type: "text", text: `Drawn polygon area ~${Math.round(area)} m². Identify the single primary building inside and report only its real footprint, ignoring sliced neighbors.` },
           { type: "image_url", image_url: { url: image } },
         ] },
       ],
