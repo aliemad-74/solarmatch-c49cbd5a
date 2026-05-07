@@ -205,7 +205,7 @@ serve(async (req) => {
 - فترة الاسترداد: ${paybackYears} سنة
 - تخفيض CO2: ${co2Saved || co2Reduction} طن/سنة
 - نوع المبنى: ${buildingType}
-- نوع الألواح: ${pvType}
+- نوع الألواح: ${pvType}${roofAnalysisBlockAr}
 
 راجع هذه البيانات وأرجع JSON بالشكل التالي:
 {
@@ -246,7 +246,7 @@ Project Data:
 - Payback Period: ${paybackYears} years
 - CO2 Reduction: ${co2Saved || co2Reduction} tons/year
 - Building Type: ${buildingType}
-- Panel Type: ${pvType}
+- Panel Type: ${pvType}${roofAnalysisBlockEn}
 
 Review this data and return JSON in this format:
 {
