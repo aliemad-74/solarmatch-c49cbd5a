@@ -37,9 +37,10 @@ const Header = () => {
   const aboutSubLinks = [
     { path: "/about", label: t('header.about') },
     { path: "/why-solarmatch", label: t('header.whySolarMatch') },
+    { path: "/features", label: t('header.features', 'Features') },
   ];
 
-  const isAboutActive = ['/about', '/why-solarmatch'].includes(location.pathname);
+  const isAboutActive = ['/about', '/why-solarmatch', '/features'].includes(location.pathname);
 
   const isActive = (path: string) => location.pathname === path;
 

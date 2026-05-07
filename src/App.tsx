@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import WhySolarMatch from "./pages/WhySolarMatch";
+import Features from "./pages/Features";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
@@ -56,9 +57,8 @@ const App = () => (
                   <Route path="/ar/how-it-works" element={<Navigate to="/ar" replace />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/ar/about" element={<About />} />
-                  {/* Legacy features/pricing URLs now redirect home — site is fully free */}
-                  <Route path="/features" element={<Navigate to="/" replace />} />
-                  <Route path="/ar/features" element={<Navigate to="/ar" replace />} />
+                  <Route path="/features" element={<Features />} />
+                  <Route path="/ar/features" element={<Features />} />
                   <Route path="/pricing" element={<Navigate to="/" replace />} />
                   <Route path="/ar/pricing" element={<Navigate to="/ar" replace />} />
                   <Route path="/why-solarmatch" element={<WhySolarMatch />} />
