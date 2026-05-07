@@ -35,60 +35,145 @@ function validate(body: unknown): { ok: true; data: Body } | { ok: false; error:
   return { ok: true, data: b as unknown as Body };
 }
 
-async function fetchSatelliteImage(center: LatLng, area: number, key: string): Promise<string | null> {
+function polygonBounds(poly: LatLng[]) {
+  let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+  for (const p of poly) {
+    if (p.lat < minLat) minLat = p.lat;
+    if (p.lat > maxLat) maxLat = p.lat;
+    if (p.lng < minLng) minLng = p.lng;
+    if (p.lng > maxLng) maxLng = p.lng;
+  }
+  return { minLat, maxLat, minLng, maxLng };
+}
+
+function pickZoom(poly: LatLng[], center: LatLng, sizePx: number): number {
+  // Fit the polygon in the image with ~25% margin around it.
+  const b = polygonBounds(poly);
+  const latSpan = Math.max(b.maxLat - b.minLat, 1e-6);
+  const lngSpan = Math.max(b.maxLng - b.minLng, 1e-6);
+  // meters per degree
+  const mPerDegLat = 111320;
+  const mPerDegLng = 111320 * Math.cos((center.lat * Math.PI) / 180);
+  const widthM = lngSpan * mPerDegLng;
+  const heightM = latSpan * mPerDegLat;
+  const targetM = Math.max(widthM, heightM) * 1.5; // 25% margin each side
+  // meters per pixel at zoom z = 156543.03392 * cos(lat) / 2^z (at scale=1)
+  // We want targetM / sizePx <= mpp(z)/scale  → choose smallest zoom satisfying
+  for (let z = 21; z >= 16; z--) {
+    const mpp = (156543.03392 * Math.cos((center.lat * Math.PI) / 180)) / Math.pow(2, z);
+    const visibleM = mpp * sizePx; // at scale=1, sizePx covers this many meters
+    if (visibleM >= targetM) return z;
+  }
+  return 18;
+}
+
+function encodePolyline(poly: LatLng[]): string {
+  // Google encoded polyline algorithm
+  let lastLat = 0, lastLng = 0, result = "";
+  const enc = (v: number) => {
+    v = v < 0 ? ~(v << 1) : v << 1;
+    let s = "";
+    while (v >= 0x20) { s += String.fromCharCode((0x20 | (v & 0x1f)) + 63); v >>= 5; }
+    s += String.fromCharCode(v + 63);
+    return s;
+  };
+  for (const p of poly) {
+    const lat = Math.round(p.lat * 1e5);
+    const lng = Math.round(p.lng * 1e5);
+    result += enc(lat - lastLat) + enc(lng - lastLng);
+    lastLat = lat; lastLng = lng;
+  }
+  return result;
+}
+
+async function fetchSatelliteImage(
+  center: LatLng,
+  polygon: LatLng[],
+  key: string,
+): Promise<{ image: string; zoom: number; metersPerPixel: number } | null> {
   try {
-    const zoom = area < 300 ? 21 : area < 1500 ? 20 : area < 8000 ? 19 : 18;
-    const url = `https://maps.googleapis.com/maps/api/staticmap?center=${center.lat},${center.lng}&zoom=${zoom}&size=640x640&scale=2&maptype=satellite&key=${key}`;
+    const sizePx = 640;
+    const zoom = pickZoom(polygon, center, sizePx);
+    // meters per pixel in the rendered image (scale=2 doubles resolution but not coverage)
+    const metersPerPixel = (156543.03392 * Math.cos((center.lat * Math.PI) / 180)) / Math.pow(2, zoom);
+    // Overlay the user's polygon so the AI sees exactly what was selected.
+    const closed = polygon[0].lat !== polygon[polygon.length - 1].lat || polygon[0].lng !== polygon[polygon.length - 1].lng
+      ? [...polygon, polygon[0]] : polygon;
+    const encoded = encodePolyline(closed);
+    const path = `path=color:0xff2a2aff|weight:3|fillcolor:0xff2a2a33|enc:${encodeURIComponent(encoded)}`;
+    const url = `https://maps.googleapis.com/maps/api/staticmap?center=${center.lat},${center.lng}&zoom=${zoom}&size=${sizePx}x${sizePx}&scale=2&maptype=satellite&${path}&key=${key}`;
     const r = await fetch(url);
-    if (!r.ok) return null;
+    if (!r.ok) { console.warn("static maps", r.status); return null; }
     const buf = new Uint8Array(await r.arrayBuffer());
     let bin = "";
     for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-    return `data:image/png;base64,${btoa(bin)}`;
+    return { image: `data:image/png;base64,${btoa(bin)}`, zoom, metersPerPixel };
   } catch (e) {
     console.warn("static maps fail", e);
     return null;
   }
 }
 
-async function visionAnalyze(image: string, area: number, hint: string | undefined, key: string) {
-  const sys = `You are a solar rooftop and land-use expert reviewing a satellite image.
+async function visionAnalyze(
+  image: string,
+  area: number,
+  metersPerPixel: number,
+  zoom: number,
+  hint: string | undefined,
+  key: string,
+) {
+  // The image is 640x640 CSS px but @scale=2 → 1280x1280 actual; coverage is still 640*mpp meters.
+  const coverageM = 640 * metersPerPixel;
+  const sys = `You are a precise solar rooftop measurement expert reviewing a Google satellite image.
 
-The user drew a coarse polygon of ~${Math.round(area)} m². The polygon is APPROXIMATE — it
-often spills over onto neighboring buildings, streets, or empty lots. Your job is to find
-the SINGLE PRIMARY building/structure the user actually intended (the one whose footprint
-is most fully and most centrally contained inside the drawn polygon) and report ONLY its
-real footprint.
+IMAGE METADATA (use these for ALL measurements):
+- The image is a square top-down satellite tile.
+- Zoom level: ${zoom}
+- Ground resolution at the image center: ${metersPerPixel.toFixed(3)} meters per CSS pixel.
+- Total ground coverage of the image: ${coverageM.toFixed(1)} m × ${coverageM.toFixed(1)} m.
+- A RED outlined polygon (semi-transparent red fill) is drawn ON the image. This is exactly
+  what the user selected. Its real-world area is ~${Math.round(area)} m².
 
-CRITICAL RULES:
-1. If the polygon contains one whole building plus partial slivers of adjacent buildings,
-   IGNORE the partial neighbors entirely. Use only the fully-contained primary building.
-   Example: user draws 400 m², inside there is one complete house of 250 m² centered, plus
-   ~75 m² slices of two neighbor houses on the sides → return detectedRoofArea ≈ 250 m²
-   and explain in 'notes' that neighbor slivers were excluded.
-2. Prefer the building whose centroid is closest to the polygon centroid AND whose roof
-   outline is FULLY visible inside the polygon. Reject any building cut by the polygon edge.
-3. detectedRoofArea must be the real-world footprint of that one primary building only —
-   never the polygon area, never a sum of multiple buildings.
-4. If the polygon clearly contains a farm/land plot rather than buildings, treat the
-   contiguous land parcel inside the polygon as the target instead.
-5. usableArea = detectedRoofArea minus obstacles (water tanks, HVAC, dishes, parapets,
-   stairwells, shading, vegetation). Be conservative.
-6. propertyType is judged from the SURROUNDING urban pattern, not just the one building.
-7. Hint from user (may be wrong, do not trust blindly): ${hint ?? "none"}.
+YOUR TASK:
+Find the SINGLE PRIMARY building (or land parcel) the user actually intended — the one
+whose footprint is most fully and most centrally contained inside the red polygon.
+Then MEASURE that one building's true ground footprint and report it.
 
-Return JSON via the tool only. In 'notes', briefly state which building you picked and
-which areas you excluded (e.g. "picked centered 18×14m house; excluded 2 neighbor slivers").`;
+HOW TO MEASURE (do this carefully, do NOT guess low):
+1. Visually estimate the building's length × width in CSS pixels on the image.
+2. Convert to meters: length_m = length_px × ${metersPerPixel.toFixed(3)} ;
+   width_m = width_px × ${metersPerPixel.toFixed(3)} .
+3. detectedRoofArea = length_m × width_m (adjust for non-rectangular shapes; use the
+   true outline, not the bounding box, when shapes are L/T/U-shaped).
+4. Sanity check against the red polygon: if the primary building visibly fills most of the
+   polygon, detectedRoofArea should be CLOSE TO (not far below) ${Math.round(area)} m².
+   Underestimating is a common failure — be honest about what you see.
+5. If the polygon contains one whole building plus thin slivers of neighbor buildings,
+   exclude the slivers. Example: 400 m² polygon with one centered 250 m² house and
+   2× ~75 m² neighbor slivers → return 250 m². But if the polygon mostly contains ONE
+   large building that fills it (e.g. a ~270 m² house in a ~300 m² polygon), return ~270.
+6. usableArea = detectedRoofArea minus obstacles (water tanks, HVAC, dishes, stairwells,
+   parapets, shading, vegetation). Typically 60–85% of detectedRoofArea for residential.
+7. unusablePercentage = round((1 - usableArea/detectedRoofArea) × 100).
+8. propertyType from the surrounding urban pattern, not just one building.
+9. confidenceScore: 0.85+ if roof outline is crisp; 0.5–0.7 if partly shaded/blurry.
+
+Hint from user (may be wrong, do not trust blindly): ${hint ?? "none"}.
+
+In 'notes', state the measured dimensions and which building you picked, e.g.
+"primary house ~18×15 m = 270 m²; excluded 1 small neighbor sliver on north edge".
+
+Return JSON via the tool only.`;
 
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-pro",
       messages: [
         { role: "system", content: sys },
         { role: "user", content: [
-          { type: "text", text: `Drawn polygon area ~${Math.round(area)} m². Identify the single primary building inside and report only its real footprint, ignoring sliced neighbors.` },
+          { type: "text", text: `Measure the primary building inside the red polygon. Polygon ≈ ${Math.round(area)} m². Image ground resolution: ${metersPerPixel.toFixed(3)} m/px. Report the building's true footprint — do not under-report.` },
           { type: "image_url", image_url: { url: image } },
         ] },
       ],
@@ -171,22 +256,33 @@ Deno.serve(async (req) => {
     // 1. Vision analysis (with fallback)
     let vision: any = null;
     if (gmaps && lovableKey) {
-      const img = await fetchSatelliteImage(center, selectedArea, gmaps);
-      if (img) {
-        try { vision = await visionAnalyze(img, selectedArea, buildingTypeHint, lovableKey); }
-        catch (e) { console.warn("vision failed", e); }
+      const shot = await fetchSatelliteImage(center, polygon, gmaps);
+      if (shot) {
+        try {
+          vision = await visionAnalyze(
+            shot.image, selectedArea, shot.metersPerPixel, shot.zoom, buildingTypeHint, lovableKey,
+          );
+        } catch (e) { console.warn("vision failed", e); }
       }
     }
 
-    const detectedRoofArea = vision
+    // Sanity floor: if AI radically under-reports (<55% of polygon), the user most
+    // likely traced a single building tightly → trust the polygon more.
+    let detectedRoofArea = vision
       ? Math.max(0, Math.min(vision.detectedRoofArea, selectedArea * 1.15))
       : Math.round(selectedArea * 0.92);
-    const usableArea = vision
+    if (vision && detectedRoofArea < selectedArea * 0.55) {
+      detectedRoofArea = Math.round(selectedArea * 0.9);
+    }
+    let usableArea = vision
       ? Math.max(0, Math.min(vision.usableArea, detectedRoofArea))
       : Math.round(detectedRoofArea * 0.65);
-    const unusablePercentage = vision
-      ? Math.max(0, Math.min(vision.unusablePercentage, 100))
-      : 35;
+    if (vision && usableArea < detectedRoofArea * 0.4) {
+      usableArea = Math.round(detectedRoofArea * 0.7);
+    }
+    const unusablePercentage = Math.round(
+      Math.max(0, Math.min(100, (1 - usableArea / Math.max(detectedRoofArea, 1)) * 100)),
+    );
     const obstacles: string[] = Array.isArray(vision?.obstacles) ? vision.obstacles.slice(0, 12) : [];
     const propertyType: string = vision?.propertyType ?? (selectedArea > 4000 ? "farm" : "residential");
     const confidenceScore = vision ? Math.max(0, Math.min(Number(vision.confidenceScore) || 0.5, 1)) : 0.3;
