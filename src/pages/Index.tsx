@@ -9,6 +9,7 @@ import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
+import { RoofReportSection, ReportFeedback } from "@/components/ReportExtras";
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
@@ -604,6 +605,12 @@ const Index = () => {
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
+          {showResults && roofReport && (
+            <div className="container mx-auto px-4 mt-4 space-y-4">
+              <RoofReportSection report={roofReport} />
+              <ReportFeedback context={{ location: locationName, area: rooftopArea, propertyType: roofReport.propertyType }} />
+            </div>
+          )}
         </div>
 
         <ScrollReveal>
