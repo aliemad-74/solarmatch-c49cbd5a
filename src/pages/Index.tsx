@@ -609,8 +609,6 @@ const Index = () => {
               electricityPrice={electricityPrice}
               solarEngineData={solarEngineData}
               solarEngineLoading={solarEngineLoading}
-              visionData={visionData}
-              visionLoading={visionLoading}
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
