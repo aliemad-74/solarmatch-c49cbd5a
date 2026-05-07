@@ -32,14 +32,12 @@ const Header = () => {
 
   const navLinks = [
     { path: "/", label: t('header.home') },
-  ];
-
-  const aboutSubLinks = [
-    { path: "/about", label: t('header.about') },
     { path: "/features", label: t('header.features', 'Features') },
+    { path: "/about", label: t('header.about') },
   ];
 
-  const isAboutActive = ['/about', '/features'].includes(location.pathname);
+  const aboutSubLinks: { path: string; label: string }[] = [];
+  const isAboutActive = false;
 
   const isActive = (path: string) => location.pathname === path;
 
