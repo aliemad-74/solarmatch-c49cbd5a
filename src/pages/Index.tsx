@@ -3,14 +3,13 @@ import { useTranslation } from "react-i18next";
 import { PageSeo } from "@/components/seo/PageSeo";
 import Header from "@/components/Header";
 import MapSection from "@/components/MapSection";
-import RoofAnalysisCard from "@/components/RoofAnalysisCard";
-import type { RoofAnalysisResult } from "@/lib/roofAnalysis";
+import { generateRoofReport, type RoofReport } from "@/lib/roofReport";
 import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
-import PaywallModal from "@/components/PaywallModal";
+import { RoofReportSection, ReportFeedback } from "@/components/ReportExtras";
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
@@ -84,7 +83,7 @@ const Index = () => {
   
   // Auth modal state
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
+  // Subscription limit modal removed — site is fully free.
   const [pendingCalculation, setPendingCalculation] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   
@@ -129,9 +128,8 @@ const Index = () => {
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
-  const [roofAnalysis, setRoofAnalysis] = useState<RoofAnalysisResult | null>(null);
-  const [roofAnalysisLoading, setRoofAnalysisLoading] = useState(false);
-  const [roofAnalysisError, setRoofAnalysisError] = useState<string | null>(null);
+  const [roofReport, setRoofReport] = useState<RoofReport | null>(null);
+  const [polygonInfo, setPolygonInfo] = useState<{ polygon: { lat: number; lng: number }[]; center: { lat: number; lng: number } } | null>(null);
 
   // Onboarding tour — show only for first-time visitors
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -315,10 +313,28 @@ const Index = () => {
 
   const performCalculation = async () => {
     setIsCalculating(true);
-    
     // Fire solar-engine in parallel (non-blocking enhancement)
     callSolarEngine();
-    
+
+    // Fire backend AI roof-report in parallel — results merge into report when ready.
+    if (polygonInfo) {
+      generateRoofReport({
+        polygon: polygonInfo.polygon,
+        center: polygonInfo.center,
+        selectedArea: rooftopArea,
+        buildingTypeHint: buildingType,
+        language: i18n.language === "ar" ? "ar" : "en",
+      })
+        .then((rep) => {
+          setRoofReport(rep);
+          // Adopt AI usable area if confident.
+          if (rep.confidenceScore >= 0.4 && rep.detectedRoofArea > 0) {
+            setRooftopArea(Math.round(rep.detectedRoofArea));
+          }
+        })
+        .catch((err) => console.warn("roof-report failed:", err));
+    }
+
     try {
       // Build market price overrides from live data
       const marketPriceOverrides: MarketPriceOverrides = {
@@ -369,13 +385,13 @@ const Index = () => {
                 co2Saved: calculation.co2Saved,
                 buildingType,
                 pvType,
-                roofAnalysis: roofAnalysis ? {
-                  selectedArea: roofAnalysis.selectedArea,
-                  detectedRoofArea: roofAnalysis.detectedRoofArea,
-                  usableArea: roofAnalysis.usableArea,
-                  unusablePercentage: roofAnalysis.unusablePercentage,
-                  obstacles: roofAnalysis.obstacles,
-                  confidenceScore: roofAnalysis.confidenceScore,
+                roofAnalysis: roofReport ? {
+                  selectedArea: roofReport.selectedArea,
+                  detectedRoofArea: roofReport.detectedRoofArea,
+                  usableArea: roofReport.usableArea,
+                  unusablePercentage: roofReport.unusablePercentage,
+                  obstacles: roofReport.obstacles,
+                  confidenceScore: roofReport.confidenceScore,
                 } : null,
               },
               language: i18n.language,
@@ -454,10 +470,7 @@ const Index = () => {
       return;
     }
 
-    if (!canGenerateReport) {
-      setShowLimitReachedModal(true);
-      return;
-    }
+    // Report limit removed — fully free.
 
     performCalculation();
   };
@@ -521,27 +534,9 @@ const Index = () => {
                 }
               }}
               onLocationChange={(name) => { setLocationName(name); }}
-              onRoofAnalysis={(result, loading, error) => {
-                setRoofAnalysis(result);
-                setRoofAnalysisLoading(loading);
-                setRoofAnalysisError(error);
-                // Use AI-detected usable area for calculations when confident
-                if (result && result.usableArea > 0 && result.confidenceScore >= 0.4) {
-                  // detectedRoofArea reflects the real building footprint inside the drawn polygon
-                  setRooftopArea(Math.round(result.detectedRoofArea));
-                }
-              }}
+              onPolygonComplete={(polygon, center) => setPolygonInfo({ polygon, center })}
             />
           </ScrollReveal>
-          {(roofAnalysisLoading || roofAnalysis || roofAnalysisError) && (
-            <div className="container mx-auto px-4 mt-3">
-              <RoofAnalysisCard
-                loading={roofAnalysisLoading}
-                result={roofAnalysis}
-                error={roofAnalysisError}
-              />
-            </div>
-          )}
         </div>
 
         {/* Product Role Clarification */}
@@ -610,6 +605,12 @@ const Index = () => {
               aiReviewText={aiReviewText}
             />
           </ScrollReveal>
+          {showResults && roofReport && (
+            <div className="container mx-auto px-4 mt-4 space-y-4">
+              <RoofReportSection report={roofReport} />
+              <ReportFeedback context={{ location: locationName, area: rooftopArea, propertyType: roofReport.propertyType }} />
+            </div>
+          )}
         </div>
 
         <ScrollReveal>
@@ -642,10 +643,6 @@ const Index = () => {
         onSuccess={() => {}}
       />
 
-      <PaywallModal
-        open={showLimitReachedModal}
-        onOpenChange={setShowLimitReachedModal}
-      />
 
       <MobileBottomNav />
 

@@ -11,9 +11,10 @@ import ROITimeline from "./ROITimeline";
 import ShareDialog from "./ShareDialog";
 import ContactExpertDialog from "./ContactExpertDialog";
 
-import FeatureGate from "./FeatureGate";
-import LockedFeature from "./LockedFeature";
-import UpgradeBanner from "./UpgradeBanner";
+// SolarMatch is fully free — feature gates removed; render children directly.
+const FeatureGate = ({ children }: { feature?: unknown; children: React.ReactNode; fallback?: React.ReactNode; showLockOverlay?: boolean }) => <>{children}</>;
+const LockedFeature = ({ children }: { feature?: unknown; children: React.ReactNode; showLocked?: boolean }) => <>{children}</>;
+const UpgradeBanner = () => null;
 import IdealSizingCard from "./IdealSizingCard";
 import SystemComparison from "./SystemComparison";
 import TechnicalSpecifications from "./TechnicalSpecifications";
@@ -21,7 +22,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { generateSolarReport, ReportLanguage } from "@/lib/pdfReport";
 import { useState, useEffect } from "react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
-import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+// usePlanFeatures removed — all features unlocked.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,7 +47,7 @@ interface ResultsDashboardProps {
 const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, monthlyConsumption = 500, pvType = "B_standard_mono", buildingType = "apartment", costScenario = "medium", electricityPrice = 1.95, solarEngineData, solarEngineLoading, aiReviewText }: ResultsDashboardProps) => {
   const { t, i18n } = useTranslation();
   const { profile } = useUserAuth();
-  const planFeatures = usePlanFeatures();
+  const planFeatures = { canExportPDF: true, canShareReport: true, canViewPackageComparison: true, canViewROIChart: true, canViewSensitivity: true, canViewAIFull: true, canViewAIAdvisor: true } as Record<string, boolean>;
   const isAr = i18n.language === "ar";
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isEmailingReport, setIsEmailingReport] = useState(false);
