@@ -19,6 +19,7 @@ import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
 import Unsubscribe from "./pages/Unsubscribe";
 import SeoTopicPage from "./pages/SeoTopicPage";
+import FinancingCalculator from "./pages/FinancingCalculator";
 import { SEO_SLUGS } from "./components/seo/seoContent";
 
 // Admin pages
@@ -70,6 +71,8 @@ const App = () => (
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/ar/terms" element={<Terms />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/financing" element={<FinancingCalculator />} />
+                  <Route path="/ar/financing" element={<FinancingCalculator />} />
                   <Route path="/ar/contact" element={<Contact />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
 
