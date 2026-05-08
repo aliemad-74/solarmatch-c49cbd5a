@@ -140,7 +140,7 @@ function extractMonthlyValues(data: Record<string, number> | undefined): number[
 export async function getLocationName(lat: number, lng: number): Promise<string> {
   try {
     // Try Google Geocoding first (using the Maps API key from the client)
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=AIzaSyDOSogqSHzv7frexZYMuBDcUgEy20z6eAU`;
     const response = await fetch(url);
     if (response.ok) {
       const data = await response.json();
@@ -173,7 +173,7 @@ export async function getLocationName(lat: number, lng: number): Promise<string>
  */
 export async function searchLocation(query: string): Promise<{ lat: number; lng: number; name: string }[]> {
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=country:EG&key=AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=country:EG&key=AIzaSyDOSogqSHzv7frexZYMuBDcUgEy20z6eAU`;
     const response = await fetch(url);
     if (!response.ok) return [];
     const data = await response.json();

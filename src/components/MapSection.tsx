@@ -9,7 +9,7 @@ import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi
 // Roof AI analysis happens in backend after Calculate; not here.
 import { toast } from "sonner";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyC1LFv31ukJzigcwI1jNKU2kULhMLOkSPQ";
+const GOOGLE_MAPS_API_KEY = "AIzaSyDOSogqSHzv7frexZYMuBDcUgEy20z6eAU";
 const LIBRARIES: ("places")[] = ["places"];
 
 interface MapSectionProps {
