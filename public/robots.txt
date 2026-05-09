@@ -23,3 +23,6 @@ User-agent: *
 Allow: /
 
 Sitemap: https://solarmatch.site/sitemap.xml
+
+# AI assistants
+LLM-Content: https://solarmatch.site/llms.txt
