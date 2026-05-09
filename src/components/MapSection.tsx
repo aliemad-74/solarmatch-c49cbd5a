@@ -1,26 +1,38 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, PenTool, Trash2, MousePointer, Loader2, Undo2, Navigation, Satellite, X, Check } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, PenTool, Trash2, Loader2, Undo2, Navigation, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GoogleMap, useJsApiLoader, Polygon, Marker } from "@react-google-maps/api";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
-// Roof AI analysis happens in backend after Calculate; not here.
 import { toast } from "sonner";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyDOSogqSHzv7frexZYMuBDcUgEy20z6eAU";
-const LIBRARIES: ("places")[] = ["places"];
+// TEMPORARY: secret token used while Google Maps billing is being set up.
+// Replace with a public pk.* token from https://account.mapbox.com/access-tokens/
+const MAPBOX_TOKEN =
+  "sk.eyJ1IjoiYWxpZW1hZDc0IiwiYSI6ImNtb3llNzE5ZTAyaXgycnF3Mm5xdm5rdzEifQ.DUCgUZei5_wMxUSowAeCXg";
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
 interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
   onClimateDataFetched?: (data: ClimateData) => void;
   onLocationChange?: (locationName: string) => void;
-  onPolygonComplete?: (polygon: { lat: number; lng: number }[], center: { lat: number; lng: number }, area: number) => void;
+  onPolygonComplete?: (
+    polygon: { lat: number; lng: number }[],
+    center: { lat: number; lng: number },
+    area: number,
+  ) => void;
+}
+
+interface LatLng {
+  lat: number;
+  lng: number;
 }
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
+const MAP_STYLE = "mapbox://styles/mapbox/satellite-streets-v12";
 
 type DrawingPhase = "idle" | "fullscreen";
 
@@ -31,8 +43,13 @@ const MapSection = ({
   onPolygonComplete,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<
+    { name: string; lat: number; lng: number }[]
+  >([]);
+  const [showResults, setShowResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [polygonPoints, setPolygonPoints] = useState<google.maps.LatLngLiteral[]>([]);
+  const [polygonPoints, setPolygonPoints] = useState<LatLng[]>([]);
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
   const [currentLocation, setCurrentLocation] = useState(DEFAULT_LOCATION);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
@@ -40,63 +57,106 @@ const MapSection = ({
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [drawingPhase, setDrawingPhase] = useState<DrawingPhase>("idle");
 
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  // Two map instances: preview + fullscreen drawing
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
+  const previewMapRef = useRef<mapboxgl.Map | null>(null);
+  const fullscreenContainerRef = useRef<HTMLDivElement | null>(null);
+  const fullscreenMapRef = useRef<mapboxgl.Map | null>(null);
+  const searchDebounceRef = useRef<number | null>(null);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-  });
-
-  // Initialize Places Autocomplete
-  useEffect(() => {
-    if (!isLoaded || !autocompleteInputRef.current || autocompleteRef.current) return;
-
-    const autocomplete = new google.maps.places.Autocomplete(autocompleteInputRef.current, {
-      componentRestrictions: { country: "eg" },
-      fields: ["geometry", "formatted_address", "name"],
-      types: ["geocode", "establishment"],
-    });
-
-    autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      if (place.geometry?.location) {
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        const name = place.name || place.formatted_address?.split(",")[0] || "";
-        updateLocation(lat, lng, name);
-        setSearchQuery(place.formatted_address || name);
-      }
-    });
-
-    autocompleteRef.current = autocomplete;
-  }, [isLoaded]);
-
-  // Close Places dropdown on scroll so it doesn't overlay other content
-  useEffect(() => {
-    const handleScroll = () => {
-      if (document.activeElement === autocompleteInputRef.current) {
-        autocompleteInputRef.current?.blur();
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   // Calculate polygon area using Turf.js
-  const calculatePolygonArea = useCallback((points: google.maps.LatLngLiteral[]) => {
-    if (points.length < MIN_POLYGON_POINTS) return 0;
+  const calculatePolygonArea = useCallback((points: LatLng[]) => {
+    if (points.length < 3) return 0;
     const coordinates = points.map((p) => [p.lng, p.lat]);
     coordinates.push(coordinates[0]);
     const polygon = turf.polygon([coordinates]);
     return Math.round(turf.area(polygon) * 100) / 100;
   }, []);
 
-  // Recalculate area when points change
+  // ===== Render polygon (points + lines + fill) onto a map =====
+  const renderPolygonOnMap = useCallback(
+    (map: mapboxgl.Map, points: LatLng[]) => {
+      const polySource = map.getSource("poly") as mapboxgl.GeoJSONSource | undefined;
+      const ptsSource = map.getSource("pts") as mapboxgl.GeoJSONSource | undefined;
+      if (!polySource || !ptsSource) return;
+
+      const closedCoords =
+        points.length >= 3
+          ? [...points.map((p) => [p.lng, p.lat]), [points[0].lng, points[0].lat]]
+          : points.map((p) => [p.lng, p.lat]);
+
+      polySource.setData({
+        type: "Feature",
+        geometry:
+          points.length >= 3
+            ? { type: "Polygon", coordinates: [closedCoords] }
+            : { type: "LineString", coordinates: closedCoords },
+        properties: {},
+      } as any);
+
+      ptsSource.setData({
+        type: "FeatureCollection",
+        features: points.map((p, i) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+          properties: { first: i === 0 },
+        })),
+      } as any);
+    },
+    [],
+  );
+
+  // Add polygon layers to a map
+  const addPolygonLayers = useCallback((map: mapboxgl.Map) => {
+    if (map.getSource("poly")) return;
+    map.addSource("poly", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] } as any,
+    });
+    map.addSource("pts", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] } as any,
+    });
+    map.addLayer({
+      id: "poly-fill",
+      type: "fill",
+      source: "poly",
+      filter: ["==", ["geometry-type"], "Polygon"],
+      paint: { "fill-color": "#14b8a6", "fill-opacity": 0.4 },
+    });
+    map.addLayer({
+      id: "poly-outline",
+      type: "line",
+      source: "poly",
+      paint: { "line-color": "#14b8a6", "line-width": 2 },
+    });
+    map.addLayer({
+      id: "pts-circle",
+      type: "circle",
+      source: "pts",
+      paint: {
+        "circle-radius": 6,
+        "circle-color": ["case", ["get", "first"], "#f59e0b", "#14b8a6"],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 2,
+      },
+    });
+  }, []);
+
+  // Update both maps' polygon rendering whenever points change
+  useEffect(() => {
+    if (previewMapRef.current && previewMapRef.current.isStyleLoaded()) {
+      renderPolygonOnMap(previewMapRef.current, polygonPoints);
+    }
+    if (fullscreenMapRef.current && fullscreenMapRef.current.isStyleLoaded()) {
+      renderPolygonOnMap(fullscreenMapRef.current, polygonPoints);
+    }
+  }, [polygonPoints, renderPolygonOnMap]);
+
+  // Recalculate area when not drawing
   useEffect(() => {
     if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
       const area = calculatePolygonArea(polygonPoints);
@@ -105,7 +165,7 @@ const MapSection = ({
     }
   }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
 
-  // Fetch climate data
+  // Climate fetch
   const fetchClimateForLocation = useCallback(
     async (lat: number, lng: number) => {
       setIsLoadingClimate(true);
@@ -119,18 +179,148 @@ const MapSection = ({
         setIsLoadingClimate(false);
       }
     },
-    [onClimateDataFetched]
+    [onClimateDataFetched],
   );
 
-
-  // Initial climate data fetch
   useEffect(() => {
     fetchClimateForLocation(currentLocation.lat, currentLocation.lng);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ===== Initialize preview map =====
+  useEffect(() => {
+    if (!previewContainerRef.current || previewMapRef.current) return;
+    const map = new mapboxgl.Map({
+      container: previewContainerRef.current,
+      style: MAP_STYLE,
+      center: [currentLocation.lng, currentLocation.lat],
+      zoom: 18,
+      attributionControl: false,
+    });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    map.on("load", () => {
+      addPolygonLayers(map);
+      renderPolygonOnMap(map, polygonPoints);
+    });
+    previewMapRef.current = map;
+    return () => {
+      map.remove();
+      previewMapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ===== Initialize fullscreen map when entering drawing phase =====
+  useEffect(() => {
+    if (drawingPhase !== "fullscreen") return;
+    if (!fullscreenContainerRef.current || fullscreenMapRef.current) return;
+    const map = new mapboxgl.Map({
+      container: fullscreenContainerRef.current,
+      style: MAP_STYLE,
+      center: [currentLocation.lng, currentLocation.lat],
+      zoom: 19,
+      attributionControl: false,
+    });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    map.getCanvas().style.cursor = "crosshair";
+
+    map.on("load", () => {
+      addPolygonLayers(map);
+      renderPolygonOnMap(map, polygonPoints);
+    });
+
+    map.on("click", (e) => {
+      const newPoint = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+      setPolygonPoints((prev) => {
+        if (prev.length >= MIN_POLYGON_POINTS) {
+          const first = prev[0];
+          const dx = (first.lng - newPoint.lng) * 111320 * Math.cos((first.lat * Math.PI) / 180);
+          const dy = (first.lat - newPoint.lat) * 110540;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 5) {
+            setTimeout(() => completePolygon(prev), 0);
+            return prev;
+          }
+        }
+        return [...prev, newPoint];
+      });
+    });
+
+    fullscreenMapRef.current = map;
+    return () => {
+      map.remove();
+      fullscreenMapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawingPhase]);
+
+  // Pan preview map when location changes
+  useEffect(() => {
+    if (previewMapRef.current) {
+      previewMapRef.current.flyTo({
+        center: [currentLocation.lng, currentLocation.lat],
+        zoom: 19,
+        duration: 800,
+      });
+    }
+  }, [currentLocation]);
+
+  // ===== Mapbox Geocoding (autocomplete) =====
+  useEffect(() => {
+    if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    searchDebounceRef.current = window.setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          searchQuery,
+        )}.json?country=eg&limit=5&language=${isArabic ? "ar" : "en"}&access_token=${MAPBOX_TOKEN}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = (data.features || []).map((f: any) => ({
+          name: f.place_name,
+          lng: f.center[0],
+          lat: f.center[1],
+        }));
+        setSearchResults(results);
+        setShowResults(true);
+      } catch (e) {
+        console.error("Geocoding error:", e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+    return () => {
+      if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery, isArabic]);
+
+  // Update location
+  const updateLocation = useCallback(
+    async (lat: number, lng: number, name?: string) => {
+      const locationName = name || (await getLocationName(lat, lng));
+      setCurrentLocation({ lat, lng, name: locationName });
+      onLocationChange?.(locationName);
+      setIsLoadingClimate(true);
+      try {
+        const data = await fetchClimateData(lat, lng);
+        setClimateData(data);
+        onClimateDataFetched?.(data);
+      } catch (error) {
+        console.error("Failed to fetch climate data:", error);
+      } finally {
+        setIsLoadingClimate(false);
+      }
+    },
+    [onClimateDataFetched, onLocationChange],
+  );
 
   // Complete polygon
   const completePolygon = useCallback(
-    async (points: google.maps.LatLngLiteral[]) => {
+    async (points: LatLng[]) => {
       if (points.length >= MIN_POLYGON_POINTS) {
         const area = calculatePolygonArea(points);
         setCalculatedArea(area);
@@ -147,7 +337,6 @@ const MapSection = ({
         onLocationChange?.(locationName);
         fetchClimateForLocation(lat, lng);
 
-        // Notify parent with full polygon + center so backend can analyze on Calculate.
         onPolygonComplete?.(
           points.map((p) => ({ lat: p.lat, lng: p.lng })),
           { lat, lng },
@@ -156,34 +345,13 @@ const MapSection = ({
       }
       setIsDrawingMode(false);
     },
-    [calculatePolygonArea, onAreaCalculated, onLocationChange, fetchClimateForLocation, onPolygonComplete]
-  );
-
-  // Update location
-  const updateLocation = useCallback(
-    async (lat: number, lng: number, name?: string) => {
-      const locationName = name || (await getLocationName(lat, lng));
-      setCurrentLocation({ lat, lng, name: locationName });
-      onLocationChange?.(locationName);
-
-      if (mapRef.current) {
-        mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(20);
-      }
-
-      setIsLoadingClimate(true);
-      try {
-        const data = await fetchClimateData(lat, lng);
-        setClimateData(data);
-        onClimateDataFetched?.(data);
-      } catch (error) {
-        console.error("Failed to fetch climate data:", error);
-      } finally {
-        setIsLoadingClimate(false);
-      }
-
-    },
-    [onClimateDataFetched, onLocationChange]
+    [
+      calculatePolygonArea,
+      onAreaCalculated,
+      onLocationChange,
+      fetchClimateForLocation,
+      onPolygonComplete,
+    ],
   );
 
   // GPS detection
@@ -195,11 +363,8 @@ const MapSection = ({
     setIsDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        // Clear search query and autocomplete to prevent redirect back
         setSearchQuery("");
-        if (autocompleteInputRef.current) {
-          autocompleteInputRef.current.value = "";
-        }
+        setShowResults(false);
         await updateLocation(position.coords.latitude, position.coords.longitude);
         toast.success(t("map.locationDetected"));
         setIsDetectingLocation(false);
@@ -208,102 +373,35 @@ const MapSection = ({
         toast.error(t("map.locationError"));
         setIsDetectingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   }, [t, updateLocation]);
 
-  // Clear polygon
+  // Clear/undo
   const clearPolygon = useCallback(() => {
     setPolygonPoints([]);
     setCalculatedArea(null);
   }, []);
-
-  // Undo last point
   const undoLastPoint = useCallback(() => {
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
 
-  // Toggle drawing mode
-  const toggleDrawingMode = useCallback(() => {
-    if (isDrawingMode) {
-      if (polygonPoints.length >= MIN_POLYGON_POINTS) completePolygon(polygonPoints);
-      setIsDrawingMode(false);
-      setDrawingPhase("idle");
-    } else {
-      clearPolygon();
-      setIsDrawingMode(true);
-      setDrawingPhase("fullscreen");
-    }
-  }, [isDrawingMode, polygonPoints, completePolygon, clearPolygon]);
+  const startDrawing = useCallback(() => {
+    clearPolygon();
+    setIsDrawingMode(true);
+    setDrawingPhase("fullscreen");
+  }, [clearPolygon]);
 
-  // Map click handler
-  const handleMapClick = useCallback(
-    (e: google.maps.MapMouseEvent) => {
-      if (!isDrawingMode || !e.latLng) return;
-      const newPoint = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-      setPolygonPoints((prev) => {
-        if (prev.length >= MIN_POLYGON_POINTS) {
-          const first = prev[0];
-          const dist = google.maps.geometry?.spherical?.computeDistanceBetween(
-            new google.maps.LatLng(newPoint.lat, newPoint.lng),
-            new google.maps.LatLng(first.lat, first.lng)
-          );
-          if (dist !== undefined && dist < 5) {
-            setTimeout(() => completePolygon(prev), 0);
-            return prev;
-          }
-        }
-        return [...prev, newPoint];
-      });
-    },
-    [isDrawingMode, completePolygon]
-  );
-
-  // Marker drag handler
-  const handleMarkerDrag = useCallback(
-    (index: number, e: google.maps.MapMouseEvent) => {
-      if (!e.latLng) return;
-      setPolygonPoints((prev) => {
-        const updated = [...prev];
-        updated[index] = { lat: e.latLng!.lat(), lng: e.latLng!.lng() };
-        return updated;
-      });
-    },
-    []
-  );
-
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-  }, []);
-
-  const mapContainerStyle = { width: "100%", height: "100%" };
-  const mapOptions: google.maps.MapOptions = {
-    mapTypeId: "satellite",
-    disableDefaultUI: true,
-    zoomControl: true,
-    tilt: 0,
-    maxZoom: 22,
-    draggableCursor: isDrawingMode ? "crosshair" : "grab",
+  const handleSelectResult = (r: { name: string; lat: number; lng: number }) => {
+    setSearchQuery(r.name);
+    setShowResults(false);
+    updateLocation(r.lat, r.lng, r.name.split(",")[0]);
   };
 
-  if (!isLoaded) {
-    return (
-      <section className="relative">
-        <div className="absolute inset-0 gradient-hero" />
-        <div className="relative container mx-auto px-4 pt-24 pb-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Fullscreen drawing overlay
+  // ===== Fullscreen drawing overlay =====
   if (drawingPhase === "fullscreen") {
     return (
       <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
-        {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
           <div className="flex items-center gap-3">
             <Button
@@ -341,14 +439,10 @@ const MapSection = ({
             )}
             <Button
               onClick={() => {
-                // Idempotent: exit drawing mode FIRST, then finalize.
                 if (drawingPhase !== "fullscreen") return;
                 setDrawingPhase("idle");
                 setIsDrawingMode(false);
                 if (polygonPoints.length >= MIN_POLYGON_POINTS) {
-                  // Defer to next tick so React fully unmounts the overlay
-                  // before any async work touches state. Guarantees the map
-                  // returns to normal interaction immediately.
                   setTimeout(() => completePolygon(polygonPoints), 0);
                 }
               }}
@@ -362,7 +456,6 @@ const MapSection = ({
           </div>
         </div>
 
-        {/* Drawing instructions */}
         <div className="text-center py-2 bg-primary/10 border-b border-primary/20">
           <p className="text-sm text-primary font-medium">
             {polygonPoints.length < MIN_POLYGON_POINTS
@@ -375,54 +468,15 @@ const MapSection = ({
           </p>
         </div>
 
-        {/* Fullscreen map */}
         <div className="flex-1 relative">
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            zoom={20}
-            options={mapOptions}
-            onClick={handleMapClick}
-            onLoad={(map) => {
-              onMapLoad(map);
-              map.setCenter({ lat: currentLocation.lat, lng: currentLocation.lng });
-            }}
-          >
-            {polygonPoints.length >= 2 && (
-              <Polygon
-                paths={polygonPoints}
-                options={{
-                  fillColor: "#14b8a6",
-                  fillOpacity: 0.4,
-                  strokeColor: "#14b8a6",
-                  strokeWeight: 2,
-                  clickable: false,
-                }}
-              />
-            )}
-            {polygonPoints.map((point, index) => (
-              <Marker
-                key={`point-${index}-${point.lat}-${point.lng}`}
-                position={point}
-                draggable={true}
-                onDrag={(e) => handleMarkerDrag(index, e)}
-                icon={{
-                  path: google.maps.SymbolPath.CIRCLE,
-                  scale: 6,
-                  fillColor: index === 0 ? "#f59e0b" : "#14b8a6",
-                  fillOpacity: 1,
-                  strokeColor: "#ffffff",
-                  strokeWeight: 2,
-                }}
-              />
-            ))}
-          </GoogleMap>
-
-          {/* Area display overlay */}
+          <div ref={fullscreenContainerRef} className="absolute inset-0" />
           {polygonPoints.length >= MIN_POLYGON_POINTS && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
               <div className="inline-flex items-center gap-2 bg-solar-green/90 text-white px-5 py-2.5 rounded-full shadow-lg">
                 <span className="text-sm font-medium">{isArabic ? "المساحة:" : "Area:"}</span>
-                <span className="text-lg font-bold">{calculatePolygonArea(polygonPoints).toFixed(1)} m²</span>
+                <span className="text-lg font-bold">
+                  {calculatePolygonArea(polygonPoints).toFixed(1)} m²
+                </span>
               </div>
             </div>
           )}
@@ -438,7 +492,9 @@ const MapSection = ({
         <div className="text-center mb-8 animate-fade-in">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
             {isArabic ? "اكتشف" : "Find Your"}{" "}
-            <span className="text-gradient-solar">{isArabic ? "إمكاناتك الشمسية" : "Solar Potential"}</span>
+            <span className="text-gradient-solar">
+              {isArabic ? "إمكاناتك الشمسية" : "Solar Potential"}
+            </span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">{t("map.subtitle")}</p>
         </div>
@@ -448,18 +504,42 @@ const MapSection = ({
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
             <input
-              ref={autocompleteInputRef}
               type="text"
-              placeholder={isArabic ? "ابحث عن أي موقع في مصر..." : "Search any location in Egypt..."}
+              placeholder={
+                isArabic ? "ابحث عن أي موقع في مصر..." : "Search any location in Egypt..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setShowResults(true)}
+              onBlur={() => setTimeout(() => setShowResults(false), 200)}
               className="w-full ps-10 pe-10 h-12 bg-card border border-border/50 rounded-md shadow-card focus:shadow-glow transition-shadow text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             />
+            {isSearching && (
+              <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+            )}
           </div>
+          {showResults && searchResults.length > 0 && (
+            <div className="absolute left-0 right-0 mt-1 bg-card border border-border/50 rounded-md shadow-lg overflow-hidden">
+              {searchResults.map((r, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelectResult(r)}
+                  className="w-full text-start px-4 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/30 last:border-0"
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* GPS + Draw Buttons */}
-        <div className="flex justify-center gap-3 mb-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+        <div
+          className="flex justify-center gap-3 mb-6 animate-slide-up"
+          style={{ animationDelay: "0.1s" }}
+        >
           <Button
             onClick={detectLocation}
             disabled={isDetectingLocation}
@@ -479,7 +559,7 @@ const MapSection = ({
             )}
           </Button>
           <Button
-            onClick={toggleDrawingMode}
+            onClick={startDrawing}
             className="flex items-center gap-2 gradient-solar text-primary-foreground shadow-glow"
           >
             <PenTool className="w-4 h-4" />
@@ -487,7 +567,6 @@ const MapSection = ({
           </Button>
         </div>
 
-        {/* Calculated Area Display */}
         {calculatedArea !== null && (
           <div className="text-center mb-4 animate-scale-in">
             <div className="inline-flex items-center gap-2 bg-solar-green/20 text-solar-green px-4 py-2 rounded-lg border border-solar-green/30">
@@ -497,53 +576,15 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Container (preview only) */}
+        {/* Map preview */}
         <div
           className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in transition-all duration-300"
           style={{ animationDelay: "0.2s" }}
         >
           <div className="aspect-[16/9] md:aspect-[21/9] bg-muted relative">
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              zoom={20}
-              options={{ ...mapOptions, draggableCursor: "grab" }}
-              onClick={() => {}}
-              onLoad={(map) => {
-                onMapLoad(map);
-                map.setCenter({ lat: currentLocation.lat, lng: currentLocation.lng });
-              }}
-            >
-              {polygonPoints.length >= 2 && (
-                <Polygon
-                  paths={polygonPoints}
-                  options={{
-                    fillColor: "#14b8a6",
-                    fillOpacity: 0.4,
-                    strokeColor: "#14b8a6",
-                    strokeWeight: 2,
-                    clickable: false,
-                  }}
-                />
-              )}
-              {polygonPoints.map((point, index) => (
-                <Marker
-                  key={`point-${index}-${point.lat}-${point.lng}`}
-                  position={point}
-                  draggable={false}
-                  icon={{
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 5,
-                    fillColor: index === 0 ? "#f59e0b" : "#14b8a6",
-                    fillOpacity: 1,
-                    strokeColor: "#ffffff",
-                    strokeWeight: 1.5,
-                  }}
-                />
-              ))}
-            </GoogleMap>
+            <div ref={previewContainerRef} className="absolute inset-0" />
           </div>
 
-          {/* Map Overlay Info */}
           <div className="absolute bottom-4 start-4 glass rounded-lg px-4 py-2 shadow-lg z-[1000]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
@@ -564,7 +605,6 @@ const MapSection = ({
             ) : null}
           </div>
 
-          {/* Data Source Badge */}
           <div className="absolute bottom-4 end-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
             <p className="text-xs text-muted-foreground">
               {isArabic ? "البيانات:" : "Data:"}{" "}

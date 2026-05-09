@@ -134,30 +134,23 @@ function extractMonthlyValues(data: Record<string, number> | undefined): number[
   });
 }
 
+// TEMPORARY: Mapbox token (while Google Maps billing is being set up).
+// Replace with a public pk.* token from https://account.mapbox.com/access-tokens/
+const MAPBOX_TOKEN =
+  "sk.eyJ1IjoiYWxpZW1hZDc0IiwiYSI6ImNtb3llNzE5ZTAyaXgycnF3Mm5xdm5rdzEifQ.DUCgUZei5_wMxUSowAeCXg";
+
 /**
- * Get location name using Google Maps Geocoding API
+ * Get location name using Mapbox Reverse Geocoding API
  */
 export async function getLocationName(lat: number, lng: number): Promise<string> {
   try {
-    // Try Google Geocoding first (using the Maps API key from the client)
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=AIzaSyDOSogqSHzv7frexZYMuBDcUgEy20z6eAU`;
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?language=en&types=place,locality,district,region&access_token=${MAPBOX_TOKEN}`;
     const response = await fetch(url);
     if (response.ok) {
       const data = await response.json();
-      if (data.results?.length > 0) {
-        // Find city-level result
-        const cityResult = data.results.find((r: any) =>
-          r.types?.includes("locality") || r.types?.includes("administrative_area_level_1")
-        );
-        if (cityResult) {
-          const cityComponent = cityResult.address_components?.find((c: any) =>
-            c.types?.includes("locality") || c.types?.includes("administrative_area_level_1")
-          );
-          if (cityComponent) return cityComponent.long_name;
-        }
-        // Fallback to first result's formatted address
-        const parts = data.results[0].formatted_address?.split(",");
-        return parts?.[0] || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      const feature = data.features?.[0];
+      if (feature) {
+        return feature.text || feature.place_name?.split(",")[0] || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
       }
     }
   } catch {
@@ -167,20 +160,18 @@ export async function getLocationName(lat: number, lng: number): Promise<string>
 }
 
 /**
- * Search for a location - now uses Google Places via the Maps JavaScript API
- * This function is kept for backward compatibility but the MapSection now uses
- * Google Places Autocomplete directly
+ * Search for a location using Mapbox Geocoding API
  */
 export async function searchLocation(query: string): Promise<{ lat: number; lng: number; name: string }[]> {
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&components=country:EG&key=AIzaSyDOSogqSHzv7frexZYMuBDcUgEy20z6eAU`;
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=eg&limit=5&access_token=${MAPBOX_TOKEN}`;
     const response = await fetch(url);
     if (!response.ok) return [];
     const data = await response.json();
-    return (data.results || []).map((r: any) => ({
-      lat: r.geometry.location.lat,
-      lng: r.geometry.location.lng,
-      name: r.formatted_address,
+    return (data.features || []).map((f: any) => ({
+      lat: f.center[1],
+      lng: f.center[0],
+      name: f.place_name,
     }));
   } catch {
     return [];
