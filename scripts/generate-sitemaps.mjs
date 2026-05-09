@@ -29,11 +29,20 @@ const COMP = ["solar-vs-generator","solar-vs-grid","on-grid-vs-off-grid","lithiu
 const GUIDE = ["how-solar-panels-work","net-metering-egypt","solar-maintenance","solar-myths","solar-installation-guide","khamaseen-and-dust"];
 const FIN = ["installment-plans","bank-solar-loans","solar-leasing","ppa-egypt"];
 const ROI = ["is-solar-worth-it-egypt","solar-roi-2026","payback-period-calculator","savings-by-bill-size"];
+const BLOG = [
+  ["is-solar-worth-it-in-egypt-2026","هل-الطاقة-الشمسية-مجدية-في-مصر-2026"],
+  ["on-grid-vs-hybrid-vs-off-grid-egypt","on-grid-vs-hybrid-vs-off-grid-في-مصر"],
+  ["net-metering-egypt-complete-guide","net-metering-في-مصر-الدليل-الكامل"],
+  ["solar-panel-types-egypt-tier1","أنواع-الألواح-الشمسية-في-مصر-Tier1"],
+  ["solar-financing-options-egypt","خيارات-تمويل-الطاقة-الشمسية-في-مصر"],
+  ["solar-for-farms-egypt-feddans","الطاقة-الشمسية-للمزارع-في-مصر-فدان"],
+];
 
 const CORE = [
   "/", "/ar", "/about", "/ar/about", "/features", "/ar/features",
   "/why-solarmatch", "/ar/why-solarmatch", "/contact", "/ar/contact",
   "/financing", "/ar/financing", "/privacy", "/ar/privacy", "/terms", "/ar/terms",
+  "/blog", "/ar/blog",
 ];
 
 const SEO_TOPICS = [
@@ -85,6 +94,7 @@ const files = {
   "sitemap-guides.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/guides/${s}` : `/guides/${s}`, GUIDE)),
   "sitemap-financing.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/financing/${s}` : `/financing/${s}`, FIN)),
   "sitemap-roi.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/solar-roi/${s}` : `/solar-roi/${s}`, ROI)),
+  "sitemap-blog.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/blog/${encodeURIComponent(s)}` : `/blog/${s}`, BLOG)),
 };
 
 const index = `<?xml version="1.0" encoding="UTF-8"?>

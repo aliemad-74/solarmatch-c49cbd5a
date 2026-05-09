@@ -39,6 +39,8 @@ import {
   GovernorateRoute, PropertyTypeRoute, BillRoute,
   ComparisonRoute, GuideRoute, FinancingRoute, RoiRoute,
 } from "./pages/ProgrammaticSeoRoutes";
+import BlogIndex from "./pages/BlogIndex";
+import BlogPost from "./pages/BlogPost";
 import { initAnalytics } from "./lib/analytics";
 
 import "./i18n"; // Initialize i18n
@@ -116,6 +118,12 @@ const App = () => (
                   <Route path="/ar/financing/:slug" element={<FinancingRoute lang="ar" />} />
                   <Route path="/solar-roi/:slug" element={<RoiRoute lang="en" />} />
                   <Route path="/ar/solar-roi/:slug" element={<RoiRoute lang="ar" />} />
+
+                  {/* Blog / Knowledge base */}
+                  <Route path="/blog" element={<BlogIndex lang="en" />} />
+                  <Route path="/ar/blog" element={<BlogIndex lang="ar" />} />
+                  <Route path="/blog/:slug" element={<BlogPost lang="en" />} />
+                  <Route path="/ar/blog/:slug" element={<BlogPost lang="ar" />} />
 
                   {/* Legacy SEO pricing slug also redirects to features */}
                   <Route path="/pricing-plans" element={<Navigate to="/" replace />} />
