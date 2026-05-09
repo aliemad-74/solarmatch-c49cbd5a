@@ -1,11 +1,12 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, MessageCircle, ShieldCheck, Zap, Users } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SeoHead, orgSchema, faqSchema, articleSchema } from "./SeoHead";
+import SeoLeadDialog from "./SeoLeadDialog";
 
 export interface SeoSection {
   heading: string;
@@ -94,15 +95,41 @@ export const SeoPage = ({
             </div>
           </header>
 
+          {/* Trust strip */}
+          <div className="grid grid-cols-3 gap-2 md:gap-4 mb-8">
+            {[
+              { icon: ShieldCheck, label: isAr ? "بيانات NASA + Google" : "NASA + Google data" },
+              { icon: Zap, label: isAr ? "تحليل خلال دقيقتين" : "2-min analysis" },
+              { icon: Users, label: isAr ? "آلاف الملاك في مصر" : "Thousands of owners" },
+            ].map((it, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-xs md:text-sm">
+                <it.icon className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-foreground/80">{it.label}</span>
+              </div>
+            ))}
+          </div>
+
           {/* Primary CTA card */}
           <Card className="mb-12 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <p className="text-sm md:text-base text-foreground/90">{ctaSub}</p>
-              <Button asChild size="lg" className="shrink-0">
-                <Link to={ctaTo}>
-                  {ctaLabel} <Arrow className="w-4 h-4 ms-2" />
-                </Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                <Button asChild size="lg">
+                  <Link to={ctaTo}>
+                    {ctaLabel} <Arrow className="w-4 h-4 ms-2" />
+                  </Link>
+                </Button>
+                <SeoLeadDialog
+                  lang={lang}
+                  topic={title}
+                  trigger={
+                    <Button size="lg" variant="outline">
+                      <MessageCircle className="w-4 h-4 me-2" />
+                      {isAr ? "تحدث مع خبير" : "Talk to expert"}
+                    </Button>
+                  }
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -168,15 +195,44 @@ export const SeoPage = ({
                 {isAr ? "ابدأ تحليل سطحك الآن" : "Start your free solar analysis"}
               </h2>
               <p className="opacity-90 mb-6 max-w-xl mx-auto">{ctaSub}</p>
-              <Button asChild size="lg" variant="secondary">
-                <Link to={ctaTo}>
-                  {ctaLabel} <Arrow className="w-4 h-4 ms-2" />
-                </Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button asChild size="lg" variant="secondary">
+                  <Link to={ctaTo}>
+                    {ctaLabel} <Arrow className="w-4 h-4 ms-2" />
+                  </Link>
+                </Button>
+                <SeoLeadDialog
+                  lang={lang}
+                  topic={title}
+                  trigger={
+                    <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10">
+                      <MessageCircle className="w-4 h-4 me-2" />
+                      {isAr ? "تحدث مع خبير" : "Talk to expert"}
+                    </Button>
+                  }
+                />
+              </div>
             </CardContent>
           </Card>
         </article>
       </main>
+
+      {/* Sticky mobile CTA */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t border-border p-3 flex gap-2 shadow-lg">
+        <Button asChild className="flex-1" size="sm">
+          <Link to={ctaTo}>{ctaLabel}</Link>
+        </Button>
+        <SeoLeadDialog
+          lang={lang}
+          topic={title}
+          trigger={
+            <Button variant="outline" size="sm" className="flex-1">
+              <MessageCircle className="w-4 h-4 me-1" />
+              {isAr ? "خبير" : "Expert"}
+            </Button>
+          }
+        />
+      </div>
 
       <Footer />
     </div>
