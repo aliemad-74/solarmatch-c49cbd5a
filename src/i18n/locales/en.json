@@ -209,9 +209,8 @@
     },
     "background": {
       "title": "Project Background",
-      "p1": "SolarMatch was developed as a professional demonstration for a student innovation competition focused on sustainable technology solutions for the Egyptian market.",
-      "p2": "Egypt has exceptional solar potential, with average daily irradiance exceeding 5.5 kWh/m² across most of the country. However, many property owners lack access to reliable tools for evaluating whether solar makes sense for their specific situation.",
-      "p3": "Our platform bridges this gap by combining real NASA climate data with Egypt's actual electricity tariff structure to provide engineering-grade feasibility assessments that anyone can understand."
+      "p1": "Egypt has exceptional solar potential, with average daily irradiance exceeding 5.5 kWh/m² across most of the country. However, many property owners lack access to reliable tools for evaluating whether solar makes sense for their specific situation.",
+      "p2": "Our platform bridges this gap by combining real NASA climate data with Egypt's actual electricity tariff structure to provide engineering-grade feasibility assessments that anyone can understand."
     },
     "valuesTitle": "Our Values",
     "values": {

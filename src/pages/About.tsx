@@ -116,9 +116,8 @@ const About = () => {
               </div>
               
               <div className="space-y-4 text-muted-foreground">
-                <p>{t('about.background.p1')}</p>
-                <p>{t('about.background.p2')}</p>
-                <p>{t('about.background.p3')}</p>
+               <p>{t('about.background.p1')}</p>
+               <p>{t('about.background.p2')}</p>
               </div>
             </div>
           </div>
