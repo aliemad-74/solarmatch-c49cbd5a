@@ -26,6 +26,7 @@ export const SeoHead = ({
   const url = `${SITE}${path}`;
   const altUrl = altPath ? `${SITE}${altPath}` : undefined;
   const dir = lang === "ar" ? "rtl" : "ltr";
+  const ogImage = `${SITE}/og-image.png`;
 
   const schemas = Array.isArray(schema) ? schema : schema ? [schema] : [];
 
@@ -54,11 +55,17 @@ export const SeoHead = ({
       {altUrl && (
         <meta property="og:locale:alternate" content={lang === "ar" ? "en_US" : "ar_EG"} />
       )}
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content="SolarMatch — Go Solar, Get Matched" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:site" content="@solarmatch" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={ogImage} />
 
       {/* JSON-LD */}
       {schemas.map((s, i) => (
@@ -98,6 +105,34 @@ export const websiteSchema: Record<string, unknown> = {
   url: SITE,
   inLanguage: ["en", "ar"],
   publisher: { "@type": "Organization", name: "SolarMatch" },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: `${SITE}/blog?q={search_term_string}` },
+    "query-input": "required name=search_term_string",
+  },
+};
+
+export const howToSchema = (
+  name: string,
+  description: string,
+  steps: { name: string; text: string }[]
+): Record<string, unknown> => ({
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name,
+  description,
+  step: steps.map((s, i) => ({
+    "@type": "HowToStep",
+    position: i + 1,
+    name: s.name,
+    text: s.text,
+  })),
+});
+
+export const speakableSchema: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "SpeakableSpecification",
+  cssSelector: ["h1", "h2", "[data-speakable]"],
 };
 
 export const faqSchema = (

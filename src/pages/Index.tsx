@@ -9,6 +9,7 @@ import InputPanel from "@/components/InputPanel";
 import ResultsDashboard from "@/components/ResultsDashboard";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
+import SeoLinkHub from "@/components/seo/SeoLinkHub";
 import AuthModal from "@/components/AuthModal";
 import { RoofReportSection, ReportFeedback } from "@/components/ReportExtras";
 
@@ -673,6 +674,8 @@ const Index = () => {
           <FAQSection />
         </ScrollReveal>
       </main>
+
+      <SeoLinkHub />
 
       <Footer />
 

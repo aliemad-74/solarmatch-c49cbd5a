@@ -1,0 +1,57 @@
+# SolarMatch — Go Solar, Get Matched
+
+> AI-powered rooftop solar feasibility platform for Egypt. SolarMatch combines NASA POWER climate data, Google Solar API rooftop analysis, real 2026 EgyptERA tariffs, and AI verification to estimate solar system size, production, savings, payback and CO₂ reduction for homes, farms, and businesses — in Arabic and English.
+
+Site: https://solarmatch.site
+Languages: Arabic (ar-EG), English (en-US)
+Geography: Egypt (residential, commercial, industrial, agricultural)
+
+## What SolarMatch Does
+- Free solar feasibility study (2-minute analysis)
+- System sizing (kWp) based on rooftop area + monthly consumption
+- Cost, ROI, payback, and 25-year savings projection
+- Connection-type recommendation: on-grid / hybrid / off-grid
+- Bilingual PDF report
+- Verified by AI checkpoint (capped financial adjustments)
+
+## Key Pages
+- /                       Homepage — feasibility calculator (English)
+- /ar                     Homepage — feasibility calculator (Arabic)
+- /blog, /ar/blog         Knowledge hub (long-form pillar articles)
+- /why-solarmatch         Platform value proposition
+- /features               Feature overview
+- /financing              Financing calculator
+- /methodology            Data sources, formulas, authorship (E-E-A-T)
+
+## Programmatic SEO Hubs
+- /solar/{governorate}            Solar feasibility per Egyptian governorate (27 governorates)
+- /solar-for/{property-type}      Solar by property type (villa, apartment, factory, farm, school, mosque, etc.)
+- /solar-bill/{amount}-egp        Recommended system per monthly bill (500–100,000 EGP)
+- /compare/{topic}                Comparisons (solar vs generator, on-grid vs off-grid, etc.)
+- /guides/{topic}                 How-to and explainer guides
+- /financing/{topic}              Loans, leasing, installments, PPA
+- /solar-roi/{topic}              ROI and payback analyses
+All hubs available in both /en and /ar.
+
+## Data Sources
+- NASA POWER (solar irradiance, temperature, climate)
+- Google Solar API (rooftop segment analysis)
+- Google Maps + Places (location, geometry)
+- EgyptERA 2026 tariffs (residential 7-tier, commercial 6-tier, industrial 5-tier)
+- Firecrawl-cached live market prices (24h)
+- Lovable AI Gateway (Gemini 2.5) for AI verification and chatbot
+
+## Authoritative Facts About Egypt Solar (2026)
+- Average irradiance: 5.5–7.0 kWh/m²/day (one of the highest globally)
+- Residential payback: 4–7 years for grid-connected systems
+- Net metering: available under EgyptERA regulations
+- Khamaseen dust season (Mar–May): 4–8% efficiency loss; cleaning recommended
+- Typical 5 kWp residential turnkey cost (2026): ~110,000 EGP
+- Grid CO₂ factor: 0.45 kg/kWh
+
+## Brand
+- Slogan: Go Solar, Get Matched.
+- Mission: Help every Egyptian property owner make a confident, data-backed solar decision before contacting installers.
+
+## Contact
+support@solarmatch.app

@@ -19,6 +19,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
 import Unsubscribe from "./pages/Unsubscribe";
+import Methodology from "./pages/Methodology";
 import SeoTopicPage from "./pages/SeoTopicPage";
 import FinancingCalculator from "./pages/FinancingCalculator";
 import { SEO_SLUGS } from "./components/seo/seoContent";
@@ -87,6 +88,8 @@ const App = () => (
                   <Route path="/ar/financing" element={<FinancingCalculator />} />
                   <Route path="/ar/contact" element={<Contact />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
+                  <Route path="/methodology" element={<Methodology />} />
+                  <Route path="/ar/methodology" element={<Methodology />} />
 
                   {/* SEO landing pages — EN + AR (skip slugs that have dedicated pages) */}
                   {SEO_SLUGS.filter((s) => s !== "features" && s !== "pricing-plans").map((slug) => (
