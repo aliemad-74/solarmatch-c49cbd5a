@@ -4,7 +4,9 @@ import { Link } from "react-router-dom";
 import SolarMatchLogo from "./SolarMatchLogo";
 
 const Footer = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isAr = i18n.language === "ar";
+  const blogPath = isAr ? "/ar/blog" : "/blog";
 
   return (
     <footer className="border-t border-border bg-[hsl(157_53%_18%)] text-white print:hidden pb-20 md:pb-0">
@@ -27,7 +29,7 @@ const Footer = () => {
             <p>© 2025 SolarMatch. Built for the Innovation Competition.</p>
             <div className="flex items-center gap-6">
               <Link to="/methodology" className="hover:text-white transition-colors">{t('footer.methodology', 'Methodology')}</Link>
-              <Link to="/blog" className="hover:text-white transition-colors">{t('footer.blog', 'Blog')}</Link>
+              <Link to={blogPath} className="hover:text-white transition-colors">{t('footer.blog', 'Blog')}</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">{t('footer.privacy', 'Privacy')}</Link>
               <Link to="/terms" className="hover:text-white transition-colors">{t('footer.terms', 'Terms')}</Link>
               <Link to="/contact" className="hover:text-white transition-colors">{t('footer.contact', 'Contact')}</Link>

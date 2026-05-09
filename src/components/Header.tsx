@@ -23,8 +23,9 @@ import { useUserAuth } from "@/contexts/UserAuthContext";
 import AuthModal from "./AuthModal";
 
 const Header = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
+  const isAr = i18n.language === "ar";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { isAdmin, admin, signOut: adminSignOut } = useAdminAuth();
@@ -33,7 +34,7 @@ const Header = () => {
   const navLinks = [
     { path: "/", label: t('header.home') },
     { path: "/features", label: t('header.features', 'Features') },
-    { path: "/blog", label: t('header.blog', 'Blog') },
+    { path: isAr ? "/ar/blog" : "/blog", label: t('header.blog', 'Blog') },
     { path: "/about", label: t('header.about') },
   ];
 
