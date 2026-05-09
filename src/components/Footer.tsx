@@ -26,6 +26,8 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/60">
             <p>© 2025 SolarMatch. Built for the Innovation Competition.</p>
             <div className="flex items-center gap-6">
+              <Link to="/methodology" className="hover:text-white transition-colors">{t('footer.methodology', 'Methodology')}</Link>
+              <Link to="/blog" className="hover:text-white transition-colors">{t('footer.blog', 'Blog')}</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">{t('footer.privacy', 'Privacy')}</Link>
               <Link to="/terms" className="hover:text-white transition-colors">{t('footer.terms', 'Terms')}</Link>
               <Link to="/contact" className="hover:text-white transition-colors">{t('footer.contact', 'Contact')}</Link>
