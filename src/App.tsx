@@ -19,6 +19,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
 import Unsubscribe from "./pages/Unsubscribe";
+import Methodology from "./pages/Methodology";
 import SeoTopicPage from "./pages/SeoTopicPage";
 import FinancingCalculator from "./pages/FinancingCalculator";
 import { SEO_SLUGS } from "./components/seo/seoContent";
