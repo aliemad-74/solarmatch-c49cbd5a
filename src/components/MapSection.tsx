@@ -189,6 +189,7 @@ const MapSection = ({
         subdomains: cfg.subdomains,
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
+        detectRetina: true,
         attribution: cfg.attribution,
       }).addTo(map);
     });
@@ -302,6 +303,7 @@ const MapSection = ({
         subdomains: cfg.subdomains,
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
+        detectRetina: true,
         attribution: cfg.attribution,
       }).addTo(map);
       previewMapRef.current = map;
@@ -341,6 +343,7 @@ const MapSection = ({
         subdomains: cfg.subdomains,
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
+        detectRetina: true,
         attribution: cfg.attribution,
       }).addTo(map);
       map.getContainer().style.cursor = "crosshair";
