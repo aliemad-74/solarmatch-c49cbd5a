@@ -553,7 +553,7 @@ const MapSection = ({
         </div>
 
         {/* Search */}
-        <div className="max-w-lg mx-auto mb-6 animate-slide-up relative z-50">
+        <div className="max-w-lg mx-auto mb-6 animate-slide-up relative z-[200]">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
             <input
