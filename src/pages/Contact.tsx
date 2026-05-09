@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { Mail, Phone, MapPin, MessageCircle, Clock, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 
 const Contact = () => {
   const { i18n } = useTranslation();
