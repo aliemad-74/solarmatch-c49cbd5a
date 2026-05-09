@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SeoHead, orgSchema, faqSchema, articleSchema } from "./SeoHead";
+import { SeoHead, orgSchema, faqSchema, articleSchema, breadcrumbSchema, websiteSchema } from "./SeoHead";
 import SeoLeadDialog from "./SeoLeadDialog";
 
 export interface SeoSection {
@@ -57,9 +57,31 @@ export const SeoPage = ({
   const isAr = lang === "ar";
   const Arrow = isAr ? ArrowLeft : ArrowRight;
 
+  // Derive breadcrumb hub label from path: /solar/* → governorates, /solar-for/* → property types, etc.
+  const homeHref = isAr ? "/ar" : "/";
+  const seg = path.replace(/^\/ar/, "").split("/").filter(Boolean)[0] || "";
+  const hubMap: Record<string, { en: string; ar: string; href: string; arHref: string }> = {
+    "solar": { en: "Solar by Region", ar: "الطاقة الشمسية حسب المحافظة", href: "/blog", arHref: "/ar/blog" },
+    "solar-for": { en: "Solar by Property", ar: "الطاقة الشمسية حسب نوع العقار", href: "/blog", arHref: "/ar/blog" },
+    "solar-bill": { en: "Solar by Bill Size", ar: "الطاقة الشمسية حسب الفاتورة", href: "/blog", arHref: "/ar/blog" },
+    "compare": { en: "Comparisons", ar: "المقارنات", href: "/blog", arHref: "/ar/blog" },
+    "guides": { en: "Guides", ar: "الأدلة الإرشادية", href: "/blog", arHref: "/ar/blog" },
+    "financing": { en: "Financing", ar: "التمويل", href: "/blog", arHref: "/ar/blog" },
+    "solar-roi": { en: "ROI", ar: "العائد", href: "/blog", arHref: "/ar/blog" },
+    "blog": { en: "Blog", ar: "المدونة", href: "/blog", arHref: "/ar/blog" },
+  };
+  const hub = hubMap[seg];
+  const crumbs = [
+    { name: isAr ? "الرئيسية" : "Home", path: homeHref },
+    ...(hub ? [{ name: isAr ? hub.ar : hub.en, path: isAr ? hub.arHref : hub.href }] : []),
+    { name: h1, path },
+  ];
+
   const schemas: Record<string, unknown>[] = [
     orgSchema,
+    websiteSchema,
     articleSchema(title, description, path),
+    breadcrumbSchema(crumbs),
   ];
   if (faqs && faqs.length) schemas.push(faqSchema(faqs));
 
@@ -85,6 +107,22 @@ export const SeoPage = ({
 
       <main className="pt-32 pb-24 md:pb-12">
         <article className="container mx-auto px-4 max-w-4xl">
+          {/* Breadcrumb trail */}
+          <nav aria-label="Breadcrumb" className="mb-6 text-xs md:text-sm text-muted-foreground">
+            <ol className="flex flex-wrap items-center gap-1.5">
+              {crumbs.map((c, i) => (
+                <li key={i} className="flex items-center gap-1.5">
+                  {i < crumbs.length - 1 ? (
+                    <Link to={c.path} className="hover:text-primary transition-colors">{c.name}</Link>
+                  ) : (
+                    <span className="text-foreground/70 line-clamp-1">{c.name}</span>
+                  )}
+                  {i < crumbs.length - 1 && <span className="opacity-50">{isAr ? "›" : "›"}</span>}
+                </li>
+              ))}
+            </ol>
+          </nav>
+
           {/* Hero */}
           <header className="mb-10">
             <h1 className="font-display text-3xl md:text-5xl font-bold text-foreground leading-tight mb-4">
