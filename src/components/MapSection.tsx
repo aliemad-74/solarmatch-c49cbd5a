@@ -11,7 +11,7 @@ import { toast } from "sonner";
 // TEMPORARY: secret token used while Google Maps billing is being set up.
 // Replace with a public pk.* token from https://account.mapbox.com/access-tokens/
 const MAPBOX_TOKEN =
-  "sk.eyJ1IjoiYWxpZW1hZDc0IiwiYSI6ImNtb3llNzE5ZTAyaXgycnF3Mm5xdm5rdzEifQ.DUCgUZei5_wMxUSowAeCXg";
+  "pk.eyJ1IjoiYWxpZW1hZDc0IiwiYSI6ImNtb3llNDgyeTBobGMycXF4ZzR4Z3V5azgifQ.1I2brc382ZP3gs3A4aNKfg";
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 interface MapSectionProps {
