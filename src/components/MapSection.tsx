@@ -19,9 +19,9 @@ const PROVIDERS: Record<
   Provider,
   { url: string; subdomains?: string[]; maxNativeZoom: number; attribution: string; label: string }
 > = {
-  // Google Hybrid satellite — highest resolution in Egypt (Cairo/Alex/Delta/Upper Egypt).
+  // Google Hybrid satellite — highest resolution in Egypt.
   google: {
-    url: "https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    url: "https://mt{s}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga",
     subdomains: ["0", "1", "2", "3"],
     maxNativeZoom: 21,
     attribution: "© Google",
