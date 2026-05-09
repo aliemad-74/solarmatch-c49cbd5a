@@ -47,7 +47,7 @@
     "@supabase/supabase-js": "^2.93.3",
     "@tanstack/react-query": "^5.83.0",
     "@turf/turf": "^7.3.3",
-    "@types/leaflet": "^1.9.8",
+    "@types/leaflet": "^1.9.21",
     "@types/leaflet-draw": "^1.0.13",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
