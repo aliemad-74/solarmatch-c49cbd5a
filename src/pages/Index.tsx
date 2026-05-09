@@ -548,6 +548,15 @@ const Index = () => {
         <LiveReportCounter />
 
 
+        {/* Slogan */}
+        <div className="container mx-auto px-4 pt-2 pb-1 text-center">
+          <p className="font-display text-base md:text-lg font-semibold tracking-tight text-foreground/90">
+            <span className="text-primary">Go Solar</span>
+            <span className="text-muted-foreground/60 mx-2">·</span>
+            <span className="text-accent">Get Matched</span>
+          </p>
+        </div>
+
         <div id="map-section">
           <ScrollReveal>
             <MapSection
