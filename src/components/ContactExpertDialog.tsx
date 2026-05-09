@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Phone, Mail, MessageCircle, Clock, User, Loader2, CheckCircle } from "lucide-react";
+import { Phone, Mail, Clock, User, Loader2, CheckCircle } from "lucide-react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import {
   Dialog,
@@ -145,6 +145,10 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
             <CheckCircle className="w-12 h-12 text-solar-green mx-auto mb-4" />
             <p className="text-lg font-medium text-foreground">{t('contact.success')}</p>
           </div>
+        ) : !profile ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {t('contact.signInRequired', 'الرجاء تسجيل الدخول أولاً حتى نستخدم بيانات حسابك.')}
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             {/* Project Summary */}
@@ -162,24 +166,14 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
               </div>
             )}
 
-            {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="flex items-center gap-2">
-                <User className="w-4 h-4 text-muted-foreground" />
-                {t('contact.name')}
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder={t('contact.namePlaceholder')}
-                required
-                maxLength={200}
-                className={fieldErrors.name ? "border-destructive" : ""}
-              />
-              {fieldErrors.name && (
-                <p className="text-xs text-destructive">{fieldErrors.name}</p>
-              )}
+            {/* Account info (read-only summary) */}
+            <div className="rounded-lg border border-border/50 p-3 text-xs space-y-1 bg-card">
+              <p className="flex items-center gap-2 text-muted-foreground">
+                <User className="w-3.5 h-3.5" /> {profile.name}
+              </p>
+              <p className="flex items-center gap-2 text-muted-foreground">
+                <Mail className="w-3.5 h-3.5" /> {profile.email}
+              </p>
             </div>
 
             {/* Phone */}
@@ -198,60 +192,13 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
                 maxLength={20}
                 pattern="[0-9+\-() ]{7,20}"
                 className={fieldErrors.phone ? "border-destructive" : ""}
+                autoFocus
               />
               {fieldErrors.phone && (
                 <p className="text-xs text-destructive">{fieldErrors.phone}</p>
               )}
             </div>
 
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                {t('contact.email')}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder={t('contact.emailPlaceholder')}
-                required
-                maxLength={255}
-                className={fieldErrors.email ? "border-destructive" : ""}
-              />
-              {fieldErrors.email && (
-                <p className="text-xs text-destructive">{fieldErrors.email}</p>
-              )}
-            </div>
-
-            {/* Preferred Contact Method */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MessageCircle className="w-4 h-4 text-muted-foreground" />
-                {t('contact.preferredContact')}
-              </Label>
-              <RadioGroup
-                value={formData.preferredContact}
-                onValueChange={(value: "call" | "whatsapp" | "email") => setFormData({ ...formData, preferredContact: value })}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="call" id="call" />
-                  <Label htmlFor="call" className="text-sm cursor-pointer">{t('contact.call')}</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="whatsapp" id="whatsapp" />
-                  <Label htmlFor="whatsapp" className="text-sm cursor-pointer">{t('contact.whatsapp')}</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="email" id="email-option" />
-                  <Label htmlFor="email-option" className="text-sm cursor-pointer">{t('contact.emailOption')}</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* Best Time */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" />
