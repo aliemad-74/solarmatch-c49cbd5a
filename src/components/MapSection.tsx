@@ -291,7 +291,7 @@ const MapSection = ({
       if (previewMapRef.current) return;
 
       const map = L.map(node, {
-        center: [currentLocation.lat, currentLocation.lng],
+        center: [currentLocationRef.current.lat, currentLocationRef.current.lng],
         zoom: 19,
         maxZoom: 22,
         zoomControl: true,
@@ -330,7 +330,7 @@ const MapSection = ({
       if (fullscreenMapRef.current) return;
 
       const map = L.map(node, {
-        center: [currentLocation.lat, currentLocation.lng],
+        center: [currentLocationRef.current.lat, currentLocationRef.current.lng],
         zoom: 20,
         maxZoom: 22,
         zoomControl: true,
