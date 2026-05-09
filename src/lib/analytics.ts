@@ -28,3 +28,8 @@ export function trackEvent(
     // Never let analytics break the app.
   }
 }
+
+// Optional initializer (gtag snippet is in index.html). Reserved for future setup.
+export function initAnalytics(): void {
+  // No-op: GA4 is bootstrapped via the gtag snippet in index.html.
+}
