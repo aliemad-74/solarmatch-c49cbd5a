@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { Mail, Phone, MapPin, MessageCircle, Clock, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 
 const Contact = () => {
   const { i18n } = useTranslation();
@@ -105,6 +106,15 @@ const Contact = () => {
                 href={c.href}
                 target={c.href.startsWith("http") ? "_blank" : undefined}
                 rel="noopener noreferrer"
+                onClick={() => {
+                  const isWa = c.href.includes("wa.me");
+                  const isMail = c.href.startsWith("mailto:");
+                  const isTel = c.href.startsWith("tel:");
+                  trackEvent(isWa ? "whatsapp_clicked" : "contact_clicked", {
+                    channel: isWa ? "whatsapp" : isMail ? "email" : isTel ? "phone" : "other",
+                    location: "contact_page",
+                  });
+                }}
                 className="bg-card border border-border rounded-2xl p-6 hover:shadow-md hover:border-primary/40 transition-all group"
               >
                 <div className={`w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 ${c.color}`}>

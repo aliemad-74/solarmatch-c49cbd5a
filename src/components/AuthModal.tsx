@@ -147,6 +147,14 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
         setSentToEmail(signUpData.email);
         setEmailSent(true);
         setSuccess(t('auth.checkEmail'));
+        try {
+          const { trackEvent } = await import('@/lib/analytics');
+          trackEvent('signup_completed', {
+            method: 'email',
+            user_type: signUpData.userType,
+            profile_type: signUpData.profileType,
+          });
+        } catch {/* noop */}
       }
     } catch (err) {
       console.error('Sign up error:', err);

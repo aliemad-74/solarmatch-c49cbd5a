@@ -28,6 +28,7 @@ import { useMarketData } from "@/hooks/useMarketData";
 import { toast } from "sonner";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
+import { trackEvent } from "@/lib/analytics";
 import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
 
 export interface SolarEngineData {
@@ -484,6 +485,13 @@ const Index = () => {
         await recordReportGeneration(locationName, calculation.kWInstalled);
       }
 
+      trackEvent("report_generated", {
+        system_kw: calculation.kWInstalled,
+        building_type: buildingType,
+        coverage_ratio: calculation.coverageRatio,
+        payback_years: calculation.paybackYears,
+      });
+
       setTimeout(() => {
         document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
       }, 100);
@@ -495,6 +503,12 @@ const Index = () => {
   };
 
   const handleCalculate = () => {
+    trackEvent("calculate_clicked", {
+      authenticated: !!(user && profile),
+      building_type: buildingType,
+      monthly_consumption: monthlyConsumption,
+    });
+
     if (!user || !profile) {
       setShowAuthModal(true);
       setPendingCalculation(true);
