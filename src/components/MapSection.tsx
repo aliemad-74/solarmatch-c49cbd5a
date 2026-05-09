@@ -185,72 +185,82 @@ const MapSection = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===== Initialize preview map =====
-  useEffect(() => {
-    if (!previewContainerRef.current || previewMapRef.current) return;
-    const map = new mapboxgl.Map({
-      container: previewContainerRef.current,
-      style: MAP_STYLE,
-      center: [currentLocation.lng, currentLocation.lat],
-      zoom: 18,
-      attributionControl: false,
-    });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-    map.on("load", () => {
-      addPolygonLayers(map);
-      renderPolygonOnMap(map, polygonPoints);
-    });
-    previewMapRef.current = map;
-    return () => {
-      map.remove();
-      previewMapRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ===== Initialize fullscreen map when entering drawing phase =====
-  useEffect(() => {
-    if (drawingPhase !== "fullscreen") return;
-    if (!fullscreenContainerRef.current || fullscreenMapRef.current) return;
-    const map = new mapboxgl.Map({
-      container: fullscreenContainerRef.current,
-      style: MAP_STYLE,
-      center: [currentLocation.lng, currentLocation.lat],
-      zoom: 19,
-      attributionControl: false,
-    });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-    map.getCanvas().style.cursor = "crosshair";
-
-    map.on("load", () => {
-      addPolygonLayers(map);
-      renderPolygonOnMap(map, polygonPoints);
-    });
-
-    map.on("click", (e) => {
-      const newPoint = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-      setPolygonPoints((prev) => {
-        if (prev.length >= MIN_POLYGON_POINTS) {
-          const first = prev[0];
-          const dx = (first.lng - newPoint.lng) * 111320 * Math.cos((first.lat * Math.PI) / 180);
-          const dy = (first.lat - newPoint.lat) * 110540;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 5) {
-            setTimeout(() => completePolygon(prev), 0);
-            return prev;
-          }
+  // ===== Callback ref: init preview map whenever its container mounts =====
+  const previewContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) {
+        if (previewMapRef.current) {
+          previewMapRef.current.remove();
+          previewMapRef.current = null;
         }
-        return [...prev, newPoint];
+        return;
+      }
+      if (previewMapRef.current) return;
+      const map = new mapboxgl.Map({
+        container: node,
+        style: MAP_STYLE,
+        center: [currentLocation.lng, currentLocation.lat],
+        zoom: 19,
+        maxZoom: 22,
+        attributionControl: false,
       });
-    });
-
-    fullscreenMapRef.current = map;
-    return () => {
-      map.remove();
-      fullscreenMapRef.current = null;
-    };
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+      map.on("load", () => {
+        addPolygonLayers(map);
+        renderPolygonOnMap(map, polygonPoints);
+      });
+      previewMapRef.current = map;
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drawingPhase]);
+    [],
+  );
+
+  // ===== Callback ref: init fullscreen drawing map =====
+  const fullscreenContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) {
+        if (fullscreenMapRef.current) {
+          fullscreenMapRef.current.remove();
+          fullscreenMapRef.current = null;
+        }
+        return;
+      }
+      if (fullscreenMapRef.current) return;
+      const map = new mapboxgl.Map({
+        container: node,
+        style: MAP_STYLE,
+        center: [currentLocation.lng, currentLocation.lat],
+        zoom: 20,
+        maxZoom: 22,
+        attributionControl: false,
+      });
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+      map.getCanvas().style.cursor = "crosshair";
+      map.on("load", () => {
+        addPolygonLayers(map);
+        renderPolygonOnMap(map, polygonPoints);
+      });
+      map.on("click", (e) => {
+        const newPoint = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+        setPolygonPoints((prev) => {
+          if (prev.length >= MIN_POLYGON_POINTS) {
+            const first = prev[0];
+            const dx = (first.lng - newPoint.lng) * 111320 * Math.cos((first.lat * Math.PI) / 180);
+            const dy = (first.lat - newPoint.lat) * 110540;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 5) {
+              setTimeout(() => completePolygon(prev), 0);
+              return prev;
+            }
+          }
+          return [...prev, newPoint];
+        });
+      });
+      fullscreenMapRef.current = map;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   // Pan preview map when location changes
   useEffect(() => {
