@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Phone, Mail, MessageCircle, Clock, User, Loader2, CheckCircle } from "lucide-react";
+import { useUserAuth } from "@/contexts/UserAuthContext";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ interface ContactExpertDialogProps {
 
 const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDialogProps) => {
   const { t } = useTranslation();
+  const { profile } = useUserAuth();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -44,6 +46,18 @@ const ContactExpertDialog = ({ results, locationName, trigger }: ContactExpertDi
     preferredContact: "call",
     bestTime: "morning",
   });
+
+  // Prefill from logged-in user's account when the dialog opens
+  useEffect(() => {
+    if (open && profile) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prev.name || profile.name || "",
+        email: prev.email || profile.email || "",
+        phone: prev.phone || profile.phone || "",
+      }));
+    }
+  }, [open, profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

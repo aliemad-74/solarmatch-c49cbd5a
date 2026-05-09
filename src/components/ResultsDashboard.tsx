@@ -310,6 +310,33 @@ const ResultsDashboard = ({ results, isVisible, locationName, shareableParams, m
             </div>
           </div>
 
+          {/* Contact Expert CTA — prominent, right below the headline numbers */}
+          <div className="mt-4 p-4 md:p-5 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-solar-gold/5 print:hidden">
+            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+              <div className="flex-1">
+                <h4 className="font-display text-base md:text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-primary" />
+                  {isAr ? "تكلم مع خبير الطاقة الشمسية" : "Talk to a Solar Expert"}
+                </h4>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  {isAr
+                    ? "سيب رقمك وهنتواصل معاك بعرض مخصص بناءً على هذا التقرير."
+                    : "Leave your number and we'll contact you with a tailored offer based on this report."}
+                </p>
+              </div>
+              <ContactExpertDialog
+                results={results}
+                locationName={locationName}
+                trigger={
+                  <Button size="lg" className="w-full md:w-auto shrink-0 shadow-md">
+                    <Phone className="w-4 h-4" />
+                    {isAr ? "تواصل مع خبير" : "Contact Expert"}
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+
           {/* Warnings */}
           {results.warnings.length > 0 && (
             <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-xl print:hidden">
