@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, PenTool, Trash2, Loader2, Undo2, Navigation, X, Check, Layers } from "lucide-react";
+import { Search, PenTool, Trash2, Loader2, Undo2, Navigation, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -13,7 +13,7 @@ const MAPBOX_TOKEN =
   "pk.eyJ1IjoiYWxpZW1hZDc0IiwiYSI6ImNtb3llNDgyeTBobGMycXF4ZzR4Z3V5azgifQ.1I2brc382ZP3gs3A4aNKfg";
 
 // ===== Tile providers (highest free quality available for Egypt) =====
-type Provider = "google" | "esri";
+type Provider = "google";
 
 const PROVIDERS: Record<
   Provider,
@@ -26,12 +26,6 @@ const PROVIDERS: Record<
     maxNativeZoom: 22,
     attribution: "© Google",
     label: "Google",
-  },
-  esri: {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    maxNativeZoom: 19,
-    attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
-    label: "Esri",
   },
 };
 
@@ -479,16 +473,6 @@ const MapSection = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setProvider(provider === "google" ? "esri" : "google")}
-              variant="outline"
-              size="sm"
-              className="gap-1"
-              title={isArabic ? "تبديل مصدر الصور" : "Switch imagery"}
-            >
-              <Layers className="w-4 h-4" />
-              {PROVIDERS[provider].label}
-            </Button>
             {polygonPoints.length > 0 && (
               <Button onClick={undoLastPoint} variant="outline" size="sm" className="gap-1">
                 <Undo2 className="w-4 h-4" />
@@ -633,15 +617,6 @@ const MapSection = ({
           >
             <PenTool className="w-4 h-4" />
             {isArabic ? "ارسم السطح" : "Draw Rooftop"}
-          </Button>
-          <Button
-            onClick={() => setProvider(provider === "google" ? "esri" : "google")}
-            variant="outline"
-            className="flex items-center gap-2 bg-card border-border"
-            title={isArabic ? "تبديل مصدر الصور" : "Switch imagery"}
-          >
-            <Layers className="w-4 h-4" />
-            {PROVIDERS[provider].label}
           </Button>
         </div>
 
