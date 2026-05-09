@@ -78,22 +78,8 @@ const UsersTable = () => {
     },
   });
 
-  const updateSubscriptionMutation = useMutation({
-    mutationFn: async ({ userId, updates }: { userId: string; updates: Record<string, any> }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("user_id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });
-      toast({ title: "Subscription updated", description: "User subscription has been updated." });
-    },
-    onError: () => {
-      toast({ title: t("admin.error"), description: "Failed to update subscription", variant: "destructive" });
-    },
-  });
+  // Subscription system removed.
+
 
   const changeRoleMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
