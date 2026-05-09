@@ -503,6 +503,12 @@ const Index = () => {
   };
 
   const handleCalculate = () => {
+    trackEvent("calculate_clicked", {
+      authenticated: !!(user && profile),
+      building_type: buildingType,
+      monthly_consumption: monthlyConsumption,
+    });
+
     if (!user || !profile) {
       setShowAuthModal(true);
       setPendingCalculation(true);
