@@ -19,9 +19,9 @@ const PROVIDERS: Record<
   Provider,
   { url: string; subdomains?: string[]; maxNativeZoom: number; attribution: string; label: string }
 > = {
-  // Google Hybrid satellite — highest resolution in Egypt (Cairo/Alex/Delta/Upper Egypt).
+  // Google Hybrid satellite — highest resolution in Egypt.
   google: {
-    url: "https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    url: "https://mt{s}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga",
     subdomains: ["0", "1", "2", "3"],
     maxNativeZoom: 21,
     attribution: "© Google",
@@ -90,14 +90,18 @@ const MapSection = ({
 
   const searchDebounceRef = useRef<number | null>(null);
   const polygonPointsRef = useRef<LatLng[]>([]);
+  const currentLocationRef = useRef(DEFAULT_LOCATION);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  // Keep a ref synced with polygonPoints for stable handlers
+  // Keep refs synced for stable handlers
   useEffect(() => {
     polygonPointsRef.current = polygonPoints;
   }, [polygonPoints]);
+  useEffect(() => {
+    currentLocationRef.current = currentLocation;
+  }, [currentLocation]);
 
   // ===== Area calculation =====
   const calculatePolygonArea = useCallback((points: LatLng[]) => {
@@ -287,7 +291,7 @@ const MapSection = ({
       if (previewMapRef.current) return;
 
       const map = L.map(node, {
-        center: [currentLocation.lat, currentLocation.lng],
+        center: [currentLocationRef.current.lat, currentLocationRef.current.lng],
         zoom: 19,
         maxZoom: 22,
         zoomControl: true,
@@ -326,7 +330,7 @@ const MapSection = ({
       if (fullscreenMapRef.current) return;
 
       const map = L.map(node, {
-        center: [currentLocation.lat, currentLocation.lng],
+        center: [currentLocationRef.current.lat, currentLocationRef.current.lng],
         zoom: 20,
         maxZoom: 22,
         zoomControl: true,
