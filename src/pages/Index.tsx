@@ -485,6 +485,13 @@ const Index = () => {
         await recordReportGeneration(locationName, calculation.kWInstalled);
       }
 
+      trackEvent("report_generated", {
+        system_kw: calculation.kWInstalled,
+        building_type: buildingType,
+        coverage_ratio: calculation.coverageRatio,
+        payback_years: calculation.paybackYears,
+      });
+
       setTimeout(() => {
         document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
       }, 100);
