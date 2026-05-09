@@ -94,6 +94,7 @@ const files = {
   "sitemap-guides.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/guides/${s}` : `/guides/${s}`, GUIDE)),
   "sitemap-financing.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/financing/${s}` : `/financing/${s}`, FIN)),
   "sitemap-roi.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/solar-roi/${s}` : `/solar-roi/${s}`, ROI)),
+  "sitemap-blog.xml": wrap(dualUrls((s, l) => l === "ar" ? `/ar/blog/${encodeURIComponent(s)}` : `/blog/${s}`, BLOG)),
 };
 
 const index = `<?xml version="1.0" encoding="UTF-8"?>
