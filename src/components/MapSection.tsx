@@ -32,7 +32,7 @@ interface LatLng {
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
-const MAP_STYLE = "mapbox://styles/mapbox/satellite-streets-v12";
+const MAP_STYLE = "mapbox://styles/mapbox/satellite-v9";
 
 type DrawingPhase = "idle" | "fullscreen";
 
