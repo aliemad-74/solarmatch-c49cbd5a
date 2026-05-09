@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Phone, Mail, MessageCircle, Clock, User, Loader2, CheckCircle } from "lucide-react";
+import { Phone, Mail, Clock, User, Loader2, CheckCircle } from "lucide-react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import {
   Dialog,
