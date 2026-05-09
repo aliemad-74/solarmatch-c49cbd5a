@@ -530,14 +530,14 @@ const Index = () => {
         path="/"
         arPath="/?lang=ar"
         en={{
-          title: "SolarMatch | AI Solar Feasibility Platform for Egypt",
-          description: "SolarMatch helps homeowners, farms, and businesses in Egypt estimate solar system size, savings, ROI, payback period, and installation cost using AI-powered solar analysis.",
-          keywords: "SolarMatch, Solar Match, solar calculator Egypt, solar panels Egypt, solar feasibility Egypt, AI solar calculator, solar ROI Egypt, solar cost Egypt, solar payback calculator, solar for farms Egypt, solar for businesses Egypt, solar savings calculator, solar system size calculator, solar installation Egypt",
+          title: "SolarMatch — Go Solar, Get Matched | AI Solar Feasibility for Egypt",
+          description: "Go Solar, Get Matched. SolarMatch helps homeowners, farms, and businesses in Egypt estimate solar system size, savings, ROI, payback period, and installation cost using AI-powered solar analysis.",
+          keywords: "SolarMatch, Solar Match, Go Solar Get Matched, solar calculator Egypt, solar panels Egypt, solar feasibility Egypt, AI solar calculator, solar ROI Egypt, solar cost Egypt, solar payback calculator, solar for farms Egypt, solar for businesses Egypt, solar savings calculator, solar system size calculator, solar installation Egypt",
         }}
         ar={{
-          title: "SolarMatch | منصة ذكية لدراسة جدوى الطاقة الشمسية في مصر",
-          description: "يساعدك SolarMatch على حساب تكلفة الطاقة الشمسية، التوفير، العائد على الاستثمار، وفترة الاسترداد للمنازل والمزارع والشركات في مصر.",
-          keywords: "SolarMatch, الطاقة الشمسية في مصر, حاسبة الطاقة الشمسية, دراسة جدوى الطاقة الشمسية, تكلفة الطاقة الشمسية في مصر, الطاقة الشمسية للمزارع, الطاقة الشمسية للشركات, ألواح شمسية للمنازل, تركيب الطاقة الشمسية في مصر",
+          title: "SolarMatch — Go Solar, Get Matched | الطاقة الشمسية في مصر",
+          description: "Go Solar, Get Matched. يساعدك SolarMatch على حساب تكلفة الطاقة الشمسية، التوفير، العائد على الاستثمار، وفترة الاسترداد للمنازل والمزارع والشركات في مصر.",
+          keywords: "SolarMatch, Go Solar Get Matched, الطاقة الشمسية في مصر, حاسبة الطاقة الشمسية, دراسة جدوى الطاقة الشمسية, تكلفة الطاقة الشمسية في مصر, الطاقة الشمسية للمزارع, الطاقة الشمسية للشركات, ألواح شمسية للمنازل, تركيب الطاقة الشمسية في مصر",
         }}
       />
       <Header />
