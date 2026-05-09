@@ -1,18 +1,39 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, PenTool, Trash2, Loader2, Undo2, Navigation, X, Check } from "lucide-react";
+import { Search, PenTool, Trash2, Loader2, Undo2, Navigation, X, Check, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import * as turf from "@turf/turf";
 import { fetchClimateData, getLocationName, ClimateData } from "@/lib/climateApi";
 import { toast } from "sonner";
 
-// TEMPORARY: secret token used while Google Maps billing is being set up.
-// Replace with a public pk.* token from https://account.mapbox.com/access-tokens/
+// Mapbox token only used for the Geocoding (search) API — the map itself is Leaflet.
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiYWxpZW1hZDc0IiwiYSI6ImNtb3llNDgyeTBobGMycXF4ZzR4Z3V5azgifQ.1I2brc382ZP3gs3A4aNKfg";
-mapboxgl.accessToken = MAPBOX_TOKEN;
+
+// ===== Tile providers (highest free quality available for Egypt) =====
+type Provider = "google" | "esri";
+
+const PROVIDERS: Record<
+  Provider,
+  { url: string; subdomains?: string[]; maxNativeZoom: number; attribution: string; label: string }
+> = {
+  // Google Hybrid satellite — highest resolution in Egypt (Cairo/Alex/Delta/Upper Egypt).
+  google: {
+    url: "https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    subdomains: ["0", "1", "2", "3"],
+    maxNativeZoom: 21,
+    attribution: "© Google",
+    label: "Google",
+  },
+  esri: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    maxNativeZoom: 19,
+    attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
+    label: "Esri",
+  },
+};
 
 interface MapSectionProps {
   onAreaCalculated?: (area: number) => void;
@@ -32,31 +53,6 @@ interface LatLng {
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
-// Custom style using Esri World Imagery — much higher resolution over Egypt
-// (Cairo/Alexandria/Delta) than Mapbox satellite. Free, no token required.
-const MAP_STYLE: mapboxgl.StyleSpecification = {
-  version: 8,
-  sources: {
-    "esri-imagery": {
-      type: "raster",
-      tiles: [
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      ],
-      tileSize: 256,
-      maxzoom: 19,
-      attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
-    },
-  },
-  layers: [
-    {
-      id: "esri-imagery-layer",
-      type: "raster",
-      source: "esri-imagery",
-      minzoom: 0,
-      maxzoom: 22,
-    },
-  ],
-};
 
 type DrawingPhase = "idle" | "fullscreen";
 
@@ -80,16 +76,30 @@ const MapSection = ({
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   const [drawingPhase, setDrawingPhase] = useState<DrawingPhase>("idle");
+  const [provider, setProvider] = useState<Provider>("google");
 
-  // Two map instances: preview + fullscreen drawing
-  const previewMapRef = useRef<mapboxgl.Map | null>(null);
-  const fullscreenMapRef = useRef<mapboxgl.Map | null>(null);
+  const previewMapRef = useRef<L.Map | null>(null);
+  const previewTileRef = useRef<L.TileLayer | null>(null);
+  const previewPolyRef = useRef<L.Polygon | L.Polyline | null>(null);
+  const previewMarkersRef = useRef<L.CircleMarker[]>([]);
+
+  const fullscreenMapRef = useRef<L.Map | null>(null);
+  const fullscreenTileRef = useRef<L.TileLayer | null>(null);
+  const fullscreenPolyRef = useRef<L.Polygon | L.Polyline | null>(null);
+  const fullscreenMarkersRef = useRef<L.CircleMarker[]>([]);
+
   const searchDebounceRef = useRef<number | null>(null);
+  const polygonPointsRef = useRef<LatLng[]>([]);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  // Calculate polygon area using Turf.js
+  // Keep a ref synced with polygonPoints for stable handlers
+  useEffect(() => {
+    polygonPointsRef.current = polygonPoints;
+  }, [polygonPoints]);
+
+  // ===== Area calculation =====
   const calculatePolygonArea = useCallback((points: LatLng[]) => {
     if (points.length < 3) return 0;
     const coordinates = points.map((p) => [p.lng, p.lat]);
@@ -98,96 +108,89 @@ const MapSection = ({
     return Math.round(turf.area(polygon) * 100) / 100;
   }, []);
 
-  // ===== Render polygon (points + lines + fill) onto a map =====
+  // ===== Render polygon onto a Leaflet map =====
   const renderPolygonOnMap = useCallback(
-    (map: mapboxgl.Map, points: LatLng[]) => {
-      const polySource = map.getSource("poly") as mapboxgl.GeoJSONSource | undefined;
-      const ptsSource = map.getSource("pts") as mapboxgl.GeoJSONSource | undefined;
-      if (!polySource || !ptsSource) return;
+    (
+      map: L.Map,
+      points: LatLng[],
+      polyRef: React.MutableRefObject<L.Polygon | L.Polyline | null>,
+      markersRef: React.MutableRefObject<L.CircleMarker[]>,
+    ) => {
+      // Clear old
+      if (polyRef.current) {
+        polyRef.current.remove();
+        polyRef.current = null;
+      }
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
 
-      const closedCoords =
-        points.length >= 3
-          ? [...points.map((p) => [p.lng, p.lat]), [points[0].lng, points[0].lat]]
-          : points.map((p) => [p.lng, p.lat]);
+      if (points.length === 0) return;
 
-      polySource.setData({
-        type: "Feature",
-        geometry:
-          points.length >= 3
-            ? { type: "Polygon", coordinates: [closedCoords] }
-            : { type: "LineString", coordinates: closedCoords },
-        properties: {},
-      } as any);
+      const latlngs = points.map((p) => [p.lat, p.lng]) as [number, number][];
 
-      ptsSource.setData({
-        type: "FeatureCollection",
-        features: points.map((p, i) => ({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-          properties: { first: i === 0 },
-        })),
-      } as any);
+      if (points.length >= 3) {
+        polyRef.current = L.polygon(latlngs, {
+          color: "#14b8a6",
+          weight: 2,
+          fillColor: "#14b8a6",
+          fillOpacity: 0.4,
+        }).addTo(map);
+      } else if (points.length >= 2) {
+        polyRef.current = L.polyline(latlngs, {
+          color: "#14b8a6",
+          weight: 2,
+        }).addTo(map);
+      }
+
+      points.forEach((p, i) => {
+        const marker = L.circleMarker([p.lat, p.lng], {
+          radius: 6,
+          color: "#ffffff",
+          weight: 2,
+          fillColor: i === 0 ? "#f59e0b" : "#14b8a6",
+          fillOpacity: 1,
+        }).addTo(map);
+        markersRef.current.push(marker);
+      });
     },
     [],
   );
 
-  // Add polygon layers to a map
-  const addPolygonLayers = useCallback((map: mapboxgl.Map) => {
-    if (map.getSource("poly")) return;
-    map.addSource("poly", {
-      type: "geojson",
-      data: { type: "FeatureCollection", features: [] } as any,
-    });
-    map.addSource("pts", {
-      type: "geojson",
-      data: { type: "FeatureCollection", features: [] } as any,
-    });
-    map.addLayer({
-      id: "poly-fill",
-      type: "fill",
-      source: "poly",
-      filter: ["==", ["geometry-type"], "Polygon"],
-      paint: { "fill-color": "#14b8a6", "fill-opacity": 0.4 },
-    });
-    map.addLayer({
-      id: "poly-outline",
-      type: "line",
-      source: "poly",
-      paint: { "line-color": "#14b8a6", "line-width": 2 },
-    });
-    map.addLayer({
-      id: "pts-circle",
-      type: "circle",
-      source: "pts",
-      paint: {
-        "circle-radius": 6,
-        "circle-color": ["case", ["get", "first"], "#f59e0b", "#14b8a6"],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 2,
-      },
-    });
-  }, []);
-
-  // Update both maps' polygon rendering whenever points change
+  // Re-render polygon on either map when points change
   useEffect(() => {
-    if (previewMapRef.current && previewMapRef.current.isStyleLoaded()) {
-      renderPolygonOnMap(previewMapRef.current, polygonPoints);
+    if (previewMapRef.current) {
+      renderPolygonOnMap(previewMapRef.current, polygonPoints, previewPolyRef, previewMarkersRef);
     }
-    if (fullscreenMapRef.current && fullscreenMapRef.current.isStyleLoaded()) {
-      renderPolygonOnMap(fullscreenMapRef.current, polygonPoints);
+    if (fullscreenMapRef.current) {
+      renderPolygonOnMap(
+        fullscreenMapRef.current,
+        polygonPoints,
+        fullscreenPolyRef,
+        fullscreenMarkersRef,
+      );
     }
   }, [polygonPoints, renderPolygonOnMap]);
 
-  // Recalculate area when not drawing
+  // Update tile layer when provider changes
   useEffect(() => {
-    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
-      const area = calculatePolygonArea(polygonPoints);
-      setCalculatedArea(area);
-      if (onAreaCalculated && area > 0) onAreaCalculated(area);
-    }
-  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
+    const cfg = PROVIDERS[provider];
+    [previewMapRef, fullscreenMapRef].forEach((mapRef, idx) => {
+      const map = mapRef.current;
+      if (!map) return;
+      const tileRef = idx === 0 ? previewTileRef : fullscreenTileRef;
+      if (tileRef.current) {
+        tileRef.current.remove();
+      }
+      tileRef.current = L.tileLayer(cfg.url, {
+        subdomains: cfg.subdomains,
+        maxNativeZoom: cfg.maxNativeZoom,
+        maxZoom: 22,
+        attribution: cfg.attribution,
+      }).addTo(map);
+    });
+  }, [provider]);
 
-  // Climate fetch
+  // ===== Climate =====
   const fetchClimateForLocation = useCallback(
     async (lat: number, lng: number) => {
       setIsLoadingClimate(true);
@@ -209,133 +212,15 @@ const MapSection = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===== Callback ref: init preview map whenever its container mounts =====
-  const previewContainerRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (!node) {
-        if (previewMapRef.current) {
-          previewMapRef.current.remove();
-          previewMapRef.current = null;
-        }
-        return;
-      }
-      if (previewMapRef.current) return;
-      const map = new mapboxgl.Map({
-        container: node,
-        style: MAP_STYLE,
-        center: [currentLocation.lng, currentLocation.lat],
-        zoom: 19,
-        maxZoom: 22,
-        attributionControl: false,
-      });
-      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-      map.on("load", () => {
-        addPolygonLayers(map);
-        renderPolygonOnMap(map, polygonPoints);
-      });
-      previewMapRef.current = map;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  // ===== Callback ref: init fullscreen drawing map =====
-  const fullscreenContainerRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (!node) {
-        if (fullscreenMapRef.current) {
-          fullscreenMapRef.current.remove();
-          fullscreenMapRef.current = null;
-        }
-        return;
-      }
-      if (fullscreenMapRef.current) return;
-      const map = new mapboxgl.Map({
-        container: node,
-        style: MAP_STYLE,
-        center: [currentLocation.lng, currentLocation.lat],
-        zoom: 20,
-        maxZoom: 22,
-        attributionControl: false,
-      });
-      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-      map.getCanvas().style.cursor = "crosshair";
-      map.on("load", () => {
-        addPolygonLayers(map);
-        renderPolygonOnMap(map, polygonPoints);
-      });
-      map.on("click", (e) => {
-        const newPoint = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-        setPolygonPoints((prev) => {
-          if (prev.length >= MIN_POLYGON_POINTS) {
-            const first = prev[0];
-            const dx = (first.lng - newPoint.lng) * 111320 * Math.cos((first.lat * Math.PI) / 180);
-            const dy = (first.lat - newPoint.lat) * 110540;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 5) {
-              setTimeout(() => completePolygon(prev), 0);
-              return prev;
-            }
-          }
-          return [...prev, newPoint];
-        });
-      });
-      fullscreenMapRef.current = map;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  // Pan preview map when location changes
-  useEffect(() => {
-    if (previewMapRef.current) {
-      previewMapRef.current.flyTo({
-        center: [currentLocation.lng, currentLocation.lat],
-        zoom: 19,
-        duration: 800,
-      });
-    }
-  }, [currentLocation]);
-
-  // ===== Mapbox Geocoding (autocomplete) =====
-  useEffect(() => {
-    if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
-    if (!searchQuery.trim() || searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    searchDebounceRef.current = window.setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          searchQuery,
-        )}.json?country=eg&limit=5&language=${isArabic ? "ar" : "en"}&access_token=${MAPBOX_TOKEN}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        const results = (data.features || []).map((f: any) => ({
-          name: f.place_name,
-          lng: f.center[0],
-          lat: f.center[1],
-        }));
-        setSearchResults(results);
-        setShowResults(true);
-      } catch (e) {
-        console.error("Geocoding error:", e);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 350);
-    return () => {
-      if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
-    };
-  }, [searchQuery, isArabic]);
-
-  // Update location
+  // ===== Update location =====
   const updateLocation = useCallback(
     async (lat: number, lng: number, name?: string) => {
       const locationName = name || (await getLocationName(lat, lng));
       setCurrentLocation({ lat, lng, name: locationName });
       onLocationChange?.(locationName);
+      if (previewMapRef.current) {
+        previewMapRef.current.setView([lat, lng], 19, { animate: true });
+      }
       setIsLoadingClimate(true);
       try {
         const data = await fetchClimateData(lat, lng);
@@ -350,7 +235,7 @@ const MapSection = ({
     [onClimateDataFetched, onLocationChange],
   );
 
-  // Complete polygon
+  // ===== Complete polygon =====
   const completePolygon = useCallback(
     async (points: LatLng[]) => {
       if (points.length >= MIN_POLYGON_POINTS) {
@@ -386,7 +271,134 @@ const MapSection = ({
     ],
   );
 
-  // GPS detection
+  // ===== Preview map: callback ref (mounts/remounts cleanly) =====
+  const previewContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) {
+        if (previewMapRef.current) {
+          previewMapRef.current.remove();
+          previewMapRef.current = null;
+          previewTileRef.current = null;
+          previewPolyRef.current = null;
+          previewMarkersRef.current = [];
+        }
+        return;
+      }
+      if (previewMapRef.current) return;
+
+      const map = L.map(node, {
+        center: [currentLocation.lat, currentLocation.lng],
+        zoom: 19,
+        maxZoom: 22,
+        zoomControl: true,
+        attributionControl: true,
+      });
+      const cfg = PROVIDERS[provider];
+      previewTileRef.current = L.tileLayer(cfg.url, {
+        subdomains: cfg.subdomains,
+        maxNativeZoom: cfg.maxNativeZoom,
+        maxZoom: 22,
+        attribution: cfg.attribution,
+      }).addTo(map);
+      previewMapRef.current = map;
+      // Render any existing polygon
+      renderPolygonOnMap(map, polygonPointsRef.current, previewPolyRef, previewMarkersRef);
+      // Ensure proper sizing
+      setTimeout(() => map.invalidateSize(), 0);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  // ===== Fullscreen drawing map: callback ref =====
+  const fullscreenContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) {
+        if (fullscreenMapRef.current) {
+          fullscreenMapRef.current.remove();
+          fullscreenMapRef.current = null;
+          fullscreenTileRef.current = null;
+          fullscreenPolyRef.current = null;
+          fullscreenMarkersRef.current = [];
+        }
+        return;
+      }
+      if (fullscreenMapRef.current) return;
+
+      const map = L.map(node, {
+        center: [currentLocation.lat, currentLocation.lng],
+        zoom: 20,
+        maxZoom: 22,
+        zoomControl: true,
+        attributionControl: true,
+      });
+      const cfg = PROVIDERS[provider];
+      fullscreenTileRef.current = L.tileLayer(cfg.url, {
+        subdomains: cfg.subdomains,
+        maxNativeZoom: cfg.maxNativeZoom,
+        maxZoom: 22,
+        attribution: cfg.attribution,
+      }).addTo(map);
+      map.getContainer().style.cursor = "crosshair";
+
+      map.on("click", (e: L.LeafletMouseEvent) => {
+        const newPoint = { lat: e.latlng.lat, lng: e.latlng.lng };
+        const prev = polygonPointsRef.current;
+        if (prev.length >= MIN_POLYGON_POINTS) {
+          const first = prev[0];
+          const dx = (first.lng - newPoint.lng) * 111320 * Math.cos((first.lat * Math.PI) / 180);
+          const dy = (first.lat - newPoint.lat) * 110540;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 5) {
+            setTimeout(() => completePolygon(prev), 0);
+            return;
+          }
+        }
+        setPolygonPoints([...prev, newPoint]);
+      });
+
+      fullscreenMapRef.current = map;
+      renderPolygonOnMap(map, polygonPointsRef.current, fullscreenPolyRef, fullscreenMarkersRef);
+      setTimeout(() => map.invalidateSize(), 0);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  // ===== Search (Mapbox Geocoding) =====
+  useEffect(() => {
+    if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    searchDebounceRef.current = window.setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          searchQuery,
+        )}.json?country=eg&limit=5&language=${isArabic ? "ar" : "en"}&access_token=${MAPBOX_TOKEN}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = (data.features || []).map((f: any) => ({
+          name: f.place_name,
+          lng: f.center[0],
+          lat: f.center[1],
+        }));
+        setSearchResults(results);
+        setShowResults(true);
+      } catch (e) {
+        console.error("Geocoding error:", e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+    return () => {
+      if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery, isArabic]);
+
+  // ===== GPS =====
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error(t("map.gpsNotSupported"));
@@ -409,7 +421,7 @@ const MapSection = ({
     );
   }, [t, updateLocation]);
 
-  // Clear/undo
+  // ===== Polygon helpers =====
   const clearPolygon = useCallback(() => {
     setPolygonPoints([]);
     setCalculatedArea(null);
@@ -417,7 +429,6 @@ const MapSection = ({
   const undoLastPoint = useCallback(() => {
     setPolygonPoints((prev) => prev.slice(0, -1));
   }, []);
-
   const startDrawing = useCallback(() => {
     clearPolygon();
     setIsDrawingMode(true);
@@ -430,7 +441,16 @@ const MapSection = ({
     updateLocation(r.lat, r.lng, r.name.split(",")[0]);
   };
 
-  // ===== Fullscreen drawing overlay =====
+  // Recalc area when not drawing
+  useEffect(() => {
+    if (!isDrawingMode && polygonPoints.length >= MIN_POLYGON_POINTS) {
+      const area = calculatePolygonArea(polygonPoints);
+      setCalculatedArea(area);
+      if (onAreaCalculated && area > 0) onAreaCalculated(area);
+    }
+  }, [polygonPoints, isDrawingMode, calculatePolygonArea, onAreaCalculated]);
+
+  // ===== Fullscreen drawing UI =====
   if (drawingPhase === "fullscreen") {
     return (
       <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
@@ -452,6 +472,16 @@ const MapSection = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setProvider(provider === "google" ? "esri" : "google")}
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              title={isArabic ? "تبديل مصدر الصور" : "Switch imagery"}
+            >
+              <Layers className="w-4 h-4" />
+              {PROVIDERS[provider].label}
+            </Button>
             {polygonPoints.length > 0 && (
               <Button onClick={undoLastPoint} variant="outline" size="sm" className="gap-1">
                 <Undo2 className="w-4 h-4" />
@@ -531,7 +561,7 @@ const MapSection = ({
           <p className="text-muted-foreground max-w-xl mx-auto">{t("map.subtitle")}</p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search */}
         <div className="max-w-lg mx-auto mb-6 animate-slide-up relative z-50">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
@@ -567,9 +597,9 @@ const MapSection = ({
           )}
         </div>
 
-        {/* GPS + Draw Buttons */}
+        {/* Buttons */}
         <div
-          className="flex justify-center gap-3 mb-6 animate-slide-up"
+          className="flex justify-center flex-wrap gap-3 mb-6 animate-slide-up"
           style={{ animationDelay: "0.1s" }}
         >
           <Button
@@ -597,6 +627,15 @@ const MapSection = ({
             <PenTool className="w-4 h-4" />
             {isArabic ? "ارسم السطح" : "Draw Rooftop"}
           </Button>
+          <Button
+            onClick={() => setProvider(provider === "google" ? "esri" : "google")}
+            variant="outline"
+            className="flex items-center gap-2 bg-card border-border"
+            title={isArabic ? "تبديل مصدر الصور" : "Switch imagery"}
+          >
+            <Layers className="w-4 h-4" />
+            {PROVIDERS[provider].label}
+          </Button>
         </div>
 
         {calculatedArea !== null && (
@@ -608,7 +647,7 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map preview */}
+        {/* Preview map */}
         <div
           className="relative rounded-2xl overflow-hidden shadow-xl border border-border/50 animate-scale-in transition-all duration-300"
           style={{ animationDelay: "0.2s" }}
@@ -617,7 +656,7 @@ const MapSection = ({
             <div ref={previewContainerRef} className="absolute inset-0" />
           </div>
 
-          <div className="absolute bottom-4 start-4 glass rounded-lg px-4 py-2 shadow-lg z-[1000]">
+          <div className="absolute bottom-4 start-4 glass rounded-lg px-4 py-2 shadow-lg z-[1000] pointer-events-none">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-solar-green animate-pulse" />
               <span className="text-sm font-medium text-foreground">
@@ -637,7 +676,7 @@ const MapSection = ({
             ) : null}
           </div>
 
-          <div className="absolute bottom-4 end-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000]">
+          <div className="absolute bottom-4 end-4 glass rounded-lg px-3 py-1.5 shadow-lg z-[1000] pointer-events-none">
             <p className="text-xs text-muted-foreground">
               {isArabic ? "البيانات:" : "Data:"}{" "}
               <span className="text-foreground font-medium">NASA POWER</span>
