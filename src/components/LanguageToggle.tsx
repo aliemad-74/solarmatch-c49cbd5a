@@ -3,29 +3,32 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { setLanguage } from "@/i18n";
+import { BLOG_POSTS } from "@/seo/data/blog";
 
 /**
  * Maps the current pathname to its mirror in the target language.
- * Currently the blog is the only section with hard-coded /ar mirrors,
- * but this helper is centralized so future mirrored routes can be added here.
+ * Blog posts use distinct EN/AR slugs, so we resolve the post and swap.
  */
 const mirrorPath = (pathname: string, target: "en" | "ar"): string => {
   // Blog index
-  if (pathname === "/blog" || pathname === "/blog/") {
-    return target === "ar" ? "/ar/blog" : "/blog";
-  }
-  if (pathname === "/ar/blog" || pathname === "/ar/blog/") {
+  if (pathname === "/blog" || pathname === "/blog/" || pathname === "/ar/blog" || pathname === "/ar/blog/") {
     return target === "ar" ? "/ar/blog" : "/blog";
   }
 
-  // Blog post
+  // Blog post (EN → AR or AR → EN)
   if (pathname.startsWith("/blog/")) {
-    const slug = pathname.slice("/blog/".length);
-    return target === "ar" ? `/ar/blog/${slug}` : `/blog/${slug}`;
+    const slug = decodeURIComponent(pathname.slice("/blog/".length));
+    const post = BLOG_POSTS.find((p) => p.slug === slug);
+    if (post) {
+      return target === "ar" ? `/ar/blog/${encodeURIComponent(post.arSlug)}` : `/blog/${post.slug}`;
+    }
   }
   if (pathname.startsWith("/ar/blog/")) {
-    const slug = pathname.slice("/ar/blog/".length);
-    return target === "ar" ? `/ar/blog/${slug}` : `/blog/${slug}`;
+    const slug = decodeURIComponent(pathname.slice("/ar/blog/".length));
+    const post = BLOG_POSTS.find((p) => p.arSlug === slug);
+    if (post) {
+      return target === "ar" ? `/ar/blog/${encodeURIComponent(post.arSlug)}` : `/blog/${post.slug}`;
+    }
   }
 
   // No mirror — keep same path; rest of the app reacts to i18n.language only.
