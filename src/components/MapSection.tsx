@@ -186,7 +186,7 @@ const MapSection = ({
         tileRef.current.remove();
       }
       tileRef.current = L.tileLayer(cfg.url, {
-        subdomains: cfg.subdomains,
+        subdomains: cfg.subdomains ?? 'abc',
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
         detectRetina: true,
@@ -300,7 +300,7 @@ const MapSection = ({
       });
       const cfg = PROVIDERS[provider];
       previewTileRef.current = L.tileLayer(cfg.url, {
-        subdomains: cfg.subdomains,
+        subdomains: cfg.subdomains ?? 'abc',
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
         detectRetina: true,
@@ -340,7 +340,7 @@ const MapSection = ({
       });
       const cfg = PROVIDERS[provider];
       fullscreenTileRef.current = L.tileLayer(cfg.url, {
-        subdomains: cfg.subdomains,
+        subdomains: cfg.subdomains ?? 'abc',
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
         detectRetina: true,
