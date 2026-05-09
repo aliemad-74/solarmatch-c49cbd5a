@@ -35,8 +35,15 @@ import AdminVisitors from "./pages/admin/AdminVisitors";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import VisitTracker from "./components/VisitTracker";
+import {
+  GovernorateRoute, PropertyTypeRoute, BillRoute,
+  ComparisonRoute, GuideRoute, FinancingRoute, RoiRoute,
+} from "./pages/ProgrammaticSeoRoutes";
+import { initAnalytics } from "./lib/analytics";
 
 import "./i18n"; // Initialize i18n
+
+initAnalytics();
 
 const queryClient = new QueryClient();
 
@@ -94,6 +101,22 @@ const App = () => (
                       element={<SeoTopicPage lang="ar" slug={slug} />}
                     />
                   ))}
+                  {/* Programmatic SEO routes — EN + AR */}
+                  <Route path="/solar/:slug" element={<GovernorateRoute lang="en" />} />
+                  <Route path="/ar/solar/:slug" element={<GovernorateRoute lang="ar" />} />
+                  <Route path="/solar-for/:slug" element={<PropertyTypeRoute lang="en" />} />
+                  <Route path="/ar/solar-for/:slug" element={<PropertyTypeRoute lang="ar" />} />
+                  <Route path="/solar-bill/:slug" element={<BillRoute lang="en" />} />
+                  <Route path="/ar/solar-bill/:slug" element={<BillRoute lang="ar" />} />
+                  <Route path="/compare/:slug" element={<ComparisonRoute lang="en" />} />
+                  <Route path="/ar/compare/:slug" element={<ComparisonRoute lang="ar" />} />
+                  <Route path="/guides/:slug" element={<GuideRoute lang="en" />} />
+                  <Route path="/ar/guides/:slug" element={<GuideRoute lang="ar" />} />
+                  <Route path="/financing/:slug" element={<FinancingRoute lang="en" />} />
+                  <Route path="/ar/financing/:slug" element={<FinancingRoute lang="ar" />} />
+                  <Route path="/solar-roi/:slug" element={<RoiRoute lang="en" />} />
+                  <Route path="/ar/solar-roi/:slug" element={<RoiRoute lang="ar" />} />
+
                   {/* Legacy SEO pricing slug also redirects to features */}
                   <Route path="/pricing-plans" element={<Navigate to="/" replace />} />
                   <Route path="/ar/pricing-plans" element={<Navigate to="/ar" replace />} />
