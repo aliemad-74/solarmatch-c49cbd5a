@@ -23,7 +23,7 @@ const PROVIDERS: Record<
   google: {
     url: "https://mt{s}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga",
     subdomains: ["0", "1", "2", "3"],
-    maxNativeZoom: 21,
+    maxNativeZoom: 22,
     attribution: "© Google",
     label: "Google",
   },
@@ -189,6 +189,7 @@ const MapSection = ({
         subdomains: cfg.subdomains,
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
+        detectRetina: true,
         attribution: cfg.attribution,
       }).addTo(map);
     });
@@ -302,6 +303,7 @@ const MapSection = ({
         subdomains: cfg.subdomains,
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
+        detectRetina: true,
         attribution: cfg.attribution,
       }).addTo(map);
       previewMapRef.current = map;
@@ -341,6 +343,7 @@ const MapSection = ({
         subdomains: cfg.subdomains,
         maxNativeZoom: cfg.maxNativeZoom,
         maxZoom: 22,
+        detectRetina: true,
         attribution: cfg.attribution,
       }).addTo(map);
       map.getContainer().style.cursor = "crosshair";
