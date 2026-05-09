@@ -90,14 +90,18 @@ const MapSection = ({
 
   const searchDebounceRef = useRef<number | null>(null);
   const polygonPointsRef = useRef<LatLng[]>([]);
+  const currentLocationRef = useRef(DEFAULT_LOCATION);
 
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  // Keep a ref synced with polygonPoints for stable handlers
+  // Keep refs synced for stable handlers
   useEffect(() => {
     polygonPointsRef.current = polygonPoints;
   }, [polygonPoints]);
+  useEffect(() => {
+    currentLocationRef.current = currentLocation;
+  }, [currentLocation]);
 
   // ===== Area calculation =====
   const calculatePolygonArea = useCallback((points: LatLng[]) => {
