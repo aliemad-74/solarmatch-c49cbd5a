@@ -58,9 +58,7 @@ const MapSection = ({
   const [drawingPhase, setDrawingPhase] = useState<DrawingPhase>("idle");
 
   // Two map instances: preview + fullscreen drawing
-  const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const previewMapRef = useRef<mapboxgl.Map | null>(null);
-  const fullscreenContainerRef = useRef<HTMLDivElement | null>(null);
   const fullscreenMapRef = useRef<mapboxgl.Map | null>(null);
   const searchDebounceRef = useRef<number | null>(null);
 
