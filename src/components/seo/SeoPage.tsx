@@ -195,15 +195,44 @@ export const SeoPage = ({
                 {isAr ? "ابدأ تحليل سطحك الآن" : "Start your free solar analysis"}
               </h2>
               <p className="opacity-90 mb-6 max-w-xl mx-auto">{ctaSub}</p>
-              <Button asChild size="lg" variant="secondary">
-                <Link to={ctaTo}>
-                  {ctaLabel} <Arrow className="w-4 h-4 ms-2" />
-                </Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button asChild size="lg" variant="secondary">
+                  <Link to={ctaTo}>
+                    {ctaLabel} <Arrow className="w-4 h-4 ms-2" />
+                  </Link>
+                </Button>
+                <SeoLeadDialog
+                  lang={lang}
+                  topic={title}
+                  trigger={
+                    <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10">
+                      <MessageCircle className="w-4 h-4 me-2" />
+                      {isAr ? "تحدث مع خبير" : "Talk to expert"}
+                    </Button>
+                  }
+                />
+              </div>
             </CardContent>
           </Card>
         </article>
       </main>
+
+      {/* Sticky mobile CTA */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t border-border p-3 flex gap-2 shadow-lg">
+        <Button asChild className="flex-1" size="sm">
+          <Link to={ctaTo}>{ctaLabel}</Link>
+        </Button>
+        <SeoLeadDialog
+          lang={lang}
+          topic={title}
+          trigger={
+            <Button variant="outline" size="sm" className="flex-1">
+              <MessageCircle className="w-4 h-4 me-1" />
+              {isAr ? "خبير" : "Expert"}
+            </Button>
+          }
+        />
+      </div>
 
       <Footer />
     </div>
