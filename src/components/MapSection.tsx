@@ -32,7 +32,31 @@ interface LatLng {
 
 const DEFAULT_LOCATION = { lat: 30.0444, lng: 31.2357, name: "Cairo" };
 const MIN_POLYGON_POINTS = 4;
-const MAP_STYLE = "mapbox://styles/mapbox/satellite-v9";
+// Custom style using Esri World Imagery — much higher resolution over Egypt
+// (Cairo/Alexandria/Delta) than Mapbox satellite. Free, no token required.
+const MAP_STYLE: mapboxgl.StyleSpecification = {
+  version: 8,
+  sources: {
+    "esri-imagery": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
+    },
+  },
+  layers: [
+    {
+      id: "esri-imagery-layer",
+      type: "raster",
+      source: "esri-imagery",
+      minzoom: 0,
+      maxzoom: 22,
+    },
+  ],
+};
 
 type DrawingPhase = "idle" | "fullscreen";
 
