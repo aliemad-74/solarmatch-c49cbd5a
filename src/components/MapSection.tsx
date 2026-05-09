@@ -23,7 +23,7 @@ const PROVIDERS: Record<
   google: {
     url: "https://mt{s}.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga",
     subdomains: ["0", "1", "2", "3"],
-    maxNativeZoom: 21,
+    maxNativeZoom: 22,
     attribution: "© Google",
     label: "Google",
   },
