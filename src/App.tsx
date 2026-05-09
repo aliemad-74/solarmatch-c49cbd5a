@@ -39,6 +39,8 @@ import {
   GovernorateRoute, PropertyTypeRoute, BillRoute,
   ComparisonRoute, GuideRoute, FinancingRoute, RoiRoute,
 } from "./pages/ProgrammaticSeoRoutes";
+import BlogIndex from "./pages/BlogIndex";
+import BlogPost from "./pages/BlogPost";
 import { initAnalytics } from "./lib/analytics";
 
 import "./i18n"; // Initialize i18n
