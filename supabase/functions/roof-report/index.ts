@@ -167,7 +167,26 @@ HOW TO MEASURE (CSS pixels → meters):
   parapets, shading, vegetation). Typically 60–85% residential, 70–90% warehouse/industrial.
 - unusablePercentage = round((1 - usableArea/detectedRoofArea) × 100).
 - propertyType from surrounding urban pattern.
-- confidenceScore: 0.85+ crisp outline; 0.5–0.7 partly shaded/blurry; <0.5 unclear.
+
+CONFIDENCE SCORING — BE CALIBRATED, NOT OVERLY CONSERVATIVE:
+The image is rendered at scale=2 (actual 1280×1280 px), so it is HIGH RESOLUTION even
+though it looks 640×640. Do NOT penalize confidence for "small image" — it is sharp.
+Score confidenceScore based ONLY on what you can actually see:
+  - 0.90–0.98: building outline is crisp, you can clearly trace all 4+ external walls,
+    no heavy cloud/shadow on the roof edges, you are sure which building inside the
+    polygon is the primary one. THIS IS THE COMMON CASE for daytime Egyptian imagery —
+    use this range freely when the roof is clearly visible. Do NOT default to 0.7.
+  - 0.75–0.89: outline mostly clear but one edge is partly shaded by a taller neighbour,
+    or the seam between two attached buildings required a judgment call.
+  - 0.55–0.74: significant shadow, partial cloud, blurry tile, or the polygon spans
+    multiple buildings without a clear primary one.
+  - <0.55: roof not visible (cloud, dense tree cover, image artefact) or you genuinely
+    cannot decide which building was meant.
+Anchors: a typical clear urban Cairo/Giza rooftop with sharp parapets and visible water
+tanks should score 0.90–0.95. Reserve <0.80 for cases with REAL visual ambiguity, not
+for routine measurement uncertainty (±10% on dimensions is normal and does not lower
+confidence). The polygon being oversized is NOT a reason to lower confidence — that is
+expected and you have already corrected for it by measuring the true footprint.
 
 EXAMPLES:
 - Polygon ≈ 400 m² containing one centred ~250 m² house + slivers of 2 neighbours
