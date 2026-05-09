@@ -1,11 +1,12 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, MessageCircle, ShieldCheck, Zap, Users } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SeoHead, orgSchema, faqSchema, articleSchema } from "./SeoHead";
+import SeoLeadDialog from "./SeoLeadDialog";
 
 export interface SeoSection {
   heading: string;
