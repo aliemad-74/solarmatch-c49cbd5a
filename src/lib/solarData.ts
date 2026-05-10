@@ -432,6 +432,15 @@ export function calculateSolarFeasibility(
   const isResidentialType = buildingType === "residential" || buildingType === "apartment";
 
   // ============================================
+  // DYNAMIC SPECIFIC YIELD + TEMPERATURE DERATING
+  // Replaces static SPECIFIC_YIELD constant. Uses real climate data.
+  // ============================================
+  const avgSummerTemp = Math.max(...climate.monthlyTemperature.slice(4, 9));
+  const tempDerating = 1 - (0.004 * Math.max(0, avgSummerTemp - 25));
+  const specificYield = climate.annualAvgIrradiance * 365 * PERFORMANCE_RATIO;
+  const adjustedYield = specificYield * tempDerating;
+
+  // ============================================
   // CALCULATE ALL THREE PACKAGE OPTIONS
   // ============================================
   const packageOptions: PackageCalculation[] = (Object.entries(dynamicPackages) as [PackageType, SystemPackage][]).map(([key, pkg]) => {
@@ -444,8 +453,8 @@ export function calculateSolarFeasibility(
     // Step 3: Practical installed (with residential cap)
     let kWInstalled = Math.floor(kWMax * 0.95);
     
-    // Step 4: Energy production
-    const energyYear = kWInstalled * SPECIFIC_YIELD;
+    // Step 4: Energy production (dynamic, climate + temperature adjusted)
+    const energyYear = kWInstalled * adjustedYield;
     
     // Step 6: Savings (using tiered tariff billing)
     // In Building Mode each apartment has its own meter → calculate per-unit then aggregate.
