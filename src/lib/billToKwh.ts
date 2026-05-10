@@ -79,12 +79,14 @@ export function estimateKwhFromBill(billAmount: number, buildingType: string = "
   const bracket = finalCalc.currentTier;
   const electricityPricePerKwh = finalCalc.effectiveRate > 0 ? finalCalc.effectiveRate : bracket.rateEGP;
 
-  // Log for debugging
-  console.log("[billToKwh] Input bill:", billAmount, "EGP, category:", category);
-  console.log("[billToKwh] Estimated kWh:", bestKwh);
-  console.log("[billToKwh] Estimated bracket:", bracket.tierName);
-  console.log("[billToKwh] Recalculated bill:", finalCalc.totalCost.toFixed(2), "EGP");
-  console.log("[billToKwh] Electricity price per kWh:", electricityPricePerKwh.toFixed(4));
+  // Log for debugging (dev only)
+  if (import.meta.env.DEV) {
+    console.log("[billToKwh] Input bill:", billAmount, "EGP, category:", category);
+    console.log("[billToKwh] Estimated kWh:", bestKwh);
+    console.log("[billToKwh] Estimated bracket:", bracket.tierName);
+    console.log("[billToKwh] Recalculated bill:", finalCalc.totalCost.toFixed(2), "EGP");
+    console.log("[billToKwh] Electricity price per kWh:", electricityPricePerKwh.toFixed(4));
+  }
 
   return {
     estimatedConsumptionKwh: bestKwh,
@@ -119,7 +121,7 @@ export function getTariffForConsumption(monthlyKwh: number, buildingType: string
   const bracket = calc.currentTier;
   const electricityPricePerKwh = calc.effectiveRate > 0 ? calc.effectiveRate : bracket.rateEGP;
 
-  console.log("[getTariffForConsumption] kWh:", monthlyKwh, "category:", category, "bracket:", bracket.tierName, "price:", electricityPricePerKwh.toFixed(4));
+  if (import.meta.env.DEV) console.log("[getTariffForConsumption] kWh:", monthlyKwh, "category:", category, "bracket:", bracket.tierName, "price:", electricityPricePerKwh.toFixed(4));
 
   return {
     estimatedConsumptionKwh: Math.round(monthlyKwh),
