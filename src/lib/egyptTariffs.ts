@@ -161,7 +161,7 @@ export interface TariffCalculation {
 
 // Calculate electricity bill using tiered pricing (uses active tariffs)
 export function calculateTieredBill(monthlyKWh: number, customTiers?: TariffTier[]): TariffCalculation {
-  const tiers = customTiers || _activeTariffs;
+  const tiers = customTiers || tariffState.residential;
   let remaining = monthlyKWh;
   let totalCost = 0;
   const breakdown: { tier: TariffTier; kWh: number; cost: number }[] = [];
@@ -199,7 +199,7 @@ export function calculateBillForCategory(
   const tiers = getTiersForCategory(category);
   const result = calculateTieredBill(monthlyKWh, tiers);
   
-  console.log(`[tariff] Category: ${category}, kWh: ${monthlyKWh}, effectiveRate: ${result.effectiveRate.toFixed(4)}`);
+  if (import.meta.env.DEV) console.log(`[tariff] Category: ${category}, kWh: ${monthlyKWh}, effectiveRate: ${result.effectiveRate.toFixed(4)}`);
   
   return { ...result, tariffCategory: category };
 }
@@ -272,12 +272,14 @@ export function calculateBillAfterSolarPerUnit(
 
   const savingsAmount = beforeSolar.totalCost - afterSolar.totalCost;
 
-  console.log(
-    `[per-unit tariff] units: ${units}, avg/unit: ${avgUnitMonthlyConsumption}, ` +
-    `tier/unit: ${perUnitBefore.currentTier.tierName}, ` +
-    `effRate: ${perUnitBefore.effectiveRate.toFixed(4)}, ` +
-    `monthlySavings(total): ${savingsAmount.toFixed(2)}`
-  );
+  if (import.meta.env.DEV) {
+    console.log(
+      `[per-unit tariff] units: ${units}, avg/unit: ${avgUnitMonthlyConsumption}, ` +
+      `tier/unit: ${perUnitBefore.currentTier.tierName}, ` +
+      `effRate: ${perUnitBefore.effectiveRate.toFixed(4)}, ` +
+      `monthlySavings(total): ${savingsAmount.toFixed(2)}`
+    );
+  }
 
   return {
     ...afterSolar,
@@ -290,12 +292,12 @@ export function calculateBillAfterSolarPerUnit(
 
 // Get tier for a given consumption level
 export function getTierForConsumption(monthlyKWh: number): TariffTier {
-  for (const tier of _activeTariffs) {
+  for (const tier of tariffState.residential) {
     if (monthlyKWh <= tier.maxKWh) {
       return tier;
     }
   }
-  return _activeTariffs[_activeTariffs.length - 1];
+  return tariffState.residential[tariffState.residential.length - 1];
 }
 
 // Get effective electricity price based on consumption tier
