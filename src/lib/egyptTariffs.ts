@@ -49,14 +49,29 @@ export const RESIDENTIAL_TARIFFS = DEFAULT_RESIDENTIAL_TARIFFS;
 export const COMMERCIAL_RATE = 2.85;
 export const INDUSTRIAL_RATE = 1.95;
 
-// Active tariffs state
-let _activeTariffs: TariffTier[] = DEFAULT_RESIDENTIAL_TARIFFS;
-let _activeCommercialTariffs: TariffTier[] = DEFAULT_COMMERCIAL_TARIFFS;
-let _activeIndustrialTariffs: TariffTier[] = DEFAULT_INDUSTRIAL_TARIFFS;
-let _activeCommercialRate = COMMERCIAL_RATE;
-let _activeIndustrialRate = INDUSTRIAL_RATE;
-let _tariffSource: "static" | "live" = "static";
-let _tariffEffectiveDate = "2026";
+// Active tariffs state (wrapped in single object for testability)
+const tariffState = {
+  residential: DEFAULT_RESIDENTIAL_TARIFFS as TariffTier[],
+  commercial: DEFAULT_COMMERCIAL_TARIFFS as TariffTier[],
+  industrial: DEFAULT_INDUSTRIAL_TARIFFS as TariffTier[],
+  commercialRate: COMMERCIAL_RATE,
+  industrialRate: INDUSTRIAL_RATE,
+  source: "static" as "static" | "live",
+  effectiveDate: "2026",
+};
+
+/**
+ * Reset tariffs to static defaults (useful for tests).
+ */
+export function resetTariffs() {
+  tariffState.residential = DEFAULT_RESIDENTIAL_TARIFFS;
+  tariffState.commercial = DEFAULT_COMMERCIAL_TARIFFS;
+  tariffState.industrial = DEFAULT_INDUSTRIAL_TARIFFS;
+  tariffState.commercialRate = COMMERCIAL_RATE;
+  tariffState.industrialRate = INDUSTRIAL_RATE;
+  tariffState.source = "static";
+  tariffState.effectiveDate = "2026";
+}
 
 export function setActiveTariffs(
   tiers: TariffTier[],
@@ -68,23 +83,23 @@ export function setActiveTariffs(
 ) {
   if (tiers && tiers.length >= 5) {
     // Normalize maxKWh: null → Infinity for last tier
-    _activeTariffs = tiers.map((t, i) => ({
+    tariffState.residential = tiers.map((t, i) => ({
       ...t,
       maxKWh: t.maxKWh == null || t.maxKWh === 0 ? (i === tiers.length - 1 ? Infinity : t.maxKWh) : t.maxKWh,
     }));
-    _tariffSource = "live";
-    if (commercialRate) _activeCommercialRate = commercialRate;
-    if (industrialRate) _activeIndustrialRate = industrialRate;
-    if (effectiveDate) _tariffEffectiveDate = effectiveDate;
+    tariffState.source = "live";
+    if (commercialRate) tariffState.commercialRate = commercialRate;
+    if (industrialRate) tariffState.industrialRate = industrialRate;
+    if (effectiveDate) tariffState.effectiveDate = effectiveDate;
     
     if (commercialTiers && commercialTiers.length >= 3) {
-      _activeCommercialTariffs = commercialTiers.map((t, i) => ({
+      tariffState.commercial = commercialTiers.map((t, i) => ({
         ...t,
         maxKWh: t.maxKWh == null || t.maxKWh === 0 ? (i === commercialTiers.length - 1 ? Infinity : t.maxKWh) : t.maxKWh,
       }));
     }
     if (industrialTiers && industrialTiers.length >= 3) {
-      _activeIndustrialTariffs = industrialTiers.map((t, i) => ({
+      tariffState.industrial = industrialTiers.map((t, i) => ({
         ...t,
         maxKWh: t.maxKWh == null || t.maxKWh === 0 ? (i === industrialTiers.length - 1 ? Infinity : t.maxKWh) : t.maxKWh,
       }));
@@ -94,13 +109,13 @@ export function setActiveTariffs(
 
 export function getActiveTariffs() {
   return {
-    tiers: _activeTariffs,
-    commercialTiers: _activeCommercialTariffs,
-    industrialTiers: _activeIndustrialTariffs,
-    commercialRate: _activeCommercialRate,
-    industrialRate: _activeIndustrialRate,
-    source: _tariffSource,
-    effectiveDate: _tariffEffectiveDate,
+    tiers: tariffState.residential,
+    commercialTiers: tariffState.commercial,
+    industrialTiers: tariffState.industrial,
+    commercialRate: tariffState.commercialRate,
+    industrialRate: tariffState.industrialRate,
+    source: tariffState.source,
+    effectiveDate: tariffState.effectiveDate,
   };
 }
 
@@ -109,9 +124,9 @@ export function getActiveTariffs() {
  */
 export function getTiersForCategory(category: TariffCategory): TariffTier[] {
   switch (category) {
-    case "commercial": return _activeCommercialTariffs;
-    case "industrial": return _activeIndustrialTariffs;
-    default: return _activeTariffs;
+    case "commercial": return tariffState.commercial;
+    case "industrial": return tariffState.industrial;
+    default: return tariffState.residential;
   }
 }
 
