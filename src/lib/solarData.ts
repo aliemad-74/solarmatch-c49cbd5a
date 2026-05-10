@@ -280,21 +280,12 @@ export function calculateIdealSizing(
   
   // Determine optimal package based on ideal system size
   let optimalPackage: PackageType | null = null;
-  
-  // Find which package would best fit the ideal size
-  const packages = Object.entries(systemPackages) as [PackageType, SystemPackage][];
-  for (const [key, pkg] of packages) {
-    // Calculate how many kW this package can provide in same area
-    // A smaller ideal size suggests economy is sufficient
-    if (idealSystemSize <= 3) {
-      optimalPackage = "economy";
-      break;
-    } else if (idealSystemSize <= 6) {
-      optimalPackage = "standard";
-      break;
-    } else {
-      optimalPackage = "premium";
-    }
+  if (idealSystemSize <= 3) {
+    optimalPackage = "economy";
+  } else if (idealSystemSize <= 6) {
+    optimalPackage = "standard";
+  } else {
+    optimalPackage = "premium";
   }
   
   return {
