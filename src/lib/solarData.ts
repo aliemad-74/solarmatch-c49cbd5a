@@ -501,20 +501,16 @@ export function calculateSolarFeasibility(
   const scenario = costScenarios[costScenario];
 
   // ============================================
-  // STEP 1: Compute usable area
+  // EXTRACT SELECTED PACKAGE RESULT (no recomputation)
   // ============================================
+  const selectedResult = packageOptions.find(p => p.packageKey === selectedPackage)!;
+  const { kWInstalled, totalCost, energyYear, savingsYear, paybackYears, coverageRatio, panelCount } = selectedResult;
+
+  // Step 1: Usable area (for response shape)
   const usableArea = rooftopArea * building.usableFraction;
 
-  // ============================================
-  // STEP 2: Compute max installable power
-  // ============================================
-  const kWMax = usableArea / pv.areaPerKW;
-
-  // ============================================
-  // STEP 3: Practical installed power (with residential cap)
-  // ============================================
-  let kWInstalled = Math.floor(kWMax * 0.95);
-  let wasResized = false;
+  // Step 2: Max kW for the selected package
+  const kWMax = usableArea / selectedPkg.areaPerKW;
 
   // Rule 4: Warning for unusually large systems
   if (kWInstalled > 15 && buildingType === "residential") {
@@ -522,17 +518,10 @@ export function calculateSolarFeasibility(
   }
 
   // ============================================
-  // STEP 4: Annual energy production
-  // ============================================
-  const energyYear = kWInstalled * SPECIFIC_YIELD;
-
-  // ============================================
-  // STEP 5: Monthly energy
-  // Energy_month = Energy_year / 12
+  // STEP 5: Monthly energy + distribution
   // ============================================
   const energyMonth = energyYear / 12;
 
-  // Monthly distribution based on irradiance
   const totalIrradiance = climate.monthlyIrradiance.reduce((sum, v) => sum + v, 0);
   const monthlyProduction = climate.monthlyIrradiance.map((irradiance) => {
     const monthFraction = irradiance / totalIrradiance;
@@ -540,67 +529,27 @@ export function calculateSolarFeasibility(
   });
 
   // ============================================
-  // STEP 6: Annual savings (tiered tariff billing)
-  // Uses active tariffs (live or fallback) for accurate tier-based savings
+  // STEP 7: Monthly savings (derived from annual)
   // ============================================
-  const mainMonthlySolarProd = energyYear / 12;
-  const mainTieredResult = buildingMode && numberOfUnits > 1
-    ? calculateBillAfterSolarPerUnit(avgUnitConsumption, numberOfUnits, mainMonthlySolarProd, buildingType)
-    : calculateBillAfterSolar(effectiveMonthlyConsumption, mainMonthlySolarProd);
-  const savingsYear = mainTieredResult.savingsAmount * 12;
+  const savingsMonth = savingsYear / 12;
+
+  // Cost per kW (selected package)
+  const costPerKW = selectedPkg.costPerKW;
 
   // ============================================
-  // STEP 7: Monthly savings
-  // ============================================
-  const savingsMonth = mainTieredResult.savingsAmount;
-
-  // Rule 1 & 2 validation (mathematical integrity)
-  const savingsYearCheck = savingsMonth * 12;
-  const energyYearCheck = energyMonth * 12;
-  
-  if (Math.abs(savingsYear - savingsYearCheck) > 0.01) {
-    warnings.push("⚠️ Calculation error: Savings integrity check failed.");
-  }
-  if (Math.abs(energyYear - energyYearCheck) > 0.01) {
-    warnings.push("⚠️ Calculation error: Energy integrity check failed.");
-  }
-
-  // ============================================
-  // STEP 8: System cost
-  // Total_cost = kW_installed × cost_per_kW[cost_scenario]
-  // ============================================
-  const totalCost = kWInstalled * dynamicCostPerKW;
-  const costPerKW = kWInstalled > 0 ? totalCost / kWInstalled : 0;
-
-  // Rule 3 validation
-  if (kWInstalled > 0 && Math.abs(totalCost / costPerKW - kWInstalled) > 0.01) {
-    warnings.push("⚠️ Calculation error: Cost integrity check failed.");
-  }
-
-  // ============================================
-  // STEP 9: Payback period
-  // Payback_years = Total_cost / Savings_year
-  // ============================================
-  const paybackYears = savingsYear > 0 ? totalCost / savingsYear : 0;
-
-  // ============================================
-  // STEP 10: Coverage ratio & Building Mode
+  // STEP 10: Coverage already extracted; derive units coverage
   // ============================================
   const annualConsumption = effectiveMonthlyConsumption * 12;
-  const coverageRatio = annualConsumption > 0 ? energyYear / annualConsumption : 0;
-  
-  // Units covered calculation (for Building Mode display)
   const unitAnnualConsumption = avgUnitConsumption * 12;
   const unitsCovered = unitAnnualConsumption > 0 ? energyYear / unitAnnualConsumption : 0;
 
-  // Panel count calculation based on selected package
+  // Panel wattage (panelCount already extracted)
   const panelWattage = selectedPkg.typicalPanelWattage;
-  const panelCount = Math.ceil((kWInstalled * 1000) / panelWattage);
 
   // ============================================
   // STEP 11: CO2 impact (tons/year)
   // ============================================
-  const co2Saved = (energyYear * CO2_FACTOR) / 1000; // Convert to tons
+  const co2Saved = (energyYear * CO2_FACTOR) / 1000;
 
   // Rule 6: Physical limits check
   if (kWInstalled > rooftopArea * 0.2) {
