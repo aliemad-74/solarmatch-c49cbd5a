@@ -35,6 +35,26 @@ function tempFactor(elevation: number): number {
 const AREA_PER_KW: Record<string, number> = { economy: 8.5, standard: 7, premium: 6 };
 const DEFAULT_COST_PER_KW: Record<string, number> = { economy: 15000, standard: 19000, premium: 26000 };
 
+// NREL PVWatts standard performance ratio (industry standard, more realistic than 0.80)
+const PVWATTS_PR = 0.75;
+
+// Egypt optimal tilt ≈ 27° (close to latitude), optimal azimuth = 180° (south-facing)
+const EGYPT_OPTIMAL_TILT = 27;
+const EGYPT_OPTIMAL_AZIMUTH = 180;
+
+/**
+ * Tilt+azimuth orientation factor (PVGIS-style geometric loss).
+ * Returns ~1.0 for optimally tilted south-facing roof, lower otherwise.
+ */
+function orientationFactor(tilt: number, azimuth: number): number {
+  const tiltDelta = Math.abs(tilt - EGYPT_OPTIMAL_TILT);
+  const azDelta = Math.min(Math.abs(azimuth - EGYPT_OPTIMAL_AZIMUTH), 360 - Math.abs(azimuth - EGYPT_OPTIMAL_AZIMUTH));
+  // Smooth cosine-style penalty
+  const tiltLoss = 1 - 0.0015 * tiltDelta * tiltDelta / 10; // ~5% loss at 18° off
+  const azLoss = Math.cos((azDelta * Math.PI) / 180) * 0.5 + 0.5; // 1.0 south, 0.5 north
+  return Math.max(0.7, tiltLoss * (0.7 + 0.3 * azLoss));
+}
+
 /* ───── Fetch live market prices from DB ───── */
 async function getMarketPrices(): Promise<Record<string, number>> {
   try {
@@ -86,9 +106,8 @@ async function geocode(lat: number, lng: number, apiKey: string) {
   return { formatted_address: `${lat}, ${lng}`, city: "", governorate: "" };
 }
 
-/* ───── STEP 2: Solar data ───── */
+/* ───── STEP 2: Solar data (Google Solar + best roof segment) ───── */
 async function getSolarData(lat: number, lng: number, apiKey: string) {
-  // Try Google Solar first
   try {
     const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${apiKey}`;
     const res = await fetchWithTimeout(url);
@@ -96,14 +115,24 @@ async function getSolarData(lat: number, lng: number, apiKey: string) {
       const data = await res.json();
       const sp = data.solarPotential;
       if (sp) {
+        // Pick the largest roof segment (best candidate for installation)
+        const segments: any[] = sp.roofSegmentStats ?? [];
+        const bestSeg = segments.length
+          ? [...segments].sort((a, b) => (b.stats?.areaMeters2 ?? 0) - (a.stats?.areaMeters2 ?? 0))[0]
+          : null;
+
         return {
           source: "google_solar" as const,
-          irradiance: sp.maxSunshineHoursPerYear ? sp.maxSunshineHoursPerYear / 365 * 1.0 : 5.5,
+          irradiance: sp.maxSunshineHoursPerYear ? (sp.maxSunshineHoursPerYear / 365) : 5.5,
           max_panels: sp.maxArrayPanelsCount ?? null,
           sunshine_hours: sp.maxSunshineHoursPerYear ?? null,
           roof_area: sp.wholeRoofStats?.areaMeters2 ?? null,
           carbon_offset: sp.carbonOffsetFactorKgPerMwh ?? null,
           max_array_area: sp.maxArrayAreaMeters2 ?? null,
+          best_segment_tilt: bestSeg?.pitchDegrees ?? null,
+          best_segment_azimuth: bestSeg?.azimuthDegrees ?? null,
+          best_segment_area: bestSeg?.stats?.areaMeters2 ?? null,
+          segments_count: segments.length,
         };
       }
     }
@@ -124,18 +153,73 @@ async function getSolarData(lat: number, lng: number, apiKey: string) {
       return {
         source: "nasa_power" as const,
         irradiance: avg > 0 ? avg : 5.5,
-        max_panels: null,
-        sunshine_hours: null,
-        roof_area: null,
-        carbon_offset: null,
-        max_array_area: null,
+        max_panels: null, sunshine_hours: null, roof_area: null,
+        carbon_offset: null, max_array_area: null,
+        best_segment_tilt: null, best_segment_azimuth: null,
+        best_segment_area: null, segments_count: 0,
       };
     }
   } catch (e) {
     console.error("NASA POWER error:", e);
   }
 
-  return { source: "nasa_power" as const, irradiance: 5.5, max_panels: null, sunshine_hours: null, roof_area: null, carbon_offset: null, max_array_area: null };
+  return {
+    source: "nasa_power" as const, irradiance: 5.5,
+    max_panels: null, sunshine_hours: null, roof_area: null,
+    carbon_offset: null, max_array_area: null,
+    best_segment_tilt: null, best_segment_azimuth: null,
+    best_segment_area: null, segments_count: 0,
+  };
+}
+
+/* ───── STEP 2b: PVGIS irradiance (3rd source, free, EU JRC) ───── */
+async function getPVGISIrradiance(lat: number, lng: number): Promise<number | null> {
+  try {
+    const url = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lng}&peakpower=1&loss=14&outputformat=json&pvtechchoice=crystSi&mountingplace=building&fixed=1&angle=27&aspect=0`;
+    const res = await fetchWithTimeout(url, {}, 12000);
+    if (res.ok) {
+      const data = await res.json();
+      // PVGIS gives kWh/year per kWp; convert back to daily kWh/m²
+      // E_year = irradiance_daily * 365 * PR_pvgis (~0.86)
+      const eYear = data?.outputs?.totals?.fixed?.E_y;
+      if (typeof eYear === "number" && eYear > 0) {
+        return eYear / 365 / 0.86;
+      }
+    }
+  } catch (e) {
+    console.error("PVGIS error:", e);
+  }
+  return null;
+}
+
+/* ───── STEP 2c: Roof Vision (Gemini analysis of satellite image) ───── */
+async function getRoofVision(lat: number, lng: number) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return null;
+
+    const res = await fetchWithTimeout(
+      `${supabaseUrl}/functions/v1/roof-vision`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+          apikey: serviceKey,
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng }),
+      },
+      25000
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success) return data;
+    }
+  } catch (e) {
+    console.error("roof-vision call failed:", e);
+  }
+  return null;
 }
 
 /* ───── STEP 3: Weather & Air Quality ───── */
@@ -203,7 +287,6 @@ async function getPollenDust(lat: number, lng: number, apiKey: string) {
   return { pollenIndex: 0, available: false };
 }
 
-// Combined soiling-loss model: PM10 dominates in Egypt; pollen adds a small bump.
 function combinedSoilingLoss(pm10: number | null, pm25: number | null, pollenIndex: number, aqi: number): number {
   let pmBased: number | null = null;
   const v = pm10 ?? (pm25 != null ? pm25 * 1.5 : null);
@@ -215,9 +298,8 @@ function combinedSoilingLoss(pm10: number | null, pm25: number | null, pollenInd
   }
   const aqiBased = dustLoss(aqi);
   let base = pmBased ?? aqiBased;
-  // Pollen bump: index 0-5 → up to +1%
   base += Math.min(pollenIndex, 5) * 0.002;
-  return Math.min(base, 0.10); // cap 10%
+  return Math.min(base, 0.10);
 }
 
 /* ───── STEP 4: Elevation ───── */
@@ -238,11 +320,11 @@ async function getElevation(lat: number, lng: number, apiKey: string) {
 }
 
 /* ───── STEP 6: AI Analysis via Lovable AI ───── */
-async function getAIAnalysis(prompt: string, _unused: string) {
+async function getAIAnalysis(prompt: string) {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return null;
-    
+
     const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -298,8 +380,8 @@ serve(async (req) => {
 
     const pkg = (["economy", "standard", "premium"].includes(pvPackage) ? pvPackage : "standard") as string;
 
-    // STEP 1-4: parallel API calls + market prices
-    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices] = await Promise.all([
+    // STEP 1-4: parallel API calls + market prices + PVGIS + Vision
+    const [geo, solarData, weather, airQuality, elevation, pollen, marketPrices, pvgisIrr, vision] = await Promise.all([
       geocode(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getSolarData(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getWeather(latitude, longitude, GOOGLE_MAPS_API_KEY),
@@ -307,30 +389,52 @@ serve(async (req) => {
       getElevation(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getPollenDust(latitude, longitude, GOOGLE_MAPS_API_KEY),
       getMarketPrices(),
+      getPVGISIrradiance(latitude, longitude),
+      getRoofVision(latitude, longitude),
     ]);
 
     const aqi = airQuality.aqi;
     const dominantPollutant = airQuality.dominantPollutant;
 
-    // STEP 5: Enhanced calculation
+    /* ───── STEP 5: Multi-source irradiance averaging ───── */
+    // Average available sources for higher accuracy (Google Solar / NASA / PVGIS).
+    const irrSources: number[] = [];
+    if (solarData.irradiance > 0) irrSources.push(solarData.irradiance);
+    if (pvgisIrr && pvgisIrr > 0) irrSources.push(pvgisIrr);
+    const avgIrradiance = irrSources.length
+      ? irrSources.reduce((s, v) => s + v, 0) / irrSources.length
+      : 5.5;
+
+    // Orientation factor from Google Solar best segment, or default Egypt south-facing
+    const tilt = solarData.best_segment_tilt ?? EGYPT_OPTIMAL_TILT;
+    const azimuth = solarData.best_segment_azimuth ?? EGYPT_OPTIMAL_AZIMUTH;
+    const orientFactor = orientationFactor(tilt, azimuth);
+
+    // Vision-based usable area ratio (Computer Vision overrides default 0.60)
+    const visionRatio = vision?.usable_area_ratio ?? 0.60;
+    const shadingPenalty = vision?.shading_level === "high" ? 0.92 : vision?.shading_level === "medium" ? 0.97 : 1.0;
+
     const dust = combinedSoilingLoss(airQuality.pm10, airQuality.pm25, pollen.pollenIndex, aqi);
     const tf = tempFactor(elevation);
-    const effectiveArea = farmMode && areaInFeddans ? areaInFeddans * 4200 * 0.6 : rooftopArea;
-    const base_irradiance = solarData.irradiance * 365;
+    const effectiveArea = farmMode && areaInFeddans
+      ? areaInFeddans * 4200 * 0.85
+      : rooftopArea * visionRatio;
+
+    const base_irradiance = avgIrradiance * 365;
     const adjusted_irradiance_factor =
-      solarData.irradiance * (1 - dust) * tf * (1 - weather.cloudCover / 200);
+      avgIrradiance * (1 - dust) * tf * (1 - weather.cloudCover / 200) * orientFactor * shadingPenalty;
     const adjusted_irradiance = adjusted_irradiance_factor * 365;
 
     const areaPerKw = AREA_PER_KW[pkg] ?? 7;
     const costPerKw = marketPrices[pkg] ?? DEFAULT_COST_PER_KW[pkg] ?? 19000;
 
-    const system_size_kw = Math.round((effectiveArea * 0.60 / areaPerKw) * 100) / 100;
-    const annual_production = Math.round(system_size_kw * adjusted_irradiance_factor * 365 * 0.80);
+    const system_size_kw = Math.round((effectiveArea / areaPerKw) * 100) / 100;
+    // NREL PVWatts standard PR (0.75) instead of optimistic 0.80
+    const annual_production = Math.round(system_size_kw * adjusted_irradiance_factor * 365 * PVWATTS_PR);
     const annual_consumption = monthlyConsumption * 12;
     const coverage_ratio = annual_consumption > 0 ? Math.round((annual_production / annual_consumption) * 100) / 100 : 0;
     const total_cost = Math.round(system_size_kw * costPerKw);
 
-    // Egyptian electricity price (tiered average ~1.65 EGP/kWh)
     const electricity_price = 1.65;
     const annual_savings = Math.round(Math.min(annual_production, annual_consumption) * electricity_price);
     const payback_years = annual_savings > 0 ? Math.round((total_cost / annual_savings) * 10) / 10 : 99;
@@ -342,12 +446,11 @@ serve(async (req) => {
     else if (coverage_ratio >= 0.3 && payback_years <= 15) feasibility = "conditional";
     else feasibility = "not_suitable";
 
-    // For oversized systems, calculate recommended (right-sized) values
     let recommended: Record<string, number> | null = null;
     if (feasibility === "oversized") {
-      const target_coverage = 1.1; // 110% of consumption
+      const target_coverage = 1.1;
       const recommended_annual = annual_consumption * target_coverage;
-      const recommended_size = Math.round((recommended_annual / (adjusted_irradiance_factor * 365 * 0.80)) * 100) / 100;
+      const recommended_size = Math.round((recommended_annual / (adjusted_irradiance_factor * 365 * PVWATTS_PR)) * 100) / 100;
       const recommended_area_val = Math.round(recommended_size * areaPerKw);
       const recommended_cost_val = Math.round(recommended_size * costPerKw);
       const recommended_savings = Math.round(Math.min(recommended_annual, annual_consumption) * electricity_price);
@@ -366,7 +469,7 @@ serve(async (req) => {
 
 Location: ${geo.formatted_address}
 Building Type: ${buildingType}
-System Size: ${system_size_kw} kW
+System Size: ${system_size_kw} kW (PR=${PVWATTS_PR} NREL PVWatts standard)
 Annual Production: ${annual_production} kWh
 Monthly Consumption: ${monthlyConsumption} kWh
 Coverage Ratio: ${Math.round(coverage_ratio * 100)}%
@@ -374,9 +477,12 @@ Payback Period: ${payback_years} years
 Annual Savings: ${annual_savings} EGP
 Total Cost: ${total_cost} EGP
 CO2 Saved: ${co2_saved} tons/year
+Roof Tilt: ${Math.round(tilt)}°  Azimuth: ${Math.round(azimuth)}°  Orientation Factor: ${orientFactor.toFixed(2)}
+Vision Usable-Area Ratio: ${visionRatio} (obstacles: ${vision?.obstacles_count ?? "n/a"}, shading: ${vision?.shading_level ?? "n/a"})
+Irradiance sources used: ${irrSources.length} (avg ${avgIrradiance.toFixed(2)} kWh/m²/day)
 Air Quality Index: ${aqi}${dominantPollutant ? ` (dominant: ${dominantPollutant})` : ""}
 PM10: ${airQuality.pm10 ?? "n/a"} µg/m³  PM2.5: ${airQuality.pm25 ?? "n/a"} µg/m³
-Soiling Loss Applied: ${Math.round(dust * 1000) / 10}% (combined dust + pollen index ${pollen.pollenIndex})
+Soiling Loss Applied: ${Math.round(dust * 1000) / 10}%
 Elevation: ${Math.round(elevation)}m
 Weather: ${weather.temperature}°C, ${weather.cloudCover}% cloud cover
 Data Source: ${solarData.source}
@@ -385,14 +491,18 @@ Feasibility: ${feasibility}
 Provide:
 1. One clear opening sentence about the feasibility verdict
 2. Top 3 factors driving this recommendation (ranked by impact)
-3. One specific insight about this location's conditions (mention dust/cleaning if soiling > 4%)
+3. One specific insight about this location's conditions (mention dust/cleaning if soiling > 4%, mention orientation if factor < 0.9)
 4. One actionable next step
 
 Keep response under 200 words. Be specific with numbers.`;
 
-    const aiText = await getAIAnalysis(aiPrompt, LOVABLE_API_KEY);
+    const aiText = await getAIAnalysis(aiPrompt);
 
-    const confidence = solarData.source === "google_solar" ? "high" : (feasibility === "suitable" ? "medium" : "low");
+    const confidence = solarData.source === "google_solar" && irrSources.length >= 2 && vision?.confidence === "high"
+      ? "high"
+      : solarData.source === "google_solar"
+      ? "medium"
+      : feasibility === "suitable" ? "medium" : "low";
 
     // STEP 7: Response
     const result = {
@@ -423,7 +533,19 @@ Keep response under 200 words. Be specific with numbers.`;
         adjusted_irradiance: Math.round(adjusted_irradiance),
         max_panels: solarData.max_panels,
         sunshine_hours: solarData.sunshine_hours,
+        sources_count: irrSources.length,
+        pvgis_available: pvgisIrr !== null,
+        best_segment_tilt: solarData.best_segment_tilt,
+        best_segment_azimuth: solarData.best_segment_azimuth,
+        orientation_factor: Math.round(orientFactor * 100) / 100,
+        performance_ratio: PVWATTS_PR,
       },
+      vision_analysis: vision ? {
+        usable_area_ratio: vision.usable_area_ratio,
+        obstacles_count: vision.obstacles_count,
+        shading_level: vision.shading_level,
+        confidence: vision.confidence,
+      } : null,
       calculation: {
         system_size_kw,
         annual_production,
