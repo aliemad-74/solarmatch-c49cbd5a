@@ -271,6 +271,10 @@
 /* Hide dropdown when scrolling past it */
 .pac-container.pac-hidden-on-scroll { display: none !important; }
 
+/* Hide overlapping floating UI while onboarding tour is active */
+body[data-tour-active] .pac-container,
+body[data-tour-active] [data-floating-chat] { display: none !important; }
+
 /* ── Print ───────────────────────────────────── */
 @media print {
   body {

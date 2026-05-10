@@ -1,8 +1,9 @@
-import { useState, useEffect, useLayoutEffect, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { X, MapPin, Settings, BarChart3, Download, ArrowRight, ArrowLeft, Zap, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ONBOARDING_FLAG = "solarmatch_onboarding_seen";
 
@@ -11,10 +12,7 @@ interface TourStep {
   title: string;
   description: string;
   icon: React.ReactNode;
-  /** CSS selector to spotlight; if omitted, modal is centered. */
   selector?: string;
-  /** Preferred placement of the tooltip relative to target. */
-  placement?: "top" | "bottom" | "auto";
 }
 
 interface OnboardingTourProps {
@@ -28,7 +26,7 @@ interface SpotlightRect {
   height: number;
 }
 
-const PADDING = 12;
+const PADDING = 8;
 
 const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
   const { t, i18n } = useTranslation();
@@ -36,65 +34,72 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [rect, setRect] = useState<SpotlightRect | null>(null);
   const isRTL = i18n.language === "ar";
+  const isMobile = useIsMobile();
+  const rafRef = useRef<number | null>(null);
 
   const steps: TourStep[] = [
     {
       id: "welcome",
       title: t("onboarding.welcome.title"),
       description: t("onboarding.welcome.description"),
-      icon: <div className="w-14 h-14 rounded-full gradient-solar flex items-center justify-center text-3xl">👋</div>,
+      icon: <div className="w-12 h-12 rounded-full gradient-solar flex items-center justify-center text-2xl">👋</div>,
     },
     {
       id: "location",
       title: t("onboarding.location.title"),
       description: t("onboarding.location.description"),
-      icon: <MapPin className="w-12 h-12 text-primary" />,
+      icon: <MapPin className="w-10 h-10 text-primary" />,
       selector: "#map-section",
-      placement: "bottom",
     },
     {
       id: "configure",
       title: t("onboarding.configure.title"),
       description: t("onboarding.configure.description"),
-      icon: <Settings className="w-12 h-12 text-solar-gold" />,
+      icon: <Settings className="w-10 h-10 text-solar-gold" />,
       selector: "#config-section",
-      placement: "top",
     },
     {
       id: "calculate",
       title: t("onboarding.calculate.title"),
       description: t("onboarding.calculate.description"),
-      icon: <Zap className="w-12 h-12 text-primary" />,
+      icon: <Zap className="w-10 h-10 text-primary" />,
       selector: "[data-tour='calculate']",
-      placement: "top",
     },
     {
       id: "results",
       title: t("onboarding.results.title"),
       description: t("onboarding.results.description"),
-      icon: <BarChart3 className="w-12 h-12 text-solar-green" />,
+      icon: <BarChart3 className="w-10 h-10 text-solar-green" />,
       selector: "#results",
-      placement: "top",
     },
     {
       id: "report",
       title: t("onboarding.report.title"),
       description: t("onboarding.report.description"),
-      icon: <Download className="w-12 h-12 text-primary" />,
+      icon: <Download className="w-10 h-10 text-primary" />,
       selector: "[data-tour='report']",
-      placement: "top",
     },
     {
       id: "final",
       title: t("onboarding.final.title"),
       description: t("onboarding.final.description"),
-      icon: <div className="w-14 h-14 rounded-full gradient-solar flex items-center justify-center"><Rocket className="w-7 h-7 text-primary-foreground" /></div>,
+      icon: <div className="w-12 h-12 rounded-full gradient-solar flex items-center justify-center"><Rocket className="w-6 h-6 text-primary-foreground" /></div>,
     },
   ];
 
   const step = steps[currentStep];
 
-  // Compute spotlight rect; scroll target into view if needed.
+  // Mark body so we can hide overlapping UI (e.g. Google pac-container) via CSS
+  useEffect(() => {
+    document.body.setAttribute("data-tour-active", "true");
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.removeAttribute("data-tour-active");
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
   const recalc = useCallback(() => {
     if (!step?.selector) {
       setRect(null);
@@ -121,36 +126,26 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
     }
     const el = document.querySelector(step.selector) as HTMLElement | null;
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Allow scroll to settle
+      el.scrollIntoView({ behavior: "smooth", block: isMobile ? "start" : "center" });
       const t1 = window.setTimeout(recalc, 350);
-      const t2 = window.setTimeout(recalc, 650);
-      return () => {
-        window.clearTimeout(t1);
-        window.clearTimeout(t2);
-      };
+      return () => window.clearTimeout(t1);
     }
     recalc();
-  }, [step, recalc]);
+  }, [step, recalc, isMobile]);
 
   useEffect(() => {
-    const onResize = () => recalc();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("scroll", onResize, true);
+    const onChange = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(recalc);
+    };
+    window.addEventListener("resize", onChange, { passive: true });
+    window.addEventListener("scroll", onChange, { passive: true, capture: true });
     return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("scroll", onResize, true);
+      window.removeEventListener("resize", onChange);
+      window.removeEventListener("scroll", onChange, true);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [recalc]);
-
-  // Lock background scrolling/interaction
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
@@ -166,86 +161,74 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
 
   if (!isVisible) return null;
 
-  // Tooltip positioning
-  const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
-  const viewportW = typeof window !== "undefined" ? window.innerWidth : 1200;
-  const tooltipMaxW = 380;
-
-  let tooltipStyle: React.CSSProperties = {
-    position: "fixed",
-    left: "50%",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
-    maxWidth: tooltipMaxW,
-    width: "calc(100% - 2rem)",
-  };
-
-  if (rect) {
-    const placeBelow = rect.top + rect.height + 24 + 280 < viewportH;
-    const top = placeBelow ? rect.top + rect.height + 16 : Math.max(16, rect.top - 16 - 280);
-    const centerX = rect.left + rect.width / 2;
-    const left = Math.min(
-      Math.max(centerX - tooltipMaxW / 2, 16),
-      viewportW - tooltipMaxW - 16
-    );
+  // Mobile → use bottom sheet. Desktop → smart positioning around target.
+  let tooltipStyle: React.CSSProperties;
+  if (isMobile) {
     tooltipStyle = {
       position: "fixed",
-      top,
-      left,
-      maxWidth: tooltipMaxW,
-      width: "calc(100% - 2rem)",
-      transform: "none",
+      left: 12,
+      right: 12,
+      bottom: 12,
+      maxWidth: "none",
     };
+  } else {
+    const viewportH = window.innerHeight;
+    const viewportW = window.innerWidth;
+    const tooltipMaxW = 380;
+    if (rect) {
+      const placeBelow = rect.top + rect.height + 24 + 280 < viewportH;
+      const top = placeBelow ? rect.top + rect.height + 16 : Math.max(16, rect.top - 16 - 280);
+      const centerX = rect.left + rect.width / 2;
+      const left = Math.min(Math.max(centerX - tooltipMaxW / 2, 16), viewportW - tooltipMaxW - 16);
+      tooltipStyle = { position: "fixed", top, left, maxWidth: tooltipMaxW, width: "calc(100% - 2rem)" };
+    } else {
+      tooltipStyle = {
+        position: "fixed", left: "50%", top: "50%",
+        transform: "translate(-50%, -50%)", maxWidth: tooltipMaxW, width: "calc(100% - 2rem)",
+      };
+    }
   }
 
-  return (
-    <div className="fixed inset-0 z-[100] animate-fade-in" dir={isRTL ? "rtl" : "ltr"}>
-      {/* Spotlight overlay using SVG mask for crisp cutout */}
-      <svg className="fixed inset-0 w-full h-full pointer-events-auto" aria-hidden>
-        <defs>
-          <mask id="onboarding-spotlight-mask">
-            <rect width="100%" height="100%" fill="white" />
-            {rect && (
-              <rect
-                x={rect.left}
-                y={rect.top}
-                width={rect.width}
-                height={rect.height}
-                rx={16}
-                ry={16}
-                fill="black"
-              />
-            )}
-          </mask>
-        </defs>
-        <rect
-          width="100%"
-          height="100%"
-          fill="hsl(var(--background) / 0.78)"
-          style={{ backdropFilter: "blur(2px)" } as React.CSSProperties}
-          mask="url(#onboarding-spotlight-mask)"
-        />
-      </svg>
+  // Lightweight overlay using 4 divs around the target rect (no SVG mask, no blur).
+  const renderOverlay = () => {
+    if (!rect) {
+      return <div className="fixed inset-0 bg-background/80" />;
+    }
+    const overlayClass = "fixed bg-background/80";
+    return (
+      <>
+        <div className={overlayClass} style={{ top: 0, left: 0, right: 0, height: rect.top }} />
+        <div className={overlayClass} style={{ top: rect.top + rect.height, left: 0, right: 0, bottom: 0 }} />
+        <div className={overlayClass} style={{ top: rect.top, left: 0, width: rect.left, height: rect.height }} />
+        <div className={overlayClass} style={{ top: rect.top, left: rect.left + rect.width, right: 0, height: rect.height }} />
+      </>
+    );
+  };
 
-      {/* Glowing border around target */}
+  return (
+    <div className="fixed inset-0 z-[10001] animate-fade-in" dir={isRTL ? "rtl" : "ltr"}>
+      {renderOverlay()}
+
       {rect && (
         <div
-          className="fixed pointer-events-none rounded-2xl ring-2 ring-primary/80 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_0_30px_hsl(var(--primary)/0.5)] transition-all duration-300"
+          className="fixed pointer-events-none rounded-2xl ring-2 ring-primary/80"
           style={{
             top: rect.top,
             left: rect.left,
             width: rect.width,
             height: rect.height,
+            boxShadow: "0 0 0 3px hsl(var(--primary) / 0.25)",
           }}
         />
       )}
 
-      {/* Tooltip card */}
       <div
         style={tooltipStyle}
-        className="bg-card border border-border rounded-2xl shadow-2xl p-6 animate-scale-in"
+        className={cn(
+          "bg-card border border-border shadow-2xl p-5 animate-scale-in",
+          isMobile ? "rounded-t-2xl rounded-b-xl" : "rounded-2xl"
+        )}
       >
-        {/* Close */}
         <Button
           variant="ghost"
           size="icon"
@@ -256,13 +239,12 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
           <X className="h-4 w-4" />
         </Button>
 
-        {/* Progress dots */}
-        <div className="flex justify-center gap-1.5 mb-4">
+        <div className="flex justify-center gap-1.5 mb-3">
           {steps.map((_, index) => (
             <div
               key={index}
               className={cn(
-                "h-1.5 rounded-full transition-all duration-300",
+                "h-1.5 rounded-full transition-all duration-200",
                 index === currentStep
                   ? "w-6 bg-primary"
                   : index < currentStep
@@ -273,16 +255,16 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
           ))}
         </div>
 
-        <div className="flex justify-center mb-3">{step.icon}</div>
+        <div className="flex justify-center mb-2">{step.icon}</div>
 
-        <h3 className="text-center text-lg md:text-xl font-display font-bold text-foreground">
+        <h3 className="text-center text-base md:text-lg font-display font-bold text-foreground">
           {step.title}
         </h3>
-        <p className="text-center text-sm md:text-base text-muted-foreground mt-2 leading-relaxed">
+        <p className="text-center text-sm text-muted-foreground mt-1.5 leading-relaxed">
           {step.description}
         </p>
 
-        <div className="flex gap-2 mt-5">
+        <div className="flex gap-2 mt-4">
           {currentStep > 0 && (
             <Button variant="outline" onClick={handlePrev} className="flex-1" size="sm">
               {isRTL ? <ArrowRight className="me-1.5 h-4 w-4" /> : <ArrowLeft className="me-1.5 h-4 w-4" />}
