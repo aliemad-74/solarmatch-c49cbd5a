@@ -388,6 +388,22 @@ const Index = () => {
         calculation.coverageRatio = annualConsumption > 0
           ? calculation.energyYear / annualConsumption
           : calculation.coverageRatio;
+        calculation.monthlyProduction = calculation.monthlyProduction.map(v =>
+          Math.round(v * factor)
+        );
+        calculation.energyMonth = Math.round(calculation.energyYear / 12);
+        calculation.savingsMonth = Math.round(calculation.savingsYear / 12);
+        calculation.packageOptions = calculation.packageOptions.map(opt => ({
+          ...opt,
+          energyYear: Math.round(opt.energyYear * factor),
+          savingsYear: Math.round(opt.savingsYear * factor),
+          paybackYears: opt.savingsYear > 0
+            ? +(opt.totalCost / Math.round(opt.savingsYear * factor)).toFixed(1)
+            : 0,
+          coverageRatio: effectiveMonthlyConsumption * 12 > 0
+            ? Math.round(opt.energyYear * factor) / (effectiveMonthlyConsumption * 12)
+            : opt.coverageRatio,
+        }));
       }
 
       // Step 2: AI Review checkpoint — validate calculations before showing to user
