@@ -134,8 +134,9 @@ function extractMonthlyValues(data: Record<string, number> | undefined): number[
   });
 }
 
-// Mapbox token (sourced from environment, public pk.* token)
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+// Mapbox public token (pk.*) — safe to keep in client code, used only for Geocoding API
+const MAPBOX_TOKEN =
+  "pk.eyJ1IjoiYWxpZW1hZDc0IiwiYSI6ImNtb3llNDgyeTBobGMycXF4ZzR4Z3V5azgifQ.1I2brc382ZP3gs3A4aNKfg";
 
 /**
  * Get location name using Mapbox Reverse Geocoding API
