@@ -524,7 +524,15 @@ export function calculateSolarFeasibility(
   // ============================================
   const savingsMonth = savingsYear / 12;
 
-  // Cost per kW (selected package)
+  // Integrity checks (ensure annual = monthly * 12 consistency)
+  const energyYearCheck = energyMonth * 12;
+  if (Math.abs(energyYear - energyYearCheck) > 1) {
+    warnings.push("⚠️ Calculation error: Energy integrity check failed.");
+  }
+  const savingsYearCheck = savingsMonth * 12;
+  if (Math.abs(savingsYear - savingsYearCheck) > 1) {
+    warnings.push("⚠️ Calculation error: Savings integrity check failed.");
+  }
   const costPerKW = selectedPkg.costPerKW;
 
   // ============================================

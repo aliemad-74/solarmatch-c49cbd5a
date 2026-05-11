@@ -26,7 +26,7 @@ export function estimateKwhFromBill(billAmount: number, buildingType: string = "
 
   // Guard against invalid inputs
   if (!Number.isFinite(billAmount) || billAmount <= 0) {
-    console.warn("[billToKwh] Invalid bill amount:", billAmount);
+    if (import.meta.env.DEV) console.warn("[billToKwh] Invalid bill amount:", billAmount);
     const fallbackRate = tiers[0]?.rateEGP ?? 0.68;
     return {
       estimatedConsumptionKwh: 0,
