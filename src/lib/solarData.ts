@@ -561,9 +561,10 @@ export function calculateSolarFeasibility(
   // ============================================
   // IDEAL SYSTEM SIZING ANALYSIS
   // ============================================
+  const effectivePSH = adjustedYield / 365;
   const idealSizing = calculateIdealSizing(
     effectiveMonthlyConsumption,
-    climate.annualAvgIrradiance,
+    effectivePSH,
     kWInstalled
   );
 
