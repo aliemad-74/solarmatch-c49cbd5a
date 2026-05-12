@@ -231,20 +231,6 @@ const UsersTable = () => {
                             <Eye className="h-4 w-4 mr-2" />
                             {t("admin.users.viewDetails")}
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const newLimit = prompt(t("admin.users.enterNewLimit"), String(user.report_limit));
-                              if (newLimit !== null) {
-                                const val = parseInt(newLimit, 10);
-                                if (!isNaN(val) && val >= 0) {
-                                  updateProfileLimitMutation.mutate({ userId: user.user_id, newLimit: val });
-                                }
-                              }
-                            }}
-                          >
-                            <UserCog className="h-4 w-4 mr-2" />
-                            {t("admin.users.resetLimit")}
-                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
 
                           <DropdownMenuItem
