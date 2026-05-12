@@ -189,9 +189,7 @@ const UsersTable = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell dir="ltr">{user.phone || "-"}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
-                        {user.reports_generated} / {user.report_limit}
-                      </Badge>
+                      <Badge variant="secondary">{user.reports_generated}</Badge>
                     </TableCell>
                     <TableCell>
                       <Select
