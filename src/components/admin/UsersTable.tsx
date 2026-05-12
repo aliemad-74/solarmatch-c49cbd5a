@@ -61,24 +61,7 @@ const UsersTable = () => {
     },
   });
 
-  const updateProfileLimitMutation = useMutation({
-    mutationFn: async ({ userId, newLimit }: { userId: string; newLimit: number }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ report_limit: newLimit })
-        .eq("user_id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });
-      toast({ title: t("admin.users.limitUpdated"), description: t("admin.users.limitUpdatedDesc") });
-    },
-    onError: () => {
-      toast({ title: t("admin.error"), description: t("admin.users.limitUpdateError"), variant: "destructive" });
-    },
-  });
-
-  // Subscription system removed.
+  // Report limits removed — SolarMatch is fully free with unlimited reports.
 
 
   const changeRoleMutation = useMutation({
@@ -136,7 +119,6 @@ const UsersTable = () => {
       { key: "phone" as any, label: "Phone" },
       { key: "user_type" as any, label: "Type" },
       { key: "reports_generated" as any, label: "Reports" },
-      { key: "report_limit" as any, label: "Limit" },
       { key: "created_at" as any, label: "Registered" },
     ]);
   };
@@ -207,9 +189,7 @@ const UsersTable = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell dir="ltr">{user.phone || "-"}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
-                        {user.reports_generated} / {user.report_limit}
-                      </Badge>
+                      <Badge variant="secondary">{user.reports_generated}</Badge>
                     </TableCell>
                     <TableCell>
                       <Select
@@ -250,20 +230,6 @@ const UsersTable = () => {
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             {t("admin.users.viewDetails")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const newLimit = prompt(t("admin.users.enterNewLimit"), String(user.report_limit));
-                              if (newLimit !== null) {
-                                const val = parseInt(newLimit, 10);
-                                if (!isNaN(val) && val >= 0) {
-                                  updateProfileLimitMutation.mutate({ userId: user.user_id, newLimit: val });
-                                }
-                              }
-                            }}
-                          >
-                            <UserCog className="h-4 w-4 mr-2" />
-                            {t("admin.users.resetLimit")}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
 
