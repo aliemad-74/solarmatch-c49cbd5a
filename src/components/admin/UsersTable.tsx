@@ -119,7 +119,6 @@ const UsersTable = () => {
       { key: "phone" as any, label: "Phone" },
       { key: "user_type" as any, label: "Type" },
       { key: "reports_generated" as any, label: "Reports" },
-      { key: "report_limit" as any, label: "Limit" },
       { key: "created_at" as any, label: "Registered" },
     ]);
   };
