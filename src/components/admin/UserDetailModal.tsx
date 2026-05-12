@@ -139,7 +139,7 @@ const UserDetailModal = ({ user, open, onOpenChange }: UserDetailModalProps) => 
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{t("admin.users.reports")}</span>
-                <span className="font-medium">{user.reports_generated} / {user.report_limit}</span>
+                <span className="font-medium">{user.reports_generated}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{t("admin.userDetail.assessments")}</span>
