@@ -54,6 +54,9 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [oauthPhoneStep, setOauthPhoneStep] = useState<'google' | 'apple' | null>(null);
+  const [oauthPhone, setOauthPhone] = useState('');
+  const [oauthPhoneError, setOauthPhoneError] = useState<string | null>(null);
   
   const [signUpData, setSignUpData] = useState({
     name: '',
