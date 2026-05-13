@@ -58,13 +58,13 @@ const About = () => {
       <PageSeo
         path="/about"
         en={{
-          title: "About SolarMatch | Egypt's AI Solar Feasibility Platform",
-          description: "SolarMatch is Egypt's AI-powered solar feasibility platform — built to give homeowners, farms, and businesses accurate solar ROI, savings, and payback estimates before talking to installers.",
+          title: "About SolarMatch | AI Solar Feasibility, Egypt",
+          description: "SolarMatch is Egypt's AI solar feasibility platform — accurate ROI, savings, and payback estimates for homes, farms, and businesses.",
           keywords: "About SolarMatch, Solar Match Egypt, AI solar calculator, solar feasibility platform Egypt",
         }}
         ar={{
-          title: "عن SolarMatch | منصة دراسة جدوى الطاقة الشمسية في مصر",
-          description: "SolarMatch منصة ذكية لدراسة جدوى الطاقة الشمسية في مصر — تساعد المنازل والمزارع والشركات على معرفة التكلفة، التوفير، والعائد على الاستثمار قبل التواصل مع شركات التركيب.",
+          title: "عن SolarMatch | جدوى الطاقة الشمسية في مصر",
+          description: "SolarMatch منصة ذكية لدراسة جدوى الطاقة الشمسية في مصر للمنازل والمزارع والشركات: التكلفة، التوفير، والعائد على الاستثمار.",
           keywords: "عن SolarMatch, منصة الطاقة الشمسية, دراسة جدوى الطاقة الشمسية في مصر, الطاقة الشمسية في مصر",
         }}
         breadcrumbs={[{ name: "About", nameAr: "من نحن", path: "/about" }]}
