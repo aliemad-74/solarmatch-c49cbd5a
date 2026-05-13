@@ -567,15 +567,16 @@ const Index = () => {
         path="/"
         arPath="/?lang=ar"
         en={{
-          title: "SolarMatch — Go Solar, Get Matched | AI Solar Feasibility for Egypt",
-          description: "Go Solar, Get Matched. SolarMatch helps homeowners, farms, and businesses in Egypt estimate solar system size, savings, ROI, payback period, and installation cost using AI-powered solar analysis.",
+          title: "SolarMatch — AI Solar Feasibility for Egypt",
+          description: "Estimate solar system size, savings, ROI and payback for homes, farms and businesses in Egypt with SolarMatch's AI feasibility platform.",
           keywords: "SolarMatch, Solar Match, Go Solar Get Matched, solar calculator Egypt, solar panels Egypt, solar feasibility Egypt, AI solar calculator, solar ROI Egypt, solar cost Egypt, solar payback calculator, solar for farms Egypt, solar for businesses Egypt, solar savings calculator, solar system size calculator, solar installation Egypt",
         }}
         ar={{
-          title: "SolarMatch — Go Solar, Get Matched | الطاقة الشمسية في مصر",
-          description: "Go Solar, Get Matched. يساعدك SolarMatch على حساب تكلفة الطاقة الشمسية، التوفير، العائد على الاستثمار، وفترة الاسترداد للمنازل والمزارع والشركات في مصر.",
+          title: "SolarMatch | حاسبة الطاقة الشمسية في مصر",
+          description: "حاسبة جدوى الطاقة الشمسية في مصر للمنازل والمزارع والشركات: حجم النظام، التوفير، العائد وفترة الاسترداد بالذكاء الاصطناعي.",
           keywords: "SolarMatch, Go Solar Get Matched, الطاقة الشمسية في مصر, حاسبة الطاقة الشمسية, دراسة جدوى الطاقة الشمسية, تكلفة الطاقة الشمسية في مصر, الطاقة الشمسية للمزارع, الطاقة الشمسية للشركات, ألواح شمسية للمنازل, تركيب الطاقة الشمسية في مصر",
         }}
+        faqs={{ en: FAQ_EN, ar: FAQ_AR }}
       />
       <Header />
       
