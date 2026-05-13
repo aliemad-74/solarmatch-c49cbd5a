@@ -131,8 +131,29 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
           // Fetch profile without blocking — do NOT touch isLoading here
           setTimeout(() => {
-            fetchProfile(currentSession.user.id).then((profileData) => {
-              if (isMounted) setProfile(profileData);
+            fetchProfile(currentSession.user.id).then(async (profileData) => {
+              if (!isMounted) return;
+              setProfile(profileData);
+
+              // If user just completed OAuth and we captured a phone before the redirect,
+              // persist it to their profile (only when profile.phone is empty).
+              try {
+                const pendingPhone = typeof window !== 'undefined'
+                  ? localStorage.getItem('pending_oauth_phone')
+                  : null;
+                if (pendingPhone && profileData && !profileData.phone) {
+                  const { data: updated } = await supabase
+                    .from('profiles')
+                    .update({ phone: pendingPhone })
+                    .eq('user_id', currentSession.user.id)
+                    .select()
+                    .maybeSingle();
+                  if (isMounted && updated) setProfile(updated as Profile);
+                }
+                if (pendingPhone) localStorage.removeItem('pending_oauth_phone');
+              } catch (err) {
+                console.error('Error syncing pending OAuth phone:', err);
+              }
             });
           }, 0);
         } else {

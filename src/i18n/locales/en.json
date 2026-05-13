@@ -659,7 +659,11 @@
       "blocked_email_domain": "This email domain is not allowed. Please use a different email.",
       "ip_limit_exceeded": "Too many accounts created from this network. Please try again later.",
       "unknown": "An error occurred. Please try again."
-    }
+    },
+    "oauthPhoneTitle": "Enter your phone first",
+    "oauthPhoneDescription": "We need your mobile number before continuing with Google or Apple.",
+    "continueWithProvider": "Continue",
+    "back": "Back"
   },
   "limitReached": {
     "title": "Free Report Used",
