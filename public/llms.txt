@@ -14,24 +14,28 @@ Geography: Egypt (residential, commercial, industrial, agricultural)
 - Bilingual PDF report
 - Verified by AI checkpoint (capped financial adjustments)
 
-## Key Pages
-- /                       Homepage — feasibility calculator (English)
-- /ar                     Homepage — feasibility calculator (Arabic)
-- /blog, /ar/blog         Knowledge hub (long-form pillar articles)
-- /why-solarmatch         Platform value proposition
-- /features               Feature overview
-- /financing              Financing calculator
-- /methodology            Data sources, formulas, authorship (E-E-A-T)
+## Pages
+- [Homepage (English)](/): Free AI solar feasibility calculator for Egypt.
+- [Homepage (Arabic)](/ar): حاسبة جدوى الطاقة الشمسية في مصر.
+- [About SolarMatch](/about): Mission, values, and platform overview.
+- [Why SolarMatch](/why-solarmatch): Platform value proposition and benefits.
+- [Features](/features): Feature overview of the calculator and reports.
+- [Methodology](/methodology): Data sources, formulas, and authorship (E-E-A-T).
+- [Financing Calculator](/financing): Solar financing and installments calculator.
+- [Contact](/contact): Reach the SolarMatch team for support and partnerships.
+- [Blog (English)](/blog): Knowledge hub — long-form pillar articles.
+- [Blog (Arabic)](/ar/blog): مدونة SolarMatch بالعربية.
+- [Privacy Policy](/privacy): Privacy policy.
+- [Terms of Service](/terms): Terms of service.
 
 ## Programmatic SEO Hubs
-- /solar/{governorate}            Solar feasibility per Egyptian governorate (27 governorates)
-- /solar-for/{property-type}      Solar by property type (villa, apartment, factory, farm, school, mosque, etc.)
-- /solar-bill/{amount}-egp        Recommended system per monthly bill (500–100,000 EGP)
-- /compare/{topic}                Comparisons (solar vs generator, on-grid vs off-grid, etc.)
-- /guides/{topic}                 How-to and explainer guides
-- /financing/{topic}              Loans, leasing, installments, PPA
-- /solar-roi/{topic}              ROI and payback analyses
-All hubs available in both /en and /ar.
+- [Solar by Governorate — Cairo](/solar/cairo): Solar feasibility per Egyptian governorate (27 governorates available).
+- [Solar by Property Type — Villa](/solar-for/villa): Solar by property type (villa, apartment, factory, farm, school, mosque, etc.).
+- [Solar by Bill Amount — 2000 EGP](/solar-bill/2000-egp): Recommended system per monthly bill (500–100,000 EGP).
+- [Comparisons — Solar vs Generator](/compare/solar-vs-generator): Comparison guides (on-grid vs off-grid, solar vs generator, etc.).
+- [Guides — How Solar Works](/guides/how-solar-works): How-to and explainer guides.
+- [Financing — Solar Loans](/financing/solar-loans): Loans, leasing, installments, PPA.
+- [ROI Analyses — Residential Payback](/solar-roi/residential-payback): ROI and payback analyses.
 
 ## Data Sources
 - NASA POWER (solar irradiance, temperature, climate)
