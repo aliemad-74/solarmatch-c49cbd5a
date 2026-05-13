@@ -123,7 +123,7 @@ export const ReportFeedback = ({ context }: { context?: Record<string, unknown> 
       <CardContent className="space-y-3">
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} onClick={() => setRating(n)} className={`text-2xl leading-none ${n <= rating ? "text-primary" : "text-muted-foreground/40"}`} aria-label={`${n} stars`}>★</button>
+            <button key={n} onClick={() => setRating(n)} className={`text-2xl leading-none ${n <= rating ? "text-primary" : "text-muted-foreground"}`} aria-label={`${n} stars`}>★</button>
           ))}
         </div>
         <Textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={ar ? "تعليقك (اختياري)" : "Comment (optional)"} maxLength={2000} rows={3} />
