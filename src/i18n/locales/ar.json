@@ -659,7 +659,11 @@
       "blocked_email_domain": "هذا النطاق غير مسموح به. يرجى استخدام بريد إلكتروني آخر.",
       "ip_limit_exceeded": "تم إنشاء حسابات كثيرة من هذه الشبكة. حاول لاحقاً.",
       "unknown": "حدث خطأ. حاول مرة أخرى."
-    }
+    },
+    "oauthPhoneTitle": "أدخل رقم موبايلك أولاً",
+    "oauthPhoneDescription": "نحتاج رقم موبايلك قبل المتابعة مع Google أو Apple.",
+    "continueWithProvider": "متابعة",
+    "back": "رجوع"
   },
   "limitReached": {
     "title": "انتهى التقرير المجاني",
