@@ -77,16 +77,32 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
   const [emailSent, setEmailSent] = useState(false);
   const [sentToEmail, setSentToEmail] = useState('');
 
-  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
+  const PHONE_REGEX = /^[0-9+\-\(\) ]{7,20}$/;
+
+  const handleOAuthSignIn = (provider: 'google' | 'apple') => {
     setError(null);
-    setIsOAuthLoading(provider);
-    
-    const { error } = await signInWithOAuth(provider);
-    
+    setOauthPhoneError(null);
+    setOauthPhone('');
+    setOauthPhoneStep(provider);
+  };
+
+  const confirmOAuthPhone = async () => {
+    if (!oauthPhoneStep) return;
+    const trimmed = oauthPhone.trim();
+    if (!PHONE_REGEX.test(trimmed)) {
+      setOauthPhoneError(t('auth.errors.invalidPhone') || 'Invalid phone number');
+      return;
+    }
+    setOauthPhoneError(null);
+    try {
+      localStorage.setItem('pending_oauth_phone', trimmed);
+    } catch { /* noop */ }
+
+    setIsOAuthLoading(oauthPhoneStep);
+    const { error } = await signInWithOAuth(oauthPhoneStep);
     if (error) {
       setError(error);
     } else {
-      // OAuth succeeded inline (no redirect) — close modal
       onSuccess();
       onOpenChange(false);
     }
