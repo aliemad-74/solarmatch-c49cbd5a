@@ -91,7 +91,7 @@ const ProgressIndicator = ({ hasLocation, hasConfigured, hasResults }: ProgressI
                         ? "bg-primary text-primary-foreground"
                         : isActive
                           ? "bg-primary/15 border-[1.5px] border-primary text-primary"
-                          : "bg-muted border border-border/60 text-muted-foreground/50 group-hover:border-primary/40 group-hover:text-muted-foreground"
+                          : "bg-muted border border-border/60 text-muted-foreground group-hover:border-primary/40 group-hover:text-foreground"
                     )}
                     animate={
                       isDone
@@ -129,7 +129,7 @@ const ProgressIndicator = ({ hasLocation, hasConfigured, hasResults }: ProgressI
                   <span
                     className={cn(
                       "text-[9px] font-semibold uppercase tracking-wider transition-colors duration-300",
-                      isDone ? "text-primary" : isActive ? "text-primary/80" : "text-muted-foreground/40 group-hover:text-muted-foreground/60"
+                      isDone ? "text-primary" : isActive ? "text-primary/80" : "text-muted-foreground group-hover:text-foreground"
                     )}
                   >
                     {step.label}
