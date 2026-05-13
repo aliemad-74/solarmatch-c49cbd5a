@@ -70,13 +70,13 @@ const Contact = () => {
       <PageSeo
         path="/contact"
         en={{
-          title: "Contact SolarMatch | Solar Support & Partnerships in Egypt",
-          description: "Reach the SolarMatch team for support, partnerships, or expert consultation on solar panels, ROI, and feasibility studies for homes, farms, and businesses in Egypt.",
+          title: "Contact SolarMatch | Solar Support, Egypt",
+          description: "Reach SolarMatch for solar support, partnerships, or expert consultation on panels, ROI, and feasibility for homes, farms, and businesses.",
           keywords: "Contact SolarMatch, solar support Egypt, solar partnerships, solar consultation Egypt",
         }}
         ar={{
-          title: "تواصل مع SolarMatch | دعم الطاقة الشمسية والشراكات في مصر",
-          description: "تواصل مع فريق SolarMatch للحصول على الدعم، الشراكات، أو استشارة خبير في الطاقة الشمسية للمنازل والمزارع والشركات في مصر.",
+          title: "تواصل مع SolarMatch | دعم الطاقة الشمسية",
+          description: "تواصل مع فريق SolarMatch للدعم، الشراكات، أو استشارة خبير في الطاقة الشمسية للمنازل والمزارع والشركات في مصر.",
           keywords: "تواصل مع SolarMatch, دعم الطاقة الشمسية, الطاقة الشمسية في مصر",
         }}
         breadcrumbs={[{ name: "Contact", nameAr: "تواصل معنا", path: "/contact" }]}
