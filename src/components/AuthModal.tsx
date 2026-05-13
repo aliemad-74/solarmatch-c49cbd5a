@@ -251,6 +251,9 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
         setIsOAuthLoading(null);
         setIsSubmitting(false);
         setError(null);
+        setOauthPhoneStep(null);
+        setOauthPhone('');
+        setOauthPhoneError(null);
       }
       onOpenChange(isOpen);
     }}>
