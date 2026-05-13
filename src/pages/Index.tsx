@@ -12,6 +12,12 @@ import Footer from "@/components/Footer";
 import SeoLinkHub from "@/components/seo/SeoLinkHub";
 import AuthModal from "@/components/AuthModal";
 import { RoofReportSection, ReportFeedback } from "@/components/ReportExtras";
+import enLocale from "@/i18n/locales/en.json";
+import arLocale from "@/i18n/locales/ar.json";
+
+const FAQ_KEYS = ["howMuchCost","roofSize","paybackPeriod","maintenance","gridConnection","lifespan","weather","permits"] as const;
+const FAQ_EN = FAQ_KEYS.map((k) => ({ q: (enLocale as any).faq.questions[k].q, a: (enLocale as any).faq.questions[k].a }));
+const FAQ_AR = FAQ_KEYS.map((k) => ({ q: (arLocale as any).faq.questions[k].q, a: (arLocale as any).faq.questions[k].a }));
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SolarChatBot from "@/components/SolarChatBot";
