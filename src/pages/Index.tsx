@@ -567,6 +567,8 @@ const Index = () => {
     if (!user || !profile) {
       setShowAuthModal(true);
       setPendingCalculation(true);
+      // Persist a flag so OAuth redirect (page reload) can auto-resume
+      setPendingCalculationFlag();
       return;
     }
 
