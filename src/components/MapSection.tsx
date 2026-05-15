@@ -38,6 +38,8 @@ interface MapSectionProps {
     center: { lat: number; lng: number },
     area: number,
   ) => void;
+  initialPolygon?: { lat: number; lng: number }[];
+  initialLocation?: { lat: number; lng: number; name?: string };
 }
 
 interface LatLng {
