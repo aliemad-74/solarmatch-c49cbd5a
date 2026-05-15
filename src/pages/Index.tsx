@@ -633,6 +633,16 @@ const Index = () => {
         <div id="map-section">
           <ScrollReveal>
             <MapSection
+              initialPolygon={persistedSession.polygon}
+              initialLocation={
+                persistedSession.locationLat != null && persistedSession.locationLng != null
+                  ? {
+                      lat: persistedSession.locationLat,
+                      lng: persistedSession.locationLng,
+                      name: persistedSession.locationName,
+                    }
+                  : undefined
+              }
               onAreaCalculated={(area) => {
                 setRooftopArea(Math.round(area));
                 setPolygonDrawn(true);
