@@ -101,10 +101,11 @@ const Index = () => {
   const [solarEngineLoading, setSolarEngineLoading] = useState(false);
   
   // Explicit user-interaction flags (not from defaults/persisted)
-  const [userSelectedLocation, setUserSelectedLocation] = useState(false);
+  const persistedSession = loadPersistedSession();
+  const [userSelectedLocation, setUserSelectedLocation] = useState<boolean>(!!persistedSession.userSelectedLocation);
   const [userEditedConfig, setUserEditedConfig] = useState(false);
   const { panelPrices, tariffs, getCostPerKW, refresh: refreshMarketData } = useMarketData();
-  const [polygonDrawn, setPolygonDrawn] = useState(false);
+  const [polygonDrawn, setPolygonDrawn] = useState<boolean>(!!persistedSession.polygonDrawn);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
@@ -131,14 +132,18 @@ const Index = () => {
   // Map/location state
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   
-  const [locationName, setLocationName] = useState<string>("");
+  const [locationName, setLocationName] = useState<string>(persistedSession.locationName || "");
   
   // Results
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
   const [roofReport, setRoofReport] = useState<RoofReport | null>(null);
-  const [polygonInfo, setPolygonInfo] = useState<{ polygon: { lat: number; lng: number }[]; center: { lat: number; lng: number } } | null>(null);
+  const [polygonInfo, setPolygonInfo] = useState<{ polygon: { lat: number; lng: number }[]; center: { lat: number; lng: number } } | null>(
+    persistedSession.polygon && persistedSession.polygonCenter
+      ? { polygon: persistedSession.polygon, center: persistedSession.polygonCenter }
+      : null
+  );
 
   // Onboarding tour — show only for first-time visitors
   const [showOnboarding, setShowOnboarding] = useState(false);
