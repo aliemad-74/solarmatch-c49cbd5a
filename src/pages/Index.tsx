@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 import { trackEvent } from "@/lib/analytics";
-import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
+import { loadPersistedInputs, saveInputs, loadPersistedSession, savePersistedSession, setPendingCalculationFlag, consumePendingCalculationFlag } from "@/hooks/usePersistedInputs";
 
 export interface SolarEngineData {
   success: boolean;
