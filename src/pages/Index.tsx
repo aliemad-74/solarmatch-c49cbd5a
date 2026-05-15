@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 import { trackEvent } from "@/lib/analytics";
-import { loadPersistedInputs, saveInputs } from "@/hooks/usePersistedInputs";
+import { loadPersistedInputs, saveInputs, loadPersistedSession, savePersistedSession, setPendingCalculationFlag, consumePendingCalculationFlag } from "@/hooks/usePersistedInputs";
 
 export interface SolarEngineData {
   success: boolean;
@@ -101,10 +101,11 @@ const Index = () => {
   const [solarEngineLoading, setSolarEngineLoading] = useState(false);
   
   // Explicit user-interaction flags (not from defaults/persisted)
-  const [userSelectedLocation, setUserSelectedLocation] = useState(false);
+  const persistedSession = loadPersistedSession();
+  const [userSelectedLocation, setUserSelectedLocation] = useState<boolean>(!!persistedSession.userSelectedLocation);
   const [userEditedConfig, setUserEditedConfig] = useState(false);
   const { panelPrices, tariffs, getCostPerKW, refresh: refreshMarketData } = useMarketData();
-  const [polygonDrawn, setPolygonDrawn] = useState(false);
+  const [polygonDrawn, setPolygonDrawn] = useState<boolean>(!!persistedSession.polygonDrawn);
   const initialLocationLoadRef = useRef(true);
   // Load persisted inputs
   const persisted = loadPersistedInputs();
@@ -131,14 +132,18 @@ const Index = () => {
   // Map/location state
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
   
-  const [locationName, setLocationName] = useState<string>("");
+  const [locationName, setLocationName] = useState<string>(persistedSession.locationName || "");
   
   // Results
   const [results, setResults] = useState<SolarCalculation | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [aiReviewText, setAiReviewText] = useState<string>("");
   const [roofReport, setRoofReport] = useState<RoofReport | null>(null);
-  const [polygonInfo, setPolygonInfo] = useState<{ polygon: { lat: number; lng: number }[]; center: { lat: number; lng: number } } | null>(null);
+  const [polygonInfo, setPolygonInfo] = useState<{ polygon: { lat: number; lng: number }[]; center: { lat: number; lng: number } } | null>(
+    persistedSession.polygon && persistedSession.polygonCenter
+      ? { polygon: persistedSession.polygon, center: persistedSession.polygonCenter }
+      : null
+  );
 
   // Onboarding tour — show only for first-time visitors
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -171,6 +176,19 @@ const Index = () => {
       monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption,
       farmMode, areaInFeddans, agriculturalActivity, farmEquipmentConsumption]);
 
+  // Persist map/location/polygon state so it survives OAuth redirect & reload
+  useEffect(() => {
+    savePersistedSession({
+      locationName,
+      polygon: polygonInfo?.polygon,
+      polygonCenter: polygonInfo?.center,
+      polygonDrawn,
+      userSelectedLocation,
+      locationLat: polygonInfo?.center?.lat ?? climateData?.location?.lat,
+      locationLng: polygonInfo?.center?.lng ?? climateData?.location?.lng,
+    });
+  }, [locationName, polygonInfo, polygonDrawn, userSelectedLocation, climateData]);
+
   // Check for shared URL parameters on load
   useEffect(() => {
     const sharedParams = parseShareFromUrl();
@@ -179,7 +197,8 @@ const Index = () => {
     }
   }, []);
 
-  // Reset state when user logs out
+  // On logout, only clear in-memory results — keep inputs/location persisted
+  // so the user finds everything intact next time.
   useEffect(() => {
     if (!user) {
       setResults(null);
@@ -187,6 +206,20 @@ const Index = () => {
       setPendingCalculation(false);
     }
   }, [user]);
+
+  // Resume calculation after returning from OAuth login redirect
+  useEffect(() => {
+    if (user && profile && canGenerateReport) {
+      const shouldResume = consumePendingCalculationFlag();
+      if (shouldResume && polygonInfo && climateData) {
+        // Defer slightly so the UI mounts first
+        setTimeout(() => {
+          performCalculation();
+        }, 300);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile, canGenerateReport]);
 
   const loadSharedParams = (params: ShareableParams) => {
     setRooftopArea(params.rooftopArea);
@@ -534,6 +567,8 @@ const Index = () => {
     if (!user || !profile) {
       setShowAuthModal(true);
       setPendingCalculation(true);
+      // Persist a flag so OAuth redirect (page reload) can auto-resume
+      setPendingCalculationFlag();
       return;
     }
 
@@ -598,6 +633,16 @@ const Index = () => {
         <div id="map-section">
           <ScrollReveal>
             <MapSection
+              initialPolygon={persistedSession.polygon}
+              initialLocation={
+                persistedSession.locationLat != null && persistedSession.locationLng != null
+                  ? {
+                      lat: persistedSession.locationLat,
+                      lng: persistedSession.locationLng,
+                      name: persistedSession.locationName,
+                    }
+                  : undefined
+              }
               onAreaCalculated={(area) => {
                 setRooftopArea(Math.round(area));
                 setPolygonDrawn(true);
