@@ -176,6 +176,19 @@ const Index = () => {
       monthlyConsumption, buildingMode, numberOfUnits, avgUnitConsumption,
       farmMode, areaInFeddans, agriculturalActivity, farmEquipmentConsumption]);
 
+  // Persist map/location/polygon state so it survives OAuth redirect & reload
+  useEffect(() => {
+    savePersistedSession({
+      locationName,
+      polygon: polygonInfo?.polygon,
+      polygonCenter: polygonInfo?.center,
+      polygonDrawn,
+      userSelectedLocation,
+      locationLat: polygonInfo?.center?.lat ?? climateData?.location?.lat,
+      locationLng: polygonInfo?.center?.lng ?? climateData?.location?.lng,
+    });
+  }, [locationName, polygonInfo, polygonDrawn, userSelectedLocation, climateData]);
+
   // Check for shared URL parameters on load
   useEffect(() => {
     const sharedParams = parseShareFromUrl();
@@ -184,7 +197,8 @@ const Index = () => {
     }
   }, []);
 
-  // Reset state when user logs out
+  // On logout, only clear in-memory results — keep inputs/location persisted
+  // so the user finds everything intact next time.
   useEffect(() => {
     if (!user) {
       setResults(null);
@@ -192,6 +206,20 @@ const Index = () => {
       setPendingCalculation(false);
     }
   }, [user]);
+
+  // Resume calculation after returning from OAuth login redirect
+  useEffect(() => {
+    if (user && profile && canGenerateReport) {
+      const shouldResume = consumePendingCalculationFlag();
+      if (shouldResume && polygonInfo && climateData) {
+        // Defer slightly so the UI mounts first
+        setTimeout(() => {
+          performCalculation();
+        }, 300);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile, canGenerateReport]);
 
   const loadSharedParams = (params: ShareableParams) => {
     setRooftopArea(params.rooftopArea);
