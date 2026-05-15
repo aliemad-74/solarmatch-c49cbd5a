@@ -57,6 +57,8 @@ const MapSection = ({
   onClimateDataFetched,
   onLocationChange,
   onPolygonComplete,
+  initialPolygon,
+  initialLocation,
 }: MapSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<
@@ -65,9 +67,15 @@ const MapSection = ({
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [polygonPoints, setPolygonPoints] = useState<LatLng[]>([]);
+  const [polygonPoints, setPolygonPoints] = useState<LatLng[]>(
+    () => (initialPolygon && initialPolygon.length >= MIN_POLYGON_POINTS ? initialPolygon : [])
+  );
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null);
-  const [currentLocation, setCurrentLocation] = useState(DEFAULT_LOCATION);
+  const [currentLocation, setCurrentLocation] = useState(
+    () => initialLocation
+      ? { lat: initialLocation.lat, lng: initialLocation.lng, name: initialLocation.name || DEFAULT_LOCATION.name }
+      : DEFAULT_LOCATION
+  );
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [climateData, setClimateData] = useState<ClimateData | null>(null);
