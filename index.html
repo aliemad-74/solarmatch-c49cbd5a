@@ -157,7 +157,23 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-QH9DCF8BY4', { anonymize_ip: true });
-  </script>
+    </script>
+
+    <!-- SiteNavigationElement schema — helps Google build sitelinks -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          { "@type": "SiteNavigationElement", "name": "Home", "url": "https://solarmatch.site/" },
+          { "@type": "SiteNavigationElement", "name": "Why SolarMatch", "url": "https://solarmatch.site/why-solarmatch" },
+          { "@type": "SiteNavigationElement", "name": "Features", "url": "https://solarmatch.site/features" },
+          { "@type": "SiteNavigationElement", "name": "Blog", "url": "https://solarmatch.site/blog" },
+          { "@type": "SiteNavigationElement", "name": "About", "url": "https://solarmatch.site/about" },
+          { "@type": "SiteNavigationElement", "name": "Contact", "url": "https://solarmatch.site/contact" },
+          { "@type": "SiteNavigationElement", "name": "Methodology", "url": "https://solarmatch.site/methodology" }
+        ]
+      }
+    </script>
 </head>
 
   <body>
