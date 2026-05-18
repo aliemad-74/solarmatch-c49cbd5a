@@ -600,7 +600,7 @@ const Index = () => {
     <div className="min-h-screen bg-background" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
       <PageSeo
         path="/"
-        arPath="/?lang=ar"
+        arPath="/ar"
         en={{
           title: "SolarMatch — AI Solar Feasibility for Egypt",
           description: "Estimate solar system size, savings, ROI and payback for homes, farms and businesses in Egypt with SolarMatch's AI feasibility platform.",
