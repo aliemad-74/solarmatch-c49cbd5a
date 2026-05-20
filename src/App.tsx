@@ -36,6 +36,7 @@ import AdminVisitors from "./pages/admin/AdminVisitors";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import VisitTracker from "./components/VisitTracker";
+import PhoneCollectionGate from "./components/PhoneCollectionGate";
 import {
   GovernorateRoute, PropertyTypeRoute, BillRoute,
   ComparisonRoute, GuideRoute, FinancingRoute, RoiRoute,
