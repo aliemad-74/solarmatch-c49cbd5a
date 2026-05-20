@@ -174,11 +174,14 @@ const ReportsTable = () => {
               <TableHead>{t("admin.reports.location")}</TableHead>
               <TableHead>{t("admin.reports.systemSize")}</TableHead>
               <TableHead>{t("admin.reports.buildingType")}</TableHead>
+              <TableHead>{i18n.language === "ar" ? "نوع الخلايا" : "Panel Type"}</TableHead>
+              <TableHead>{i18n.language === "ar" ? "السعر" : "Price"}</TableHead>
               <TableHead>{t("admin.reports.savings")}</TableHead>
               <TableHead>{t("admin.reports.payback")}</TableHead>
               <TableHead>{t("admin.reports.verdict")}</TableHead>
               <TableHead>{t("admin.reports.createdAt")}</TableHead>
               <TableHead>{t("admin.users.actions")}</TableHead>
+
             </TableRow>
           </TableHeader>
           <TableBody>
