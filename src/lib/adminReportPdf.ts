@@ -74,3 +74,7 @@ export async function downloadAdminReportPdf(
     results.panelWattage = selected.package.typicalPanelWattage;
   }
 
+  await generateSolarReport(results, report.location_name || undefined, language);
+}
+
+
