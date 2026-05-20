@@ -79,35 +79,23 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
 
   const PHONE_REGEX = /^[0-9+\-\(\) ]{7,20}$/;
 
-  const handleOAuthSignIn = (provider: 'google' | 'apple') => {
+  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     setError(null);
-    setOauthPhoneError(null);
-    setOauthPhone('');
-    setOauthPhoneStep(provider);
-  };
-
-  const confirmOAuthPhone = async () => {
-    if (!oauthPhoneStep) return;
-    const trimmed = oauthPhone.trim();
-    if (!PHONE_REGEX.test(trimmed)) {
-      setOauthPhoneError(t('auth.errors.invalidPhone') || 'Invalid phone number');
-      return;
-    }
-    setOauthPhoneError(null);
-    try {
-      localStorage.setItem('pending_oauth_phone', trimmed);
-    } catch { /* noop */ }
-
-    setIsOAuthLoading(oauthPhoneStep);
-    const { error } = await signInWithOAuth(oauthPhoneStep);
+    setIsOAuthLoading(provider);
+    const { error } = await signInWithOAuth(provider);
     if (error) {
       setError(error);
+      setIsOAuthLoading(null);
     } else {
+      // Browser redirects to provider; if a new account is created without a phone,
+      // PhoneCollectionGate will prompt for it after login.
       onSuccess();
       onOpenChange(false);
+      setIsOAuthLoading(null);
     }
-    setIsOAuthLoading(null);
   };
+
+  const confirmOAuthPhone = async () => { /* deprecated */ };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,60 +316,8 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
               </Button>
             </div>
           </div>
-        ) : oauthPhoneStep ? (
-          <div className="space-y-4 mt-3">
-            <div className="p-3 rounded-lg bg-muted/50 text-center">
-              <p className="text-sm font-medium text-foreground mb-1">
-                {t('auth.oauthPhoneTitle')}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t('auth.oauthPhoneDescription')}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="oauth-phone" className="text-sm">{t('auth.phone')}</Label>
-              <Input
-                id="oauth-phone"
-                type="tel"
-                placeholder={t('auth.phonePlaceholder') || '+20 XXX XXX XXXX'}
-                value={oauthPhone}
-                onChange={(e) => setOauthPhone(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmOAuthPhone(); } }}
-                className={`h-10 ${oauthPhoneError ? 'border-destructive' : ''}`}
-                disabled={isDisabled}
-                dir="ltr"
-                autoFocus
-              />
-              {oauthPhoneError && <p className="text-xs text-destructive">{oauthPhoneError}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="w-full bg-gradient-to-r from-primary to-solar-gold hover:opacity-90"
-                onClick={confirmOAuthPhone}
-                disabled={isDisabled}
-              >
-                {isOAuthLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                {t('auth.continueWithProvider')} {oauthPhoneStep === 'google' ? 'Google' : 'Apple'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => { setOauthPhoneStep(null); setOauthPhone(''); setOauthPhoneError(null); }}
-                disabled={isDisabled}
-                className="w-full"
-              >
-                {t('auth.back')}
-              </Button>
-            </div>
-          </div>
         ) : (
+
           <>
 
         {/* OAuth Buttons */}
