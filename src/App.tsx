@@ -62,6 +62,7 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <VisitTracker />
+                <PhoneCollectionGate />
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
