@@ -61,7 +61,7 @@ const ReportsTable = () => {
       // Fetch assessments for additional data
       const { data: assessData } = await supabase
         .from("solar_assessments")
-        .select("user_id, building_type, feasibility, annual_savings, payback_years, pv_package, created_at")
+        .select("user_id, building_type, feasibility, annual_savings, payback_years, pv_package, total_cost, created_at")
         .order("created_at", { ascending: false });
 
       // Group assessments by user_id for loose matching
