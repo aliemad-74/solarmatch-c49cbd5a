@@ -37,6 +37,8 @@ const ReportsTable = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [deleteReport, setDeleteReport] = useState<any>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
 
   const { data: reports, isLoading } = useQuery({
     queryKey: ["admin-reports-enhanced"],
