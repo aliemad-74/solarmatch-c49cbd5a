@@ -18,10 +18,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, MapPin, Zap, MoreHorizontal, Trash2, Flag, DollarSign, Building } from "lucide-react";
+import { Search, MapPin, Zap, MoreHorizontal, Trash2, Flag, DollarSign, Building, Download, Sun } from "lucide-react";
 import { format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { exportToCSV } from "@/lib/exportUtils";
+import { downloadAdminReportPdf } from "@/lib/adminReportPdf";
+
 
 const feasibilityColors: Record<string, string> = {
   Suitable: "default",
