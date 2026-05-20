@@ -68,11 +68,10 @@ export default function PhoneCollectionGate() {
   return (
     <Dialog open={needsPhone}>
       <DialogContent
-        className="sm:max-w-md"
+        className="sm:max-w-md [&>button]:hidden"
         dir={isRTL ? 'rtl' : 'ltr'}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        showCloseButton={false}
       >
         <DialogHeader className="text-center sm:text-center">
           <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-solar-gold/20 flex items-center justify-center">
