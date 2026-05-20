@@ -79,35 +79,23 @@ export default function AuthModal({ open, onOpenChange, onSuccess }: AuthModalPr
 
   const PHONE_REGEX = /^[0-9+\-\(\) ]{7,20}$/;
 
-  const handleOAuthSignIn = (provider: 'google' | 'apple') => {
+  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
     setError(null);
-    setOauthPhoneError(null);
-    setOauthPhone('');
-    setOauthPhoneStep(provider);
-  };
-
-  const confirmOAuthPhone = async () => {
-    if (!oauthPhoneStep) return;
-    const trimmed = oauthPhone.trim();
-    if (!PHONE_REGEX.test(trimmed)) {
-      setOauthPhoneError(t('auth.errors.invalidPhone') || 'Invalid phone number');
-      return;
-    }
-    setOauthPhoneError(null);
-    try {
-      localStorage.setItem('pending_oauth_phone', trimmed);
-    } catch { /* noop */ }
-
-    setIsOAuthLoading(oauthPhoneStep);
-    const { error } = await signInWithOAuth(oauthPhoneStep);
+    setIsOAuthLoading(provider);
+    const { error } = await signInWithOAuth(provider);
     if (error) {
       setError(error);
+      setIsOAuthLoading(null);
     } else {
+      // Browser redirects to provider; if a new account is created without a phone,
+      // PhoneCollectionGate will prompt for it after login.
       onSuccess();
       onOpenChange(false);
+      setIsOAuthLoading(null);
     }
-    setIsOAuthLoading(null);
   };
+
+  const confirmOAuthPhone = async () => { /* deprecated */ };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
