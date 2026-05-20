@@ -187,7 +187,7 @@ const ReportsTable = () => {
           <TableBody>
             {filteredReports?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   {t("admin.reports.noReports")}
                 </TableCell>
               </TableRow>
@@ -217,6 +217,21 @@ const ReportsTable = () => {
                       <Building className="h-3 w-3 text-muted-foreground" />
                       <span className="text-sm">{report.assessment?.building_type || "-"}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {report.assessment?.pv_package ? (
+                      <div className="flex items-center gap-1">
+                        <Sun className="h-3 w-3 text-amber-500" />
+                        <span className="text-sm capitalize">{report.assessment.pv_package}</span>
+                      </div>
+                    ) : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {report.assessment?.total_cost ? (
+                      <span className="text-sm font-medium">
+                        {Number(report.assessment.total_cost).toLocaleString()} EGP
+                      </span>
+                    ) : "-"}
                   </TableCell>
                   <TableCell>
                     {report.assessment?.annual_savings ? (
@@ -250,6 +265,28 @@ const ReportsTable = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
+                          disabled={downloadingId === report.id}
+                          onClick={async () => {
+                            try {
+                              setDownloadingId(report.id);
+                              await downloadAdminReportPdf(report, i18n.language === "ar" ? "ar" : "en");
+                              toast({ title: i18n.language === "ar" ? "تم تنزيل التقرير" : "Report downloaded" });
+                            } catch (err) {
+                              console.error(err);
+                              toast({
+                                title: i18n.language === "ar" ? "فشل التنزيل" : "Download failed",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              setDownloadingId(null);
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          {i18n.language === "ar" ? "تحميل PDF" : "Download PDF"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => setDeleteReport(report)}
                         >
@@ -258,6 +295,7 @@ const ReportsTable = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+
                   </TableCell>
                 </TableRow>
               ))
