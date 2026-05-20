@@ -72,7 +72,7 @@ export default function PhoneCollectionGate() {
         dir={isRTL ? 'rtl' : 'ltr'}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        hideClose
+        showCloseButton={false}
       >
         <DialogHeader className="text-center sm:text-center">
           <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-solar-gold/20 flex items-center justify-center">
