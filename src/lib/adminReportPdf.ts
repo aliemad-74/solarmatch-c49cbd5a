@@ -55,25 +55,22 @@ export async function downloadAdminReportPdf(
     monthlyConsumption
   );
 
-  // Switch selected package to match stored choice
-  const selected = results.packageOptions.find((p) => p.packageType === pkg);
+  // Switch selected package to the user's stored choice when available
+  const selected = results.packageOptions.find((p) => p.packageKey === pkg);
   if (selected) {
+    const ratio = results.kWInstalled > 0 ? selected.kWInstalled / results.kWInstalled : 1;
     results.selectedPackage = pkg;
     results.kWInstalled = selected.kWInstalled;
-    results.kWMax = selected.kWMax;
     results.energyYear = selected.energyYear;
-    results.energyMonth = selected.energyMonth;
-    results.monthlyProduction = selected.monthlyProduction;
+    results.energyMonth = selected.energyYear / 12;
+    results.monthlyProduction = results.monthlyProduction.map((m) => m * ratio);
     results.savingsYear = selected.savingsYear;
-    results.savingsMonth = selected.savingsMonth;
+    results.savingsMonth = selected.savingsYear / 12;
     results.totalCost = selected.totalCost;
-    results.costPerKW = selected.costPerKW;
+    results.costPerKW = selected.package.costPerKW;
     results.paybackYears = selected.paybackYears;
     results.coverageRatio = selected.coverageRatio;
-    results.co2Saved = selected.co2Saved;
     results.panelCount = selected.panelCount;
-    results.panelWattage = selected.panelWattage;
+    results.panelWattage = selected.package.typicalPanelWattage;
   }
 
-  await generateSolarReport(results, report.location_name || undefined, language);
-}
