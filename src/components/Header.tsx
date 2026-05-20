@@ -33,11 +33,9 @@ const Header = () => {
 
   const navLinks = [
     { path: isAr ? "/ar" : "/", label: t('header.home') },
-    { path: isAr ? "/ar/why-solarmatch" : "/why-solarmatch", label: t('header.why', 'Why SolarMatch') },
     { path: isAr ? "/ar/features" : "/features", label: t('header.features', 'Features') },
     { path: isAr ? "/ar/blog" : "/blog", label: t('header.blog', 'Blog') },
     { path: isAr ? "/ar/about" : "/about", label: t('header.about') },
-    { path: isAr ? "/ar/contact" : "/contact", label: t('header.contact', 'Contact') },
   ];
 
   const aboutSubLinks: { path: string; label: string }[] = [];
