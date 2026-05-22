@@ -56,7 +56,7 @@ export function deriveInsights(
   let buildingType: BuildingType = "apartment";
   let buildingReason = "Medium-sized roof";
   if (rooftopArea < 80) {
-    buildingType = "residential";
+    buildingType = "apartment";
     buildingReason = "Small residential roof";
   } else if (rooftopArea > 500) {
     buildingType = "industrial";
