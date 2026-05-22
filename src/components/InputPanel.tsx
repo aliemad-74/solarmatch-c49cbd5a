@@ -180,10 +180,10 @@ const InputPanel = ({
 
   // Building type labels with translations and icons
   const buildingTypeConfig: Record<BuildingType, { label: string; icon: string }> = {
+    apartment: { label: t('buildingTypes.apartment'), icon: "🏗" },
     residential: { label: t('buildingTypes.residential'), icon: "🏠" },
     commercial: { label: t('buildingTypes.commercial'), icon: "🏢" },
     industrial: { label: t('buildingTypes.industrial'), icon: "🏭" },
-    apartment: { label: t('buildingTypes.apartment'), icon: "🏗" },
     agricultural: { label: t('buildingTypes.agricultural'), icon: "🌾" },
   };
 
