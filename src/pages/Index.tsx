@@ -247,6 +247,52 @@ const Index = () => {
       ? numberOfUnits * avgUnitConsumption 
       : monthlyConsumption;
 
+  // ─────────────────────────────────────────────────────────────
+  // AI-Recommended System Override
+  // When the solar-engine flags the system as oversized and returns a
+  // downsized "recommended" system (≈110% coverage), we surface THAT system
+  // as the primary result the customer sees (size, cost, savings, payback…).
+  // ─────────────────────────────────────────────────────────────
+  const effectiveResults = useMemo<SolarCalculation | null>(() => {
+    if (!results) return null;
+    const rec = solarEngineData?.recommended;
+    if (!rec || !rec.recommended_size_kw || !results.kWInstalled) return results;
+
+    const ratio = rec.recommended_size_kw / results.kWInstalled;
+    if (!isFinite(ratio) || ratio <= 0) return results;
+
+    const annualConsumption = effectiveMonthlyConsumption * 12;
+    const newEnergyYear = Math.round(results.energyYear * ratio);
+    const newMonthly = results.monthlyProduction.map(v => Math.round(v * ratio));
+    const effPricePerKwh = Math.min(results.energyYear, annualConsumption) > 0
+      ? results.savingsYear / Math.min(results.energyYear, annualConsumption)
+      : 1.65;
+    const newSavingsYear = Math.round(Math.min(newEnergyYear, annualConsumption) * effPricePerKwh);
+    const newPayback = newSavingsYear > 0
+      ? Math.round((rec.recommended_cost / newSavingsYear) * 10) / 10
+      : rec.recommended_payback;
+    const newCoverage = annualConsumption > 0
+      ? Math.round((newEnergyYear / annualConsumption) * 100) / 100
+      : results.coverageRatio;
+
+    return {
+      ...results,
+      kWInstalled: rec.recommended_size_kw,
+      kWMax: Math.max(rec.recommended_size_kw, results.kWMax),
+      usableArea: rec.recommended_area,
+      totalCost: rec.recommended_cost,
+      costPerKW: rec.recommended_size_kw > 0 ? Math.round(rec.recommended_cost / rec.recommended_size_kw) : results.costPerKW,
+      energyYear: newEnergyYear,
+      energyMonth: Math.round(newEnergyYear / 12),
+      monthlyProduction: newMonthly,
+      savingsYear: newSavingsYear,
+      savingsMonth: Math.round(newSavingsYear / 12),
+      paybackYears: newPayback,
+      coverageRatio: newCoverage,
+      co2Saved: Math.round(results.co2Saved * ratio * 100) / 100,
+    };
+  }, [results, solarEngineData, effectiveMonthlyConsumption]);
+
   // Handle auth success - proceed with calculation
   useEffect(() => {
     if (pendingCalculation && user && profile && canGenerateReport) {
