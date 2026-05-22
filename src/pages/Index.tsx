@@ -759,7 +759,7 @@ const Index = () => {
           {isCalculating && <ResultsSkeleton />}
           <ScrollReveal>
             <ResultsDashboard 
-              results={results}
+              results={effectiveResults}
               isVisible={showResults && !isCalculating}
               locationName={locationName}
               shareableParams={getShareableParams()}
@@ -807,9 +807,9 @@ const Index = () => {
 
       <Footer />
 
-      {showResults && results && (
+      {showResults && effectiveResults && (
         <SolarChatBot
-          results={results}
+          results={effectiveResults}
           locationName={locationName}
           preloadedRecommendation={aiReviewText}
           monthlyConsumption={effectiveMonthlyConsumption}
