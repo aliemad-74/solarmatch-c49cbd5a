@@ -434,15 +434,24 @@ export function calculateSolarFeasibility(
   // ============================================
   // CALCULATE ALL THREE PACKAGE OPTIONS
   // ============================================
+  // Demand-based ideal sizing: cap system at ~120% of annual consumption
+  // (covers conversion losses + small headroom). Prevents oversizing tiny loads
+  // on big roofs which produced absurd paybacks (e.g. 300+ years).
+  const annualConsumptionForSizing = effectiveMonthlyConsumption * 12;
+  const kWForDemand = adjustedYield > 0 ? (annualConsumptionForSizing * 1.2) / adjustedYield : 0;
+
   const packageOptions: PackageCalculation[] = (Object.entries(dynamicPackages) as [PackageType, SystemPackage][]).map(([key, pkg]) => {
     // Step 1: Usable area
     const usableArea = rooftopArea * building.usableFraction;
-    
-    // Step 2: Max kW for this package's panel type
+
+    // Step 2: Max kW the roof can physically host for this package
     const kWMax = usableArea / pkg.areaPerKW;
-    
-    // Step 3: Practical installed (with residential cap)
-    let kWInstalled = Math.floor(kWMax * 0.95);
+
+    // Step 3: Practical installed = min(roof limit, demand-based ideal)
+    const kWRoofLimit = Math.max(1, Math.floor(kWMax * 0.95));
+    let kWInstalled = kWForDemand > 0
+      ? Math.max(1, Math.min(kWRoofLimit, Math.ceil(kWForDemand)))
+      : kWRoofLimit;
     
     // Step 4: Energy production (dynamic, climate + temperature adjusted)
     const energyYear = kWInstalled * adjustedYield;
