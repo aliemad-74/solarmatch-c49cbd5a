@@ -370,7 +370,12 @@ serve(async (req) => {
       pvPackage = "standard",
       farmMode = false,
       areaInFeddans,
+      electricityPrice,
+      buildingMode = false,
+      numberOfUnits = 1,
+      avgUnitConsumption,
     } = body;
+
 
     if (typeof latitude !== "number" || typeof longitude !== "number" || !isFinite(latitude) || !isFinite(longitude)) {
       return new Response(JSON.stringify({ success: false, error: "Invalid coordinates" }), {
