@@ -334,7 +334,14 @@ const Index = () => {
             pvPackage: pkg,
             farmMode,
             areaInFeddans: farmMode ? areaInFeddans : undefined,
+            // Per-unit tariff context: in Building Mode each apartment has its
+            // own meter, so the engine must price kWh at the per-unit bracket.
+            electricityPrice,
+            buildingMode,
+            numberOfUnits: buildingMode ? numberOfUnits : 1,
+            avgUnitConsumption: buildingMode ? avgUnitConsumption : undefined,
           }),
+
           signal: controller.signal,
         }
       );

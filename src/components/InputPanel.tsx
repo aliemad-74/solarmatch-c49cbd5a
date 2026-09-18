@@ -456,7 +456,11 @@ const InputPanel = ({
                       id="num-units"
                       type="number"
                       value={numberOfUnits || ''}
-                      onChange={(e) => setNumberOfUnits(e.target.value === '' ? 0 : Number(e.target.value))}
+                      onChange={(e) => {
+                        const v = e.target.value === '' ? 0 : Number(e.target.value);
+                        setNumberOfUnits(v);
+                        if (v > 0 && avgUnitConsumption > 0) setUserHasEnteredConsumption(true);
+                      }}
                       min={0}
                       className="h-10"
                     />
@@ -467,17 +471,60 @@ const InputPanel = ({
                       id="avg-consumption"
                       type="number"
                       value={avgUnitConsumption || ''}
-                      onChange={(e) => setAvgUnitConsumption(e.target.value === '' ? 0 : Number(e.target.value))}
+                      onChange={(e) => {
+                        const v = e.target.value === '' ? 0 : Number(e.target.value);
+                        setAvgUnitConsumption(v);
+                        if (v > 0 && numberOfUnits > 0) setUserHasEnteredConsumption(true);
+                      }}
                       min={0}
                       className="h-10"
                     />
                   </div>
                 </div>
-                <div className="pt-2 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
-                    {t('input.totalBuildingConsumption')}: <span className="font-bold text-foreground">{(numberOfUnits * avgUnitConsumption).toLocaleString()} {t('common.kWh')}/{t('common.month')}</span>
-                  </p>
-                </div>
+                {/* Per-unit tariff breakdown: each apartment is billed on its own
+                    meter/bracket, then the building total is the sum of units. */}
+                {numberOfUnits > 0 && avgUnitConsumption > 0 && (() => {
+                  const perUnit = getTariffForConsumption(avgUnitConsumption, buildingType);
+                  const perUnitBill = perUnit.estimatedBillFromKwh;
+                  const buildingBill = perUnitBill * numberOfUnits;
+                  return (
+                    <div className="pt-3 border-t border-border space-y-2">
+                      <p className="text-xs font-medium text-foreground">
+                        {isArabic ? "الحساب لكل وحدة ثم المجموع" : "Calculated per unit, then summed"}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{isArabic ? "شريحة الوحدة الواحدة" : "Bracket per unit"}</span>
+                        <span className="font-semibold text-foreground">
+                          {isArabic ? perUnit.estimatedTariffBracketAr : perUnit.estimatedTariffBracket}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{isArabic ? "سعر الكهرباء للوحدة" : "Price per unit"}</span>
+                        <span className="font-semibold text-foreground">
+                          {perUnit.electricityPricePerKwh.toFixed(2)} {t('common.EGP')}/{t('common.kWh')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{isArabic ? "فاتورة الوحدة الواحدة" : "Bill per unit"}</span>
+                        <span className="font-semibold text-foreground">
+                          ~{Math.round(perUnitBill).toLocaleString()} {t('common.EGP')}/{t('common.month')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-border">
+                        <span className="text-muted-foreground">{t('input.totalBuildingConsumption')}</span>
+                        <span className="font-bold text-foreground">
+                          {(numberOfUnits * avgUnitConsumption).toLocaleString()} {t('common.kWh')}/{t('common.month')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{isArabic ? "إجمالي فواتير المبنى" : "Total building bills"}</span>
+                        <span className="font-bold text-primary">
+                          ~{Math.round(buildingBill).toLocaleString()} {t('common.EGP')}/{t('common.month')}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               /* Standard Mode: Usage Input Method Toggle */
