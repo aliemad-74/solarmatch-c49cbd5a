@@ -440,8 +440,21 @@ serve(async (req) => {
     const coverage_ratio = annual_consumption > 0 ? Math.round((annual_production / annual_consumption) * 100) / 100 : 0;
     const total_cost = Math.round(system_size_kw * costPerKw);
 
-    const electricity_price = 1.65;
+    // Price per kWh comes from the tiered tariff detected on the client.
+    // In Building Mode that bracket is the PER-APARTMENT bracket (each unit has
+    // its own meter), never the aggregated building total.
+    const electricity_price =
+      typeof electricityPrice === "number" && isFinite(electricityPrice) && electricityPrice > 0
+        ? electricityPrice
+        : 1.65;
+    if (buildingMode) {
+      console.log(
+        `[solar-engine] Building Mode: ${numberOfUnits} units x ${avgUnitConsumption ?? "?"} kWh/unit ` +
+        `→ per-unit price ${electricity_price} EGP/kWh`
+      );
+    }
     const annual_savings = Math.round(Math.min(annual_production, annual_consumption) * electricity_price);
+
     const payback_years = annual_savings > 0 ? Math.round((total_cost / annual_savings) * 10) / 10 : 99;
     const co2_saved = Math.round((annual_production * 0.55 / 1000) * 100) / 100;
 
