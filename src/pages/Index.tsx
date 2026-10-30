@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { ClimateData } from "@/lib/climateApi";
 import { parseShareFromUrl, ShareableParams } from "@/lib/shareUtils";
 import { trackEvent } from "@/lib/analytics";
-import { loadPersistedInputs, saveInputs, loadPersistedSession, savePersistedSession, setPendingCalculationFlag, consumePendingCalculationFlag } from "@/hooks/usePersistedInputs";
+import { loadPersistedInputs, saveInputs, defaultInputs, loadPersistedSession, savePersistedSession, didClearForReload, setPendingCalculationFlag, consumePendingCalculationFlag } from "@/hooks/usePersistedInputs";
 
 export interface SolarEngineData {
   success: boolean;
@@ -107,8 +107,13 @@ const Index = () => {
   const { panelPrices, tariffs, getCostPerKW, refresh: refreshMarketData } = useMarketData();
   const [polygonDrawn, setPolygonDrawn] = useState<boolean>(!!persistedSession.polygonDrawn);
   const initialLocationLoadRef = useRef(true);
-  // Load persisted inputs
+  // Load persisted inputs. After a REFRESH the drawn map area is cleared,
+  // so the derived area values reset to defaults too; other settings persist.
   const persisted = loadPersistedInputs();
+  if (didClearForReload()) {
+    persisted.rooftopArea = defaultInputs.rooftopArea;
+    persisted.areaInFeddans = defaultInputs.areaInFeddans;
+  }
   
   // Manual inputs
   const [rooftopArea, setRooftopArea] = useState<number>(persisted.rooftopArea);
