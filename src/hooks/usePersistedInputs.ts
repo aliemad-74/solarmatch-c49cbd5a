@@ -59,8 +59,10 @@ export function usePersistedInputs() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Session state — survives OAuth redirect / page reload so that
-// after login the user finds their map, polygon, and inputs intact.
+// Session state — map/area/session data. Kept in sessionStorage
+// so it survives SPA navigation between steps and the OAuth
+// redirect round-trip within the same tab, but a page REFRESH
+// (reload) intentionally starts with a clean map.
 // ─────────────────────────────────────────────────────────────
 
 export interface PersistedSession {
@@ -74,9 +76,48 @@ export interface PersistedSession {
   userSelectedLocation?: boolean;
 }
 
+// Detect that the current page load is a browser REFRESH (reload),
+// not a fresh navigation (SPA route change or OAuth redirect back).
+function wasPageReload(): boolean {
+  try {
+    const entries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    if (entries && entries.length > 0) return entries[0].type === "reload";
+    // Legacy fallback for older browsers
+    const legacy = (performance as unknown as { navigation?: { type?: number } }).navigation;
+    return legacy?.type === 1;
+  } catch {
+    return false;
+  }
+}
+
+// Evaluate reload status only once per page load, so later SPA
+// remounts of Index never re-clear a session that is already live.
+let reloadChecked = false;
+let clearedForReload = false;
+
+function checkReloadOnce(): boolean {
+  if (reloadChecked) return false;
+  reloadChecked = true;
+  if (wasPageReload()) {
+    clearedForReload = true;
+    return true;
+  }
+  return false;
+}
+
+/** True only if THIS page load was a refresh and the session was cleared. */
+export function didClearForReload(): boolean {
+  return clearedForReload;
+}
+
 export function loadPersistedSession(): PersistedSession {
   try {
-    const stored = localStorage.getItem(SESSION_KEY);
+    if (checkReloadOnce()) {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(PENDING_CALC_KEY);
+      return {};
+    }
+    const stored = sessionStorage.getItem(SESSION_KEY);
     if (stored) return JSON.parse(stored);
   } catch {}
   return {};
@@ -85,26 +126,27 @@ export function loadPersistedSession(): PersistedSession {
 export function savePersistedSession(patch: Partial<PersistedSession>) {
   try {
     const existing = loadPersistedSession();
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...existing, ...patch }));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...existing, ...patch }));
   } catch {}
 }
 
 export function clearPersistedSession() {
   try {
-    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
   } catch {}
 }
 
 // Pending calculation flag — set when user clicks Calculate but isn't logged in.
-// After successful login the page auto-resumes the calculation.
+// After successful login (same tab) the page auto-resumes the calculation.
+// Lives in sessionStorage so a refresh also drops it.
 export function setPendingCalculationFlag() {
-  try { localStorage.setItem(PENDING_CALC_KEY, "1"); } catch {}
+  try { sessionStorage.setItem(PENDING_CALC_KEY, "1"); } catch {}
 }
 export function consumePendingCalculationFlag(): boolean {
   try {
-    const v = localStorage.getItem(PENDING_CALC_KEY);
+    const v = sessionStorage.getItem(PENDING_CALC_KEY);
     if (v) {
-      localStorage.removeItem(PENDING_CALC_KEY);
+      sessionStorage.removeItem(PENDING_CALC_KEY);
       return true;
     }
   } catch {}
