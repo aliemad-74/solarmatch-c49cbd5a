@@ -20,7 +20,7 @@ export interface PersistedInputs {
   farmEquipmentConsumption: number;
 }
 
-const defaultInputs: PersistedInputs = {
+export const defaultInputs: PersistedInputs = {
   rooftopArea: 100,
   pvType: "B_standard_mono",
   buildingType: "apartment",
