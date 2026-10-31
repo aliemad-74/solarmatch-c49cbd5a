@@ -170,7 +170,9 @@ export function calculateTieredBill(monthlyKWh: number, customTiers?: TariffTier
   for (const tier of tiers) {
     if (remaining <= 0) break;
     
-    const tierRange = tier.maxKWh === Infinity ? remaining : tier.maxKWh - tier.minKWh;
+    // Tier boundaries are INCLUSIVE (51-100 covers 50 kWh), so the range is max - min + 1.
+    // Removing the +1 would leave a 1-kWh gap in every tier and push kWh into higher tiers.
+    const tierRange = tier.maxKWh === Infinity ? remaining : tier.maxKWh - tier.minKWh + 1;
     const kWhInTier = Math.min(remaining, tierRange);
     const tierCost = kWhInTier * tier.rateEGP;
     
