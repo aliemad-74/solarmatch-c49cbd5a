@@ -28,7 +28,8 @@ export interface ROIConfig {
 }
 
 const DEFAULT_CONFIG: ROIConfig = {
-  degradationRate: 0.005,       // 0.5% per year
+  degradationRate: 0.005,       // 0.5% per year — IEC 61215 standard
+  inflationRate: 0.08,          // 8% annual electricity tariff increase (Egypt historical avg: 14%, conservative 8% used)
   systemLifeYears: 25,
 };
 

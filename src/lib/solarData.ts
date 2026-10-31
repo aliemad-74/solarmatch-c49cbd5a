@@ -8,7 +8,7 @@ import { calculateBillAfterSolar, calculateBillAfterSolarPerUnit } from "./egypt
 export const SPECIFIC_YIELD = 1800;           // kWh/kW/year (Egypt average)
 export const DEFAULT_USABLE_FRACTION = 0.60;
 export const DEFAULT_ELECTRICITY_PRICE = 1.95; // EGP/kWh
-export const CO2_FACTOR = 0.55;               // kg CO2 per kWh
+export const CO2_FACTOR = 0.47;               // kg CO2 per kWh — Egyptian grid 2025 (Ministry of Electricity)
 export const SYSTEM_LIFETIME_YEARS = 25;
 
 // ================================================
@@ -231,7 +231,7 @@ export interface IdealSizingAnalysis {
   explanationKey: string;            // translation key for recommendation message
 }
 
-const PERFORMANCE_RATIO = 0.80;  // Industry standard for well-maintained systems
+const PERFORMANCE_RATIO = 0.75;  // Egypt-adjusted: accounts for dust (Khamaseen), thermal derating, and inverter losses
 const DAYS_PER_MONTH_AVG = 30.44;  // Average days per month
 
 /**
@@ -426,7 +426,7 @@ export function calculateSolarFeasibility(
   // DYNAMIC SPECIFIC YIELD + TEMPERATURE DERATING
   // Replaces static SPECIFIC_YIELD constant. Uses real climate data.
   // ============================================
-  const avgSummerTemp = Math.max(...climate.monthlyTemperature.slice(4, 9));
+  const avgSummerTemp = Math.max(...climate.monthlyTemperature.slice(3, 10));
   const tempDerating = 1 - (0.004 * Math.max(0, avgSummerTemp - 25));
   const specificYield = climate.annualAvgIrradiance * 365 * PERFORMANCE_RATIO;
   const adjustedYield = specificYield * tempDerating;
@@ -522,10 +522,11 @@ export function calculateSolarFeasibility(
   // ============================================
   const energyMonth = energyYear / 12;
 
-  const totalIrradiance = climate.monthlyIrradiance.reduce((sum, v) => sum + v, 0);
-  const monthlyProduction = climate.monthlyIrradiance.map((irradiance) => {
-    const monthFraction = irradiance / totalIrradiance;
-    return energyYear * monthFraction;
+  // Fixed: use actual days per month instead of simple proportional split
+  const DAYS_PER_MONTH_FIXED = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const monthlyProduction = climate.monthlyIrradiance.map((irradiance, i) => {
+    // Production = kWp × irradiance(kWh/m²/day) × days × performance_ratio × temp_derating
+    return kWInstalled * irradiance * DAYS_PER_MONTH_FIXED[i] * (adjustedYield / (climate.annualAvgIrradiance * 365));
   });
 
   // ============================================
